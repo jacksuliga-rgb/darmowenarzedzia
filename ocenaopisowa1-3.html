@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generator Ocen Opisowych · Stowarzyszenie 2piny</title>
+<style>
+:root {
+  --bg:       #f0f4f8;
+  --w:        #ffffff;
+  --panel:    #f7f9fb;
+  --b1:       #d0dae6;
+  --b2:       #e2eaf2;
+  --ink:      #1a2332;
+  --ink2:     #3d5166;
+  --ink3:     #7a92a8;
+  --gr:       #1e7d5a;
+  --gr2:      #17644a;
+  --grl:      #d4f0e4;
+  --grt:      #e8f7f0;
+  --or:       #c0531a;
+  --orl:      #fdeee5;
+  --bl:       #1a52a8;
+  --bll:      #ddeaf8;
+  --go:       #a06800;
+  --gob:      #fef7e0;
+  --re:       #9e1f1f;
+  --acc:      #1e7d5a;
+  --sh:       0 2px 14px rgba(26,35,50,.08);
+  --sh2:      0 6px 32px rgba(26,35,50,.13);
+  --sh3:      0 1px 4px rgba(26,35,50,.06);
+  --rad:      12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+.hdr {
+  background: linear-gradient(135deg, #1a2e22 0%, #1e7d5a 100%);
+  padding: 0 24px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 16px rgba(0,0,0,.25);
+}
+.hdr-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.hdr-icon {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,.15);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  backdrop-filter: blur(4px);
+}
+.hdr-t {
+  font-family: 'Georgia', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: #fff;
+  line-height: 1.2;
+}
+.hdr-t b { color: #a8f0cc; font-weight: 700; }
+.hdr-sub { font-size: .68rem; color: rgba(255,255,255,.6); letter-spacing: .04em; }
+.hdr-nav { margin-left: auto; display: flex; gap: 6px; }
+.nb {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.9);
+  padding: 7px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 500;
+  transition: all .18s;
+  backdrop-filter: blur(4px);
+}
+.nb:hover { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.4); }
+.nb.on { background: #fff; color: var(--gr); border-color: #fff; font-weight: 600; }
+
+/* ── LAYOUT ── */
+.layout { display: grid; grid-template-columns: 268px 1fr; min-height: calc(100vh - 58px); }
+
+/* ── SIDEBAR ── */
+.sb {
+  background: var(--w);
+  border-right: 1px solid var(--b1);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 58px;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+  box-shadow: 2px 0 12px rgba(26,35,50,.04);
+}
+.sb-brand {
+  padding: 16px 16px 14px;
+  background: linear-gradient(135deg, #f0f9f4, #e8f4f0);
+  border-bottom: 1px solid var(--b2);
+  flex-shrink: 0;
+}
+.sb-brand-name {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--gr);
+  letter-spacing: .01em;
+}
+.sb-brand-sub {
+  font-size: .72rem;
+  color: var(--ink3);
+  margin-top: 1px;
+}
+.sb-top { padding: 14px 14px 10px; border-bottom: 1px solid var(--b2); flex-shrink: 0; }
+.sb-sc { overflow-y: auto; flex: 1; padding: 8px 14px 14px; }
+.sbl {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin: 10px 0 6px 2px;
+}
+.cr {
+  display: flex; align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: .87rem;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  color: var(--ink2);
+}
+.cr:hover { background: var(--grt); color: var(--gr); }
+.cr.on { background: linear-gradient(135deg, var(--gr), #25a070); color: #fff; box-shadow: 0 2px 8px rgba(30,125,90,.3); }
+.cr .cn {
+  font-size: .69rem; padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(0,0,0,.08);
+  font-weight: 600;
+}
+.cr.on .cn { background: rgba(255,255,255,.25); }
+.sr {
+  display: flex; align-items: center;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: .85rem;
+  gap: 6px;
+  margin-bottom: 2px;
+  color: var(--ink2);
+}
+.sr:hover { background: var(--grt); color: var(--gr); }
+.sr.on { background: var(--grt); color: var(--gr); font-weight: 600; border-left: 3px solid var(--gr); }
+.sr .sx { font-size: .72rem; color: var(--ink3); margin-left: auto; }
+.sr.on .sx { color: var(--gr); }
+.sbb {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px dashed var(--b1);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink3);
+  font-size: .8rem;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+  margin-top: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sbb:hover { background: var(--grt); border-color: var(--gr); color: var(--gr); border-style: solid; }
+.sbb:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── MAIN ── */
+.main { padding: 24px 28px 40px; overflow-y: auto; }
+.view { display: none; }
+.view.on { display: block; }
+
+/* ── STUDENT BAR ── */
+.stubar {
+  background: var(--w);
+  border: 1px solid var(--b1);
+  border-radius: var(--rad);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 20px;
+  box-shadow: var(--sh);
+  border-left: 4px solid var(--gr);
+}
+.stubar-av {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--gr), #25a070);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.stubar-n { font-family: 'Georgia', serif; font-size: 1.12rem; font-weight: 700; color: var(--ink); }
+.stubar-m { font-size: .79rem; color: var(--ink3); margin-top: 2px; }
+.stubar-r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.pill { font-size: .72rem; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+.pill-b { background: var(--bll); color: var(--bl); }
+.pill-g { background: var(--grl); color: var(--gr); }
+
+/* ── MODE SWITCHER ── */
+.msw {
+  display: flex;
+  background: var(--panel);
+  border: 1px solid var(--b1);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  width: fit-content;
+  box-shadow: var(--sh3);
+}
+.msb {
+  padding: 9px 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: .86rem;
+  font-weight: 500;
+  color: var(--ink3);
+  transition: all .18s;
+  display: flex; align-items: center; gap: 7px;
+}
+.msb.on { background: var(--gr); color: #fff; box-shadow: 0 2px 8px rgba(30,125,90,.3); }
+.msb:not(.on):hover { background: var(--grt); color: var(--gr); }
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 2px solid var(--b2); margin-bottom: 20px; gap: 2px; }
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--ink3);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all .15s;
+  border-radius: 6px 6px 0 0;
+}
+.tab:hover { color: var(--gr); background: var(--grt); }
+.tab.on { color: var(--gr); border-bottom-color: var(--gr); font-weight: 700; }
+
+/* ── NOTICES ── */
+.note { padding: 10px 14px; border-radius: 8px; font-size: .82rem; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 8px; }
+.note-b { background: var(--bll); color: var(--bl); border: 1px solid #b8d4f0; }
+.note-g { background: var(--gob); color: var(--go); border: 1px solid #e8d070; }
+
+/* ── SKILL GROUPS ── */
+.sg { margin-bottom: 16px; }
+.sgt {
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--ink2);
+  margin-bottom: 8px;
+  padding: 6px 11px;
+  background: var(--panel);
+  border-radius: 7px;
+  border-left: 3px solid var(--b1);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.sgt.z { border-color: var(--gr); color: var(--gr2); background: var(--grt); }
+.sgt.e { border-color: var(--bl); color: var(--bl); background: var(--bll); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: .79rem;
+  cursor: pointer;
+  transition: all .15s;
+  border: 1.5px solid transparent;
+  user-select: none;
+  line-height: 1.3;
+  font-weight: 500;
+}
+.tag.pos { background: var(--grt); color: #1a5e3a; border-color: #c0e8d4; }
+.tag.pos:hover { background: #c4ecd8; border-color: var(--gr); transform: translateY(-1px); box-shadow: var(--sh3); }
+.tag.pos.on { background: var(--gr); color: #fff; border-color: var(--gr); box-shadow: 0 2px 8px rgba(30,125,90,.3); }
+.tag.neg { background: var(--orl); color: #7a2e10; border-color: #f4d0bc; }
+.tag.neg:hover { background: #f8ddd0; border-color: var(--or); transform: translateY(-1px); box-shadow: var(--sh3); }
+.tag.neg.on { background: var(--or); color: #fff; border-color: var(--or); box-shadow: 0 2px 8px rgba(192,83,26,.3); }
+
+/* ── RESULT CARDS ── */
+.rc {
+  background: var(--w);
+  border: 1px solid var(--b1);
+  border-radius: var(--rad);
+  box-shadow: var(--sh);
+  overflow: hidden;
+  margin-bottom: 16px;
+  transition: box-shadow .2s;
+}
+.rc:hover { box-shadow: var(--sh2); }
+.rch {
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f0f9f4, #e8f4f0);
+  border-bottom: 1px solid var(--b2);
+  font-size: .77rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--gr2);
+  display: flex; align-items: center; justify-content: space-between;
+  text-transform: uppercase;
+}
+.rtext {
+  padding: 18px 20px;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--ink);
+  min-height: 80px;
+  white-space: pre-wrap;
+  outline: none;
+  cursor: text;
+}
+.rtext:focus { background: #fafffe; }
+.rtext:empty::before { content: attr(data-ph); color: #b0c4d4; font-style: italic; }
+.copy-btn {
+  background: rgba(30,125,90,.1);
+  border: 1px solid rgba(30,125,90,.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: .71rem;
+  color: var(--gr);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 4px;
+  font-weight: 600;
+}
+.copy-btn:hover { background: var(--gr); color: #fff; border-color: var(--gr); }
+.copy-btn.ok { background: var(--gr); color: #fff; border-color: var(--gr); }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: .84rem;
+  z-index: 999;
+  opacity: 0;
+  transition: all .25s;
+  pointer-events: none;
+  box-shadow: var(--sh2);
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── DOC PREVIEW ── */
+.docwrap {
+  background: #fff;
+  border: 1px solid var(--b1);
+  border-radius: var(--rad);
+  padding: 48px 56px;
+  box-shadow: var(--sh2);
+  max-width: 740px;
+  font-family: 'Georgia', serif;
+}
+.doc-nm { font-size: 1.05rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.doc-tp { font-size: .95rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-top: 2px; }
+.doc-cl { font-size: .88rem; color: var(--ink2); margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--b2); }
+.doc-p { text-align: justify; text-indent: 2.2em; line-height: 1.95; font-size: 1rem; margin-bottom: 18px; font-style: italic; }
+.doc-bold { font-weight: 700; font-style: normal; }
+.doc-nt { margin-top: 10px; font-size: .93rem; }
+.doc-it { font-style: italic; padding-left: 1.5em; }
+.doc-ft { margin-top: 48px; font-size: .82rem; color: var(--ink3); text-align: right; border-top: 1px solid var(--b2); padding-top: 16px; }
+
+/* ── FORMS ── */
+.fg2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.fg.full { grid-column: 1/-1; }
+label { font-size: .73rem; font-weight: 600; color: var(--ink3); letter-spacing: .03em; text-transform: uppercase; }
+input, select, textarea {
+  border: 1px solid var(--b2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: .87rem;
+  color: var(--ink);
+  background: #fff;
+  transition: all .15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gr);
+  box-shadow: 0 0 0 3px rgba(30,125,90,.12);
+}
+textarea { resize: vertical; }
+.tog { display: flex; border: 1px solid var(--b2); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.tb { flex: 1; padding: 8px 12px; border: none; background: transparent; cursor: pointer; font-size: .85rem; transition: all .15s; font-weight: 500; color: var(--ink3); }
+.tb.on { background: var(--bl); color: #fff; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px; border: none;
+  cursor: pointer;
+  font-size: .84rem; font-weight: 600;
+  transition: all .18s;
+  letter-spacing: .01em;
+}
+.btn-g { background: linear-gradient(135deg, var(--gr), #25a070); color: #fff; box-shadow: 0 2px 8px rgba(30,125,90,.3); }
+.btn-g:hover { background: linear-gradient(135deg, #196b4c, #1e8a60); box-shadow: 0 4px 14px rgba(30,125,90,.4); transform: translateY(-1px); }
+.btn-o { background: #fff; border: 1px solid var(--b1); color: var(--ink2); }
+.btn-o:hover { background: var(--panel); border-color: var(--b1); }
+.btn-gd { background: linear-gradient(135deg, #b88000, #d4960a); color: #fff; box-shadow: 0 2px 8px rgba(184,128,0,.25); }
+.btn-gd:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(184,128,0,.35); }
+.btn-r { background: var(--re); color: #fff; }
+.btn-r:hover { background: #7e1818; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+/* ── MODAL ── */
+.ov { display: none; position: fixed; inset: 0; background: rgba(26,35,50,.45); z-index: 500; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.ov.on { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 28px 30px; max-width: 420px; width: 92%; box-shadow: var(--sh2); }
+.modal h3 { font-family: 'Georgia', serif; font-size: 1.15rem; margin-bottom: 18px; color: var(--ink); }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 90px 20px; color: var(--ink3); }
+.empty .ico { font-size: 3rem; margin-bottom: 14px; opacity: .6; }
+.empty p { font-size: .95rem; line-height: 1.6; }
+
+/* ── FOOTER ── */
+.footer {
+  background: linear-gradient(135deg, #1a2e22 0%, #1e3828 100%);
+  color: rgba(255,255,255,.8);
+  text-align: center;
+  padding: 20px 24px;
+  font-size: .78rem;
+  line-height: 1.7;
+}
+.footer a { color: #a8f0cc; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.footer-logo { font-size: 1rem; margin-bottom: 4px; }
+.footer strong { color: #fff; font-weight: 700; }
+.footer-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #a8f0cc;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .18s;
+}
+.footer-badge:hover {
+  background: rgba(255,255,255,.2);
+  border-color: rgba(255,255,255,.4);
+  color: #fff;
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon">✏️</div>
+    <div>
+      <div class="hdr-t">Generator <b>Ocen Opisowych</b></div>
+      <div class="hdr-sub">Stowarzyszenie 2piny · Jacek Suliga</div>
+    </div>
+  </div>
+  <nav class="hdr-nav">
+    <button class="nb on" id="nav-gen" onclick="goV('gen')">📝 Generator</button>
+    <button class="nb" id="nav-doc" onclick="goV('doc')">📄 Podgląd</button>
+    <button class="nb" id="nav-ust" onclick="goV('ust')">👤 Dane ucznia</button>
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-brand-name">📚 Moje klasy</div>
+      <div class="sb-brand-sub">Klasy 1–3 · edukacja wczesnoszkolna</div>
+    </div>
+    <div class="sb-top">
+      <div class="sbl">Klasy</div>
+      <div id="clsList"></div>
+      <button class="sbb" onclick="mCls()">＋ Dodaj klasę</button>
+    </div>
+    <div class="sb-sc">
+      <div class="sbl">Uczniowie</div>
+      <div id="stuList"></div>
+      <button class="sbb" id="addSB" onclick="mStu()" disabled>＋ Dodaj ucznia</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- GENERATOR -->
+    <div class="view on" id="view-gen">
+      <div id="g-empty" class="empty"><div class="ico">📝</div><p>Wybierz ucznia z listy po lewej stronie,<br>aby rozpocząć generowanie oceny opisowej.</p></div>
+      <div id="g-cont" style="display:none">
+        <div class="stubar">
+          <div class="stubar-av" id="bar-av">👤</div>
+          <div>
+            <div class="stubar-n" id="bar-name"></div>
+            <div class="stubar-m" id="bar-meta"></div>
+          </div>
+          <div class="stubar-r"><span class="pill" id="bar-pill"></span></div>
+        </div>
+
+        <div class="msw">
+          <button class="msb on" id="ms-pol" onclick="setMode('pol')">📋 Ocena półroczna</button>
+          <button class="msb" id="ms-roc" onclick="setMode('roc')">📜 Ocena roczna</button>
+        </div>
+
+        <!-- PÓŁROCZE -->
+        <div id="mode-pol">
+          <div class="tabs">
+            <div class="tab on" onclick="goTab('pz')">Zachowanie</div>
+            <div class="tab" onclick="goTab('pe')">Zajęcia edukacyjne</div>
+            <div class="tab" onclick="goTab('pw')">✦ Wynik</div>
+          </div>
+          <div id="tab-pz"><div class="note note-b">Zaznacz zdania. 🟢 Pozytywne · 🟠 Do uwagi</div><div id="bank-pz"></div></div>
+          <div id="tab-pe" style="display:none"><div class="note note-b">Zaznacz umiejętności z poszczególnych obszarów.</div><div id="bank-pe"></div></div>
+          <div id="tab-pw" style="display:none">
+            <div class="note note-g" id="pw-info"></div>
+            <div class="rc"><div class="rch"><span>📌 Zachowanie</span><button class="copy-btn" onclick="copyField('pw-z',this)">📋 Kopiuj</button></div><div class="rtext" id="pw-z" contenteditable="true" data-ph="Tu pojawi się tekst zachowania…"></div></div>
+            <div class="rc"><div class="rch"><span>📚 Zajęcia edukacyjne</span><button class="copy-btn" onclick="copyField('pw-e',this)">📋 Kopiuj</button></div><div class="rtext" id="pw-e" contenteditable="true" data-ph="Tu pojawi się tekst zajęć edukacyjnych…"></div></div>
+            <div class="fg2" style="margin-bottom:6px">
+              <div class="fg"><label>Religia / etyka</label><input id="pw-rel" type="text" placeholder="celujący" oninput="saveExtra('pol')"></div>
+              <div class="fg"><label>Szczególne osiągnięcia</label><input id="pw-os" type="text" oninput="saveExtra('pol')"></div>
+              <div class="fg full"><label>Wskazówki do pracy w II półroczu</label><textarea id="pw-wsk" rows="2" oninput="saveExtra('pol')"></textarea></div>
+            </div>
+            <div class="btnrow">
+              <button class="btn btn-g" onclick="generate('pol')">⟳ Generuj z zaznaczonych</button>
+              <button class="btn btn-gd" onclick="saveRes('pol')">💾 Zapisz</button>
+              <button class="btn btn-o" onclick="goV('doc')">👁 Podgląd</button>
+              <button class="btn btn-o" onclick="copyRes('pol')">📋 Kopiuj</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KONIEC ROKU -->
+        <div id="mode-roc" style="display:none">
+          <div class="tabs">
+            <div class="tab on" onclick="goTab('rz')">Zachowanie</div>
+            <div class="tab" onclick="goTab('re')">Zajęcia edukacyjne</div>
+            <div class="tab" onclick="goTab('rw')">✦ Wynik</div>
+          </div>
+          <div id="tab-rz"><div class="note note-b">Zaznacz zdania opisujące zachowanie w całym roku szkolnym.</div><div id="bank-rz"></div></div>
+          <div id="tab-re" style="display:none"><div class="note note-b">Zaznacz osiągnięcia edukacyjne z całego roku szkolnego.</div><div id="bank-re"></div></div>
+          <div id="tab-rw" style="display:none">
+            <div class="note note-g" id="rw-info"></div>
+            <div class="rc"><div class="rch"><span>📌 Zachowanie</span><div style="display:flex;align-items:center;gap:8px"><span id="rw-z-cnt" style="font-size:.72rem;color:#888"></span><button class="copy-btn" onclick="copyField('rw-z',this)">📋 Kopiuj</button></div></div><div class="rtext" id="rw-z" contenteditable="true" data-ph="Tu pojawi się tekst zachowania…" oninput="updateWordCount('rw-z','rw-z-cnt',80)"></div></div>
+            <div class="rc"><div class="rch"><span>📚 Obowiązkowe zajęcia edukacyjne</span><div style="display:flex;align-items:center;gap:8px"><span id="rw-e-cnt" style="font-size:.72rem;color:#888"></span><button class="copy-btn" onclick="copyField('rw-e',this)">📋 Kopiuj</button></div></div><div class="rtext" id="rw-e" contenteditable="true" data-ph="Tu pojawi się tekst zajęć edukacyjnych…" oninput="updateWordCount('rw-e','rw-e-cnt',125)"></div></div>
+            <div class="fg2" style="margin-bottom:6px">
+              <div class="fg"><label>Religia / etyka</label><input id="rw-rel" type="text" placeholder="celujący" oninput="saveExtra('roc')"></div>
+              <div class="fg"><label>Szczególne osiągnięcia</label><input id="rw-os" type="text" oninput="saveExtra('roc')"></div>
+              <div class="fg"><label>Dodatkowe zajęcia edukacyjne</label><input id="rw-dod" type="text" oninput="saveExtra('roc')"></div>
+              <div class="fg"><label>Inne zajęcia</label><input id="rw-inne" type="text" oninput="saveExtra('roc')"></div>
+              <div class="fg full"><label>Indywidualny program lub tok nauki</label><input id="rw-ipn" type="text" oninput="saveExtra('roc')"></div>
+              <div class="fg full"><label>Wskazówki do pracy w przyszłym roku</label><textarea id="rw-wsk" rows="2" oninput="saveExtra('roc')"></textarea></div>
+            </div>
+            <div class="btnrow">
+              <button class="btn btn-g" onclick="generate('roc')">⟳ Generuj z zaznaczonych</button>
+              <button class="btn btn-gd" onclick="saveRes('roc')">💾 Zapisz</button>
+              <button class="btn btn-o" onclick="goV('doc')">👁 Podgląd</button>
+              <button class="btn btn-o" onclick="copyRes('roc')">📋 Kopiuj</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PODGLĄD -->
+    <div class="view" id="view-doc">
+      <div id="d-empty" class="empty"><div class="ico">📄</div><p>Wybierz ucznia i wygeneruj ocenę,<br>aby zobaczyć podgląd gotowego dokumentu.</p></div>
+      <div id="d-cont" style="display:none">
+        <div class="btnrow" style="margin-bottom:14px">
+          <button class="btn btn-o" onclick="goV('gen')">← Wróć</button>
+          <button class="btn btn-g" onclick="copyDoc()">📋 Kopiuj dokument</button>
+        </div>
+        <div class="docwrap" id="docOut"></div>
+      </div>
+    </div>
+
+    <!-- DANE UCZNIA -->
+    <div class="view" id="view-ust">
+      <div id="u-empty" class="empty"><div class="ico">👤</div><p>Wybierz ucznia z listy po lewej stronie,<br>aby edytować jego dane.</p></div>
+      <div id="u-cont" style="display:none">
+        <div style="font-family:'Georgia',serif;font-size:1.2rem;margin-bottom:18px">Dane ucznia</div>
+        <div class="fg2">
+          <div class="fg"><label>Imię</label><input id="u-im" type="text" oninput="saveStu()"></div>
+          <div class="fg"><label>Nazwisko</label><input id="u-na" type="text" oninput="saveStu()"></div>
+          <div class="fg"><label>Płeć</label>
+            <div class="tog"><button class="tb on" id="sb-m" onclick="setSex('m')">Chłopiec</button><button class="tb" id="sb-f" onclick="setSex('f')">Dziewczynka</button></div>
+          </div>
+          <div class="fg"><label>Rok szkolny</label><input id="u-rok" type="text" placeholder="2025/26" oninput="saveStu()"></div>
+        </div>
+        <div class="btnrow" style="margin-top:18px"><button class="btn btn-r" onclick="delStu()">🗑 Usuń ucznia</button></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal klasa -->
+<div class="ov" id="ov-c">
+  <div class="modal">
+    <h3>Nowa klasa</h3>
+    <div class="fg" style="margin-bottom:14px"><label>Nazwa klasy</label><input id="m-cn" type="text" placeholder="np. II B"></div>
+    <div class="btnrow"><button class="btn btn-g" onclick="okCls()">Dodaj</button><button class="btn btn-o" onclick="closeOv('ov-c')">Anuluj</button></div>
+  </div>
+</div>
+
+<!-- Modal uczeń -->
+<div class="ov" id="ov-s">
+  <div class="modal">
+    <h3>Nowy uczeń</h3>
+    <div class="fg2" style="margin-bottom:14px">
+      <div class="fg"><label>Imię</label><input id="m-im" type="text"></div>
+      <div class="fg"><label>Nazwisko</label><input id="m-na" type="text"></div>
+      <div class="fg"><label>Płeć</label><select id="m-sx"><option value="m">Chłopiec</option><option value="f">Dziewczynka</option></select></div>
+      <div class="fg"><label>Rok szkolny</label><input id="m-rok" type="text" value="2025/26"></div>
+    </div>
+    <div class="btnrow"><button class="btn btn-g" onclick="okStu()">Dodaj</button><button class="btn btn-o" onclick="closeOv('ov-s')">Anuluj</button></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// BANK ZDAŃ
+// Format: [etykieta_tagu, tekst_chłopiec, tekst_dziewczynka]
+// Zdania pisane z MAŁEJ litery — imię dodawane programowo tylko raz na początku
+// ════════════════════════════════════════════════════
+
+const BANK_Z = [
+  { t:"Relacje z rówieśnikami", pos:[
+    ["nawiązuje kontakty z rówieśnikami",
+     "Bez trudu nawiązuje kontakty z rówieśnikami i szybko odnajduje się w nowym środowisku.",
+     "Bez trudu nawiązuje kontakty z rówieśnikami i szybko odnajduje się w nowym środowisku."],
+    ["zgodnie współpracuje w grupie",
+     "Zgodnie i harmonijnie współpracuje w grupie, respektując zdanie innych i angażując się we wspólne działania.",
+     "Zgodnie i harmonijnie współpracuje w grupie, respektując zdanie innych i angażując się we wspólne działania."],
+    ["rozwiązuje konflikty bez agresji",
+     "Potrafi spokojnie rozwiązywać sytuacje konfliktowe, nie uciekając się do agresji.",
+     "Potrafi spokojnie rozwiązywać sytuacje konfliktowe, nie uciekając się do agresji."],
+    ["panuje nad emocjami",
+     "W trudnych sytuacjach zachowuje spokój i skutecznie panuje nad negatywnymi emocjami.",
+     "W trudnych sytuacjach zachowuje spokój i skutecznie panuje nad negatywnymi emocjami."],
+    ["jest koleżeński i uprzejmy",
+     "Jest koleżeński, życzliwy i uczynny — służy pomocą innym i pamięta o dobrych manierach.",
+     "Jest koleżeńska, życzliwa i uczynna — służy pomocą innym i pamięta o dobrych manierach."],
+    ["przewodzi w grupie",
+     "Naturalnie przewodzi w grupie rówieśniczej i potrafi sprawnie organizować wspólne działania.",
+     "Naturalnie przewodzi w grupie rówieśniczej i potrafi sprawnie organizować wspólne działania."],
+    ["aktywnie uczestniczy w życiu klasy",
+     "Aktywnie uczestniczy w życiu klasy i z zaangażowaniem włącza się w realizację wspólnych przedsięwzięć.",
+     "Aktywnie uczestniczy w życiu klasy i z zaangażowaniem włącza się w realizację wspólnych przedsięwzięć."],
+    ["reprezentuje klasę w konkursach",
+     "Z powodzeniem reprezentuje klasę i szkołę w różnych konkursach, odnosząc przy tym liczne sukcesy.",
+     "Z powodzeniem reprezentuje klasę i szkołę w różnych konkursach, odnosząc przy tym liczne sukcesy."],
+    ["dba o cudze mienie",
+     "Zawsze pamięta o zwrocie pożyczonych przedmiotów i troszczy się o cudze mienie.",
+     "Zawsze pamięta o zwrocie pożyczonych przedmiotów i troszczy się o cudze mienie."],
+    ["rozumie zasady dobrego koleżeństwa",
+     "Doskonale rozumie zasady dobrego koleżeństwa i gotowa jest nieść pomoc innym.",
+     "Doskonale rozumie zasady dobrego koleżeństwa i gotowa jest nieść pomoc innym."],
+    ["wykazuje empatię wobec innych",
+     "Wykazuje empatię wobec rówieśników — dostrzega potrzeby innych i reaguje na nie z troską.",
+     "Wykazuje empatię wobec rówieśników — dostrzega potrzeby innych i reaguje na nie z troską."],
+  ], neg:[
+    ["ma trudności z nawiązaniem kontaktów",
+     "Ma trudności z nawiązywaniem kontaktów z rówieśnikami i wymaga w tym zakresie wsparcia.",
+     "Ma trudności z nawiązywaniem kontaktów z rówieśnikami i wymaga w tym zakresie wsparcia."],
+    ["stosuje wulgaryzmy",
+     "Zdarza mu się używać wulgaryzmów, co wymaga dalszej pracy nad kulturą języka.",
+     "Zdarza jej się używać wulgaryzmów, co wymaga dalszej pracy nad kulturą języka."],
+    ["nie panuje nad emocjami",
+     "Ma trudności z opanowaniem negatywnych emocji i wymaga wsparcia w rozwijaniu samokontroli.",
+     "Ma trudności z opanowaniem negatywnych emocji i wymaga wsparcia w rozwijaniu samokontroli."],
+    ["bywa konfliktowy",
+     "Zdarza mu się wchodzić w konflikty z rówieśnikami — pracujemy nad konstruktywnym rozwiązywaniem sporów.",
+     "Zdarza jej się wchodzić w konflikty z rówieśnikami — pracujemy nad konstruktywnym rozwiązywaniem sporów."],
+    ["stosuje przemoc",
+     "Zdarzają się sytuacje, gdy reaguje przemocą fizyczną lub słowną — jest to przedmiot stałej pracy wychowawczej.",
+     "Zdarzają się sytuacje, gdy reaguje przemocą fizyczną lub słowną — jest to przedmiot stałej pracy wychowawczej."],
+    ["jest nieśmiały",
+     "Jest osobą nieśmiałą i potrzebuje czasu oraz zachęty, by otworzyć się na grupę.",
+     "Jest osobą nieśmiałą i potrzebuje czasu oraz zachęty, by otworzyć się na grupę."],
+    ["izoluje się od grupy",
+     "Przejawia tendencję do izolowania się od grupy rówieśniczej i rzadko angażuje się we wspólne działania.",
+     "Przejawia tendencję do izolowania się od grupy rówieśniczej i rzadko angażuje się we wspólne działania."],
+    ["narzuca zdanie innym",
+     "W sytuacjach grupowych dąży do narzucania swojego zdania, co niekiedy zakłóca pracę zespołu.",
+     "W sytuacjach grupowych dąży do narzucania swojego zdania, co niekiedy zakłóca pracę zespołu."],
+  ]},
+  { t:"Relacje z dorosłymi i kultura osobista", pos:[
+    ["jest miły i kulturalny",
+     "Jest miły i kulturalny w kontaktach z dorosłymi — wzbudza sympatię swoją postawą.",
+     "Jest miła i kulturalna w kontaktach z dorosłymi — wzbudza sympatię swoją postawą."],
+    ["stosuje zwroty grzecznościowe",
+     "Stosuje właściwe zwroty grzecznościowe i potrafi kulturalnie prowadzić rozmowę.",
+     "Stosuje właściwe zwroty grzecznościowe i potrafi kulturalnie prowadzić rozmowę."],
+    ["słucha i stosuje się do poleceń",
+     "Uważnie słucha poleceń nauczyciela i sumiennie się do nich stosuje.",
+     "Uważnie słucha poleceń nauczyciela i sumiennie się do nich stosuje."],
+    ["wyróżnia się wysoką kulturą",
+     "Wyróżnia się wysoką kulturą osobistą — jest taktowny, opanowany i otwarty na innych.",
+     "Wyróżnia się wysoką kulturą osobistą — jest taktowna, opanowana i otwarta na innych."],
+    ["nie sprawia kłopotów wychowawczych",
+     "Jest uczniem zdyscyplinowanym i nie sprawia żadnych kłopotów wychowawczych.",
+     "Jest uczennicą zdyscyplinowaną i nie sprawia żadnych kłopotów wychowawczych."],
+    ["rozumie wartość prawdomówności",
+     "Rozumie pojęcia prawdy i kłamstwa oraz zdaje sobie sprawę z wagi prawdomówności w codziennym życiu.",
+     "Rozumie pojęcia prawdy i kłamstwa oraz zdaje sobie sprawę z wagi prawdomówności w codziennym życiu."],
+    ["dba o porządek wokół siebie",
+     "Dba o ład i porządek na ławce oraz w swoim otoczeniu.",
+     "Dba o ład i porządek na ławce oraz w swoim otoczeniu."],
+    ["jest uczciwy",
+     "Jest uczciwy i przyznaje się do popełnionych błędów — ceni sobie szczerość w relacjach z innymi.",
+     "Jest uczciwa i przyznaje się do popełnionych błędów — ceni sobie szczerość w relacjach z innymi."],
+  ], neg:[
+    ["rzadko stosuje zwroty grzecznościowe",
+     "Rzadko stosuje zwroty grzecznościowe i wymaga wzmocnienia w zakresie kultury języka.",
+     "Rzadko stosuje zwroty grzecznościowe i wymaga wzmocnienia w zakresie kultury języka."],
+    ["zakłóca przebieg zajęć",
+     "Zdarza mu się zakłócać przebieg zajęć, co utrudnia pracę całej klasy.",
+     "Zdarza jej się zakłócać przebieg zajęć, co utrudnia pracę całej klasy."],
+    ["sprawia kłopoty wychowawcze",
+     "Sprawia kłopoty wychowawcze wymagające systematycznej i konsekwentnej pracy.",
+     "Sprawia kłopoty wychowawcze wymagające systematycznej i konsekwentnej pracy."],
+    ["nie podporządkowuje się poleceniom",
+     "Nie zawsze podporządkowuje się poleceniom nauczyciela — wymaga stałej pracy nad dyscypliną.",
+     "Nie zawsze podporządkowuje się poleceniom nauczyciela — wymaga stałej pracy nad dyscypliną."],
+  ]},
+  { t:"Samodzielność i obowiązkowość", pos:[
+    ["pracuje samodzielnie",
+     "Samodzielnie podejmuje się powierzonych zadań, nie czekając na dodatkowy impuls ze strony nauczyciela.",
+     "Samodzielnie podejmuje się powierzonych zadań, nie czekając na dodatkowy impuls ze strony nauczyciela."],
+    ["rzadko potrzebuje pomocy",
+     "Rzadko potrzebuje wsparcia — z powodzeniem radzi sobie z zadaniami na miarę swoich możliwości.",
+     "Rzadko potrzebuje wsparcia — z powodzeniem radzi sobie z zadaniami na miarę swoich możliwości."],
+    ["jest zawsze przygotowany do zajęć",
+     "Zawsze przynosi komplet przyborów i ma odrobione zadania domowe — jest wzorem obowiązkowości.",
+     "Zawsze przynosi komplet przyborów i ma odrobione zadania domowe — jest wzorem obowiązkowości."],
+    ["jest punktualny i sumienny",
+     "Jest punktualny i sumienny — wywiązuje się ze wszystkich obowiązków szkolnych.",
+     "Jest punktualna i skrupulatnie wywiązuje się ze wszystkich obowiązków szkolnych."],
+    ["planuje swoją pracę",
+     "Potrafi zaplanować pracę i prawidłowo ustalić kolejność wykonywanych czynności.",
+     "Potrafi zaplanować pracę i prawidłowo ustalić kolejność wykonywanych czynności."],
+    ["dba o ład i porządek",
+     "Dba o ład i porządek w swoim miejscu pracy — jego stanowisko zawsze jest estetycznie zorganizowane.",
+     "Dba o ład i porządek w swoim miejscu pracy — jej stanowisko zawsze jest estetycznie zorganizowane."],
+    ["systematycznie odrabia zadania",
+     "Systematycznie i starannie odrabia zadania domowe, co pozytywnie wpływa na jej postępy.",
+     "Systematycznie i starannie odrabia zadania domowe, co pozytywnie wpływa na jej postępy."],
+  ], neg:[
+    ["nie zawsze radzi sobie samodzielnie",
+     "Nie zawsze radzi sobie bez pomocy i często oczekuje wsparcia ze strony nauczyciela.",
+     "Nie zawsze radzi sobie bez pomocy i często oczekuje wsparcia ze strony nauczyciela."],
+    ["zapomina przyborów i zadań",
+     "Zdarza mu się zapominać niezbędnych przyborów szkolnych lub odrobionych zadań domowych.",
+     "Zdarza jej się zapominać niezbędnych przyborów szkolnych lub odrobionych zadań domowych."],
+    ["nieregularnie odrabia zadania",
+     "Nieregularnie odrabia zadania domowe, co niekorzystnie wpływa na postępy w nauce.",
+     "Nieregularnie odrabia zadania domowe, co niekorzystnie wpływa na postępy w nauce."],
+  ]},
+  { t:"Aktywność i koncentracja", pos:[
+    ["wykazuje dużą aktywność",
+     "Wykazuje dużą aktywność na zajęciach i z zaangażowaniem uczestniczy we wszelkich formach pracy.",
+     "Wykazuje dużą aktywność na zajęciach i z zaangażowaniem uczestniczy we wszelkich formach pracy."],
+    ["jest wytrwały w zadaniach",
+     "Jest wytrwały w dążeniu do celu i nie rezygnuje z zadania nawet wtedy, gdy napotyka trudności.",
+     "Jest wytrwała w dążeniu do celu i nie rezygnuje z zadania nawet wtedy, gdy napotyka trudności."],
+    ["zawsze kończy zadanie",
+     "Zawsze doprowadza rozpoczęte zadanie do końca — przejawia godną pochwały rzetelność.",
+     "Zawsze doprowadza rozpoczęte zadanie do końca — przejawia godną pochwały rzetelność."],
+    ["potrafi skupić się na zadaniu",
+     "Potrafi skupić uwagę na wykonywanym zadaniu i przez dłuższy czas utrzymuje koncentrację.",
+     "Potrafi skupić uwagę na wykonywanym zadaniu i przez dłuższy czas utrzymuje koncentrację."],
+    ["pracuje w dobrym tempie",
+     "Pracuje w równomiernym, dobrym tempie — starannie i w wyznaczonym czasie realizuje powierzone zadania.",
+     "Pracuje w równomiernym, dobrym tempie — starannie i w wyznaczonym czasie realizuje powierzone zadania."],
+    ["wykazuje inicjatywę",
+     "Wykazuje inicjatywę w działaniach klasowych i szkolnych — chętnie proponuje ciekawe rozwiązania.",
+     "Wykazuje inicjatywę w działaniach klasowych i szkolnych — chętnie proponuje ciekawe rozwiązania."],
+  ], neg:[
+    ["pracuje w wolnym tempie",
+     "Pracuje w wolnym tempie i potrzebuje więcej czasu na wykonanie zadań niż przeciętnie.",
+     "Pracuje w wolnym tempie i potrzebuje więcej czasu na wykonanie zadań niż przeciętnie."],
+    ["ma problem z koncentracją",
+     "Ma trudności z utrzymaniem uwagi — łatwo się rozprasza i wymaga częstego mobilizowania do pracy.",
+     "Ma trudności z utrzymaniem uwagi — łatwo się rozprasza i wymaga częstego mobilizowania do pracy."],
+    ["szybko się zniechęca",
+     "Szybko traci motywację, zwłaszcza gdy napotyka pierwsze trudności.",
+     "Szybko traci motywację, zwłaszcza gdy napotyka pierwsze trudności."],
+    ["wymaga zachęty do pracy",
+     "Wymaga dodatkowej motywacji, by podjąć się realizacji zadania i wytrwać w nim do końca.",
+     "Wymaga dodatkowej motywacji, by podjąć się realizacji zadania i wytrwać w nim do końca."],
+  ]}
+];
+
+const BANK_E = [
+  { t:"Mówienie i słuchanie", pos:[
+    ["słucha ze zrozumieniem",
+     "Słucha ze zrozumieniem wypowiedzi innych, korzysta z przekazanych informacji i potrafi się do nich odnieść.",
+     "Słucha ze zrozumieniem wypowiedzi innych, korzysta z przekazanych informacji i potrafi się do nich odnieść."],
+    ["swobodnie prezentuje własne zdanie",
+     "Swobodnie i rzeczowo prezentuje własne zdanie, dobierając formy komunikowania się odpowiednie do sytuacji.",
+     "Swobodnie i rzeczowo prezentuje własne zdanie, dobierając formy komunikowania się odpowiednie do sytuacji."],
+    ["posługuje się bogatym słownictwem",
+     "Posługuje się bogatym i zróżnicowanym słownictwem, co wyraźnie wzbogaca jej wypowiedzi ustne.",
+     "Posługuje się bogatym i zróżnicowanym słownictwem, co wyraźnie wzbogaca jej wypowiedzi ustne."],
+    ["nadaje właściwą intonację zdaniom",
+     "Nadaje właściwą intonację zdaniom pytającym, oznajmującym i rozkazującym — mówi wyraźnie i melodyjnie.",
+     "Nadaje właściwą intonację zdaniom pytającym, oznajmującym i rozkazującym — mówi wyraźnie i melodyjnie."],
+    ["zabiera głos na forum klasy",
+     "Odważnie i rzeczowo zabiera głos na forum klasy, formułując myśli w sposób zrozumiały i logiczny.",
+     "Odważnie i rzeczowo zabiera głos na forum klasy, formułując myśli w sposób zrozumiały i logiczny."],
+    ["opowiada historyjki i układa opowiadania",
+     "Z łatwością opowiada treść historyjki obrazkowej i samodzielnie układa logiczne, ciekawe opowiadania.",
+     "Z łatwością opowiada treść historyjki obrazkowej i samodzielnie układa logiczne, ciekawe opowiadania."],
+    ["ma bogatą wyobraźnię twórczą",
+     "Ma bogatą wyobraźnię twórczą — tworzy oryginalne opowiadania pełne nieoczekiwanych zwrotów akcji.",
+     "Ma bogatą wyobraźnię twórczą — tworzy oryginalne opowiadania pełne nieoczekiwanych zwrotów akcji."],
+    ["opanowuje teksty pamięciowo",
+     "Z łatwością opanowuje pamięciowo wiersze i dłuższe fragmenty prozy.",
+     "Z łatwością opanowuje pamięciowo wiersze i dłuższe fragmenty prozy."],
+    ["pięknie recytuje wiersze",
+     "Pięknie recytuje wiersze, dbając o właściwą intonację, wyrazistość i wyrażanie emocji.",
+     "Pięknie recytuje wiersze, dbając o właściwą intonację, wyrazistość i wyrażanie emocji."],
+    ["uczestniczy w inscenizacjach",
+     "Z zaangażowaniem uczestniczy w inscenizacjach i przedstawieniach klasowych — naturalnie wciela się w powierzone role.",
+     "Z zaangażowaniem uczestniczy w inscenizacjach i przedstawieniach klasowych — naturalnie wciela się w powierzone role."],
+  ], neg:[
+    ["niechętnie wypowiada się przed grupą",
+     "Niechętnie wypowiada się przed grupą i potrzebuje zachęty, by zabrać głos.",
+     "Niechętnie wypowiada się przed grupą i potrzebuje zachęty, by zabrać głos."],
+    ["dysponuje ubogim słownictwem",
+     "Dysponuje ubogim zasobem słownictwa, co ogranicza jakość wypowiedzi ustnych.",
+     "Dysponuje ubogim zasobem słownictwa, co ogranicza jakość wypowiedzi ustnych."],
+    ["odpowiada z pomocą nauczyciela",
+     "Udziela odpowiedzi głównie z pomocą nauczyciela i wymaga wsparcia w budowaniu samodzielnych wypowiedzi.",
+     "Udziela odpowiedzi głównie z pomocą nauczyciela i wymaga wsparcia w budowaniu samodzielnych wypowiedzi."],
+    ["ma trudności z pamięciowym opanowaniem tekstów",
+     "Ma trudności z pamięciowym opanowaniem wiersza — wymaga wielokrotnych powtórzeń i dodatkowego wsparcia.",
+     "Ma trudności z pamięciowym opanowaniem wiersza — wymaga wielokrotnych powtórzeń i dodatkowego wsparcia."],
+  ]},
+  { t:"Czytanie", pos:[
+    ["czyta biegle całymi zdaniami",
+     "Czyta biegle i płynnie całymi zdaniami — zarówno teksty przygotowane wcześniej, jak i całkowicie nowe.",
+     "Czyta biegle i płynnie całymi zdaniami — zarówno teksty przygotowane wcześniej, jak i całkowicie nowe."],
+    ["czyta ze zrozumieniem",
+     "Czyta ze zrozumieniem różnorodne teksty — sprawnie wyodrębnia główną myśl i odpowiada na szczegółowe pytania dotyczące treści.",
+     "Czyta ze zrozumieniem różnorodne teksty — sprawnie wyodrębnia główną myśl i odpowiada na szczegółowe pytania dotyczące treści."],
+    ["wyszukuje informacje w tekście",
+     "Sprawnie wyszukuje w tekście potrzebne informacje i potrafi je celnie wykorzystać.",
+     "Sprawnie wyszukuje w tekście potrzebne informacje i potrafi je celnie wykorzystać."],
+    ["czyta z właściwą intonacją",
+     "Czyta głośno z właściwą intonacją, wyraźną artykulacją i dobrze dobranym tempem.",
+     "Czyta głośno z właściwą intonacją, wyraźną artykulacją i dobrze dobranym tempem."],
+    ["sięga po książki z własnej inicjatywy",
+     "Sięga po książki z własnej inicjatywy — czytelnictwo stało się jego pasją, o której chętnie opowiada.",
+     "Sięga po książki z własnej inicjatywy — czytelnictwo stało się jej pasją, o której chętnie opowiada."],
+  ], neg:[
+    ["czyta sylabami",
+     "Czyta sylabami — pracujemy systematycznie nad płynnością i tempem czytania.",
+     "Czyta sylabami — pracujemy systematycznie nad płynnością i tempem czytania."],
+    ["ma trudności ze zrozumieniem tekstu",
+     "Ma trudności ze zrozumieniem czytanych tekstów i wymaga wsparcia przy analizowaniu ich treści.",
+     "Ma trudności ze zrozumieniem czytanych tekstów i wymaga wsparcia przy analizowaniu ich treści."],
+    ["czyta niechętnie",
+     "Szybko traci zainteresowanie podczas czytania i wymaga zachęty do wytrwałości.",
+     "Szybko traci zainteresowanie podczas czytania i wymaga zachęty do wytrwałości."],
+  ]},
+  { t:"Pisanie i ortografia", pos:[
+    ["pisze czytelnie i estetycznie",
+     "Zawsze przestrzega zasad kaligrafii — pisze czytelnie i estetycznie, dbając o poprawność graficzną pisma.",
+     "Zawsze przestrzega zasad kaligrafii — pisze czytelnie i estetycznie, dbając o poprawność graficzną pisma."],
+    ["dba o poprawność ortograficzną",
+     "Dba o poprawność gramatyczną, ortograficzną i interpunkcyjną swoich wypowiedzi pisemnych.",
+     "Dba o poprawność gramatyczną, ortograficzną i interpunkcyjną swoich wypowiedzi pisemnych."],
+    ["pisze z pamięci i ze słuchu",
+     "Bezbłędnie przepisuje teksty oraz pisze z pamięci i ze słuchu, zachowując staranność i poprawność.",
+     "Bezbłędnie przepisuje teksty oraz pisze z pamięci i ze słuchu, zachowując staranność i poprawność."],
+    ["redaguje różne formy pisemne",
+     "Pod kierunkiem nauczyciela redaguje różnorodne formy pisemne: opisy, życzenia, zaproszenia i kilkuzdaniowe wypowiedzi na zadany temat.",
+     "Pod kierunkiem nauczyciela redaguje różnorodne formy pisemne: opisy, życzenia, zaproszenia i kilkuzdaniowe wypowiedzi na zadany temat."],
+    ["ma staranne i czytelne pismo",
+     "Ma staranne i czytelne pismo — prawidłowo łączy litery, zachowuje właściwe odstępy i mieści się w liniaturze.",
+     "Ma staranne i czytelne pismo — prawidłowo łączy litery, zachowuje właściwe odstępy i mieści się w liniaturze."],
+    ["dba o estetykę zeszytów",
+     "Dba o estetykę zeszytów — zapisy są przejrzyste, staranne i czytelnie zorganizowane.",
+     "Dba o estetykę zeszytów — zapisy są przejrzyste, staranne i czytelnie zorganizowane."],
+    ["stosuje wielką literę i znaki interpunkcyjne",
+     "Prawidłowo stosuje wielką literę na początku zdania oraz znaki interpunkcyjne, co świadczy o rozumieniu struktury tekstu.",
+     "Prawidłowo stosuje wielką literę na początku zdania oraz znaki interpunkcyjne, co świadczy o rozumieniu struktury tekstu."],
+  ], neg:[
+    ["pisze niestarannie",
+     "Pisze niestarannie i nieczytelnie — wymaga systematycznej pracy nad kaligrafią.",
+     "Pisze niestarannie i nieczytelnie — wymaga systematycznej pracy nad kaligrafią."],
+    ["popełnia błędy ortograficzne",
+     "Popełnia liczne błędy ortograficzne i wymaga regularnego utrwalania zasad pisowni.",
+     "Popełnia liczne błędy ortograficzne i wymaga regularnego utrwalania zasad pisowni."],
+    ["ma chwiejne pismo",
+     "Pismo jest chwiejne i trudne do odczytania — pracujemy systematycznie nad jego stabilnością.",
+     "Pismo jest chwiejne i trudne do odczytania — pracujemy systematycznie nad jego stabilnością."],
+    ["ma trudności z redagowaniem wypowiedzi",
+     "Ma trudności z samodzielnym redagowaniem dłuższych wypowiedzi pisemnych — wymaga wsparcia na każdym etapie pracy.",
+     "Ma trudności z samodzielnym redagowaniem dłuższych wypowiedzi pisemnych — wymaga wsparcia na każdym etapie pracy."],
+  ]},
+  { t:"Matematyka", pos:[
+    ["biegle liczy i porównuje liczby",
+     "Biegle liczy, porównuje liczby za pomocą znaków <, >, = i swobodnie ustala ciągi rosnące oraz malejące.",
+     "Biegle liczy, porównuje liczby za pomocą znaków <, >, = i swobodnie ustala ciągi rosnące oraz malejące."],
+    ["sprawnie dodaje i odejmuje",
+     "Sprawnie i bezbłędnie wykonuje działania dodawania i odejmowania w poznanym zakresie liczbowym.",
+     "Sprawnie i bezbłędnie wykonuje działania dodawania i odejmowania w poznanym zakresie liczbowym."],
+    ["opanował tabliczkę mnożenia",
+     "Opanował tabliczkę mnożenia i sprawnie posługuje się nią przy rozwiązywaniu zadań.",
+     "Opanowała tabliczkę mnożenia i sprawnie posługuje się nią przy rozwiązywaniu zadań."],
+    ["samodzielnie rozwiązuje zadania tekstowe",
+     "Samodzielnie i poprawnie rozwiązuje zadania tekstowe o różnym stopniu trudności, dobierając właściwe działania i uzasadniając wybór.",
+     "Samodzielnie i poprawnie rozwiązuje zadania tekstowe o różnym stopniu trudności, dobierając właściwe działania i uzasadniając wybór."],
+    ["stosuje jednostki miary",
+     "Poprawnie dokonuje pomiarów i porównuje wyniki, biegle posługując się jednostkami długości, masy, pojemności i czasu.",
+     "Poprawnie dokonuje pomiarów i porównuje wyniki, biegle posługując się jednostkami długości, masy, pojemności i czasu."],
+    ["rozumie wartość pieniędzy",
+     "Rozpoznaje banknoty i monety będące w obiegu oraz rozumie ich wartość w codziennych sytuacjach.",
+     "Rozpoznaje banknoty i monety będące w obiegu oraz rozumie ich wartość w codziennych sytuacjach."],
+    ["sprawnie operuje geometrią",
+     "Rozpoznaje i nazywa figury geometryczne, dostrzega symetrię w otoczeniu i poprawnie stosuje ją przy rozwiązywaniu zadań.",
+     "Rozpoznaje i nazywa figury geometryczne, dostrzega symetrię w otoczeniu i poprawnie stosuje ją przy rozwiązywaniu zadań."],
+    ["posługuje się kalendarzem",
+     "Posługuje się kalendarzem, zna nazwy dni tygodnia i miesięcy oraz podaje je we właściwej kolejności.",
+     "Posługuje się kalendarzem, zna nazwy dni tygodnia i miesięcy oraz podaje je we właściwej kolejności."],
+    ["wykazuje logiczne myślenie",
+     "Wykazuje logiczne myślenie matematyczne — dostrzega zależności, wyciąga wnioski i potrafi wyjaśnić tok rozumowania.",
+     "Wykazuje logiczne myślenie matematyczne — dostrzega zależności, wyciąga wnioski i potrafi wyjaśnić tok rozumowania."],
+  ], neg:[
+    ["ma trudności z działaniami",
+     "Ma trudności z wykonywaniem podstawowych działań matematycznych i wymaga stałego wsparcia w tym zakresie.",
+     "Ma trudności z wykonywaniem podstawowych działań matematycznych i wymaga stałego wsparcia w tym zakresie."],
+    ["wymaga wsparcia przy zadaniach tekstowych",
+     "Zadania tekstowe sprawiają mu duże trudności — wymaga pomocy przy wyborze działania i interpretacji treści.",
+     "Zadania tekstowe sprawiają jej duże trudności — wymaga pomocy przy wyborze działania i interpretacji treści."],
+    ["uczy się tabliczki mnożenia",
+     "Uczy się tabliczki mnożenia, jednak wymaga jeszcze wielu powtórzeń, by posługiwać się nią płynnie.",
+     "Uczy się tabliczki mnożenia, jednak wymaga jeszcze wielu powtórzeń, by posługiwać się nią płynnie."],
+  ]},
+  { t:"Przyroda i środowisko", pos:[
+    ["wykazuje dużą wiedzę przyrodniczą",
+     "Wykazuje rozległą wiedzę na temat świata roślin, zwierząt i zjawisk przyrodniczych — z łatwością stosuje ją w praktyce.",
+     "Wykazuje rozległą wiedzę na temat świata roślin, zwierząt i zjawisk przyrodniczych — z łatwością stosuje ją w praktyce."],
+    ["rozpoznaje rośliny i zwierzęta",
+     "Rozpoznaje i nazywa rośliny oraz zwierzęta charakterystyczne dla różnych środowisk przyrodniczych.",
+     "Rozpoznaje i nazywa rośliny oraz zwierzęta charakterystyczne dla różnych środowisk przyrodniczych."],
+    ["rozumie zależności w przyrodzie",
+     "Rozumie proste zależności przyczynowo-skutkowe w przyrodzie i potrafi je opisać własnymi słowami.",
+     "Rozumie proste zależności przyczynowo-skutkowe w przyrodzie i potrafi je opisać własnymi słowami."],
+    ["zna zasady dbania o środowisko",
+     "Zna zasady dbania o środowisko naturalne i stosuje je w codziennym życiu.",
+     "Zna zasady dbania o środowisko naturalne i stosuje je w codziennym życiu."],
+    ["orientuje się w otoczeniu",
+     "Dobrze orientuje się w najbliższym otoczeniu — zna swój adres, nazwy ulic i instytucji użyteczności publicznej.",
+     "Dobrze orientuje się w najbliższym otoczeniu — zna swój adres, nazwy ulic i instytucji użyteczności publicznej."],
+  ], neg:[
+    ["ma podstawową wiedzę przyrodniczą",
+     "Ma podstawową wiedzę na temat otaczającego świata — niektóre zagadnienia przyrodnicze wymagają jeszcze utrwalenia.",
+     "Ma podstawową wiedzę na temat otaczającego świata — niektóre zagadnienia przyrodnicze wymagają jeszcze utrwalenia."],
+  ]},
+  { t:"Zajęcia plastyczne i techniczne", pos:[
+    ["tworzy oryginalne prace plastyczne",
+     "Tworzy oryginalne i estetyczne prace plastyczne w różnych technikach — wyróżniają się pomysłowością i dbałością o szczegóły.",
+     "Tworzy oryginalne i estetyczne prace plastyczne w różnych technikach — wyróżniają się pomysłowością i dbałością o szczegóły."],
+    ["wykazuje uzdolnienia plastyczne",
+     "Wykazuje wyraźne uzdolnienia plastyczne i z powodzeniem uczestniczy w konkursach o różnym zasięgu.",
+     "Wykazuje wyraźne uzdolnienia plastyczne i z powodzeniem uczestniczy w konkursach o różnym zasięgu."],
+    ["sprawnie posługuje się przyborami",
+     "Sprawnie posługuje się różnorodnymi przyborami i materiałami plastycznymi, dobierając je świadomie do zamierzonego efektu.",
+     "Sprawnie posługuje się różnorodnymi przyborami i materiałami plastycznymi, dobierając je świadomie do zamierzonego efektu."],
+    ["starannie wykonuje prace techniczne",
+     "Starannie i dokładnie wykonuje prace techniczne — zawsze przestrzega zasad bezpiecznej pracy.",
+     "Starannie i dokładnie wykonuje prace techniczne — zawsze przestrzega zasad bezpiecznej pracy."],
+  ], neg:[
+    ["ma trudności z pracami plastycznymi",
+     "Prace plastyczne sprawiają mu trudność — wymaga wsparcia i więcej czasu przy czynnościach wymagających precyzji.",
+     "Prace plastyczne sprawiają jej trudność — wymaga wsparcia i więcej czasu przy czynnościach wymagających precyzji."],
+  ]},
+  { t:"Muzyka i rytmika", pos:[
+    ["śpiewa czysto i rytmicznie",
+     "Śpiewa czysto i rytmicznie, zna wiele piosenek z repertuaru dziecięcego i z przyjemnością je wykonuje.",
+     "Śpiewa czysto i rytmicznie, zna wiele piosenek z repertuaru dziecięcego i z przyjemnością je wykonuje."],
+    ["ma poczucie rytmu",
+     "Ma doskonałe poczucie rytmu — z łatwością odtwarza wzorce rytmiczne na instrumentach i ruchem całego ciała.",
+     "Ma doskonałe poczucie rytmu — z łatwością odtwarza wzorce rytmiczne na instrumentach i ruchem całego ciała."],
+    ["rozpoznaje instrumenty muzyczne",
+     "Rozpoznaje i nazywa podstawowe instrumenty muzyczne oraz rozróżnia rodzaje głosów.",
+     "Rozpoznaje i nazywa podstawowe instrumenty muzyczne oraz rozróżnia rodzaje głosów."],
+  ], neg:[
+    ["uczestniczy biernie w zajęciach muzycznych",
+     "Uczestniczy biernie w zajęciach muzycznych — wymaga zachęty do aktywności wokalnej i ruchowej.",
+     "Uczestniczy biernie w zajęciach muzycznych — wymaga zachęty do aktywności wokalnej i ruchowej."],
+  ]},
+  { t:"Wychowanie fizyczne i zdrowie", pos:[
+    ["wykazuje dużą sprawność fizyczną",
+     "Wykazuje dużą sprawność fizyczną i dobrą koordynację ruchową — chętnie podejmuje nowe wyzwania motoryczne.",
+     "Wykazuje dużą sprawność fizyczną i dobrą koordynację ruchową — chętnie podejmuje nowe wyzwania motoryczne."],
+    ["bierze udział w grach zespołowych",
+     "Z zaangażowaniem uczestniczy w grach zespołowych, przestrzegając zasad fair play i respektując decyzje sędziego.",
+     "Z zaangażowaniem uczestniczy w grach zespołowych, przestrzegając zasad fair play i respektując decyzje sędziego."],
+    ["prawidłowo wykonuje ćwiczenia gimnastyczne",
+     "Prawidłowo i pewnie wykonuje ćwiczenia gimnastyczne, w tym przewroty, skoki i ćwiczenia równoważne.",
+     "Prawidłowo i pewnie wykonuje ćwiczenia gimnastyczne, w tym przewroty, skoki i ćwiczenia równoważne."],
+    ["dba o higienę i zdrowie",
+     "Dba o higienę osobistą i zdrowy styl życia — rozumie wpływ aktywności fizycznej na zdrowie człowieka.",
+     "Dba o higienę osobistą i zdrowy styl życia — rozumie wpływ aktywności fizycznej na zdrowie człowieka."],
+    ["przestrzega zasad bezpieczeństwa",
+     "Zna i przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych i zabaw na świeżym powietrzu.",
+     "Zna i przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych i zabaw na świeżym powietrzu."],
+  ], neg:[
+    ["ma przeciętną sprawność fizyczną",
+     "Ma przeciętną sprawność fizyczną — niektóre ćwiczenia wymagają od niego dodatkowego wysiłku i ćwiczenia.",
+     "Ma przeciętną sprawność fizyczną — niektóre ćwiczenia wymagają od niej dodatkowego wysiłku i ćwiczenia."],
+  ]},
+  { t:"Informatyka i język angielski", pos:[
+    ["sprawnie obsługuje komputer",
+     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych.",
+     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych."],
+    ["zna zasady bezpieczeństwa w sieci",
+     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online.",
+     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online."],
+    ["opanował język angielski na poziomie klasy",
+     "Opanował słownictwo i podstawowe struktury języka angielskiego na poziomie klasy — bez trudu rozumie polecenia i proste teksty.",
+     "Opanowała słownictwo i podstawowe struktury języka angielskiego na poziomie klasy — bez trudu rozumie polecenia i proste teksty."],
+    ["aktywnie uczestniczy w zajęciach j. angielskiego",
+     "Aktywnie uczestniczy w zajęciach języka angielskiego — chętnie odpowiada, śpiewa piosenki i uczestniczy w grach językowych.",
+     "Aktywnie uczestniczy w zajęciach języka angielskiego — chętnie odpowiada, śpiewa piosenki i uczestniczy w grach językowych."],
+  ], neg:[
+    ["wymaga wsparcia w nauce j. angielskiego",
+     "Wymaga dodatkowego wsparcia w nauce języka angielskiego — systematycznie pracujemy nad poszerzaniem słownictwa.",
+     "Wymaga dodatkowego wsparcia w nauce języka angielskiego — systematycznie pracujemy nad poszerzaniem słownictwa."],
+    ["ma trudności z obsługą komputera",
+     "Ma trudności z samodzielną obsługą komputera i wymaga wsparcia przy wykonywaniu ćwiczeń cyfrowych.",
+     "Ma trudności z samodzielną obsługą komputera i wymaga wsparcia przy wykonywaniu ćwiczeń cyfrowych."],
+  ]}
+];
+
+const BANK_MAP = { pz:BANK_Z, pe:BANK_E, rz:BANK_Z, re:BANK_E };
+
+// ════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════
+let DB = JSON.parse(localStorage.getItem('oceny5') || '{"classes":[],"students":{}}');
+let CLS = null, STU = null;
+const save = () => localStorage.setItem('oceny5', JSON.stringify(DB));
+const S = () => STU ? DB.students[STU] : null;
+
+// ════════════════════════════════════════════════════
+// VIEWS & TABS
+// ════════════════════════════════════════════════════
+function goV(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(el => el.classList.remove('on'));
+  document.getElementById('view-' + v).classList.add('on');
+  document.getElementById('nav-' + v).classList.add('on');
+  if (v === 'doc') renderDoc();
+}
+
+function setMode(m) {
+  const s = S(); if (!s) return;
+  s.mode = m; save();
+  document.getElementById('ms-pol').classList.toggle('on', m === 'pol');
+  document.getElementById('ms-roc').classList.toggle('on', m === 'roc');
+  document.getElementById('mode-pol').style.display = m === 'pol' ? 'block' : 'none';
+  document.getElementById('mode-roc').style.display = m === 'roc' ? 'block' : 'none';
+  updatePill();
+}
+
+function updatePill() {
+  const s = S(); if (!s) return;
+  const p = document.getElementById('bar-pill');
+  p.textContent = s.mode === 'roc' ? 'Ocena roczna' : 'Ocena półroczna';
+  p.className = 'pill ' + (s.mode === 'roc' ? 'pill-g' : 'pill-b');
+}
+
+function goTab(name) {
+  const mode = name[0] === 'p' ? 'pol' : 'roc';
+  const pr = mode === 'pol' ? 'p' : 'r';
+  const tabs = [pr+'z', pr+'e', pr+'w'];
+  document.getElementById('mode-' + mode).querySelectorAll('.tab')
+    .forEach((el, i) => el.classList.toggle('on', tabs[i] === name));
+  tabs.forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = t === name ? 'block' : 'none';
+  });
+  if (name === pr + 'w') fillWynik(mode);
+}
+
+// ════════════════════════════════════════════════════
+// CLASSES
+// ════════════════════════════════════════════════════
+function mCls() { document.getElementById('m-cn').value = ''; document.getElementById('ov-c').classList.add('on'); setTimeout(() => document.getElementById('m-cn').focus(), 80); }
+function okCls() {
+  const n = document.getElementById('m-cn').value.trim(); if (!n) return;
+  const id = 'c' + Date.now();
+  DB.classes.push({ id, name: n }); save();
+  closeOv('ov-c'); renderCls(); selCls(id);
+}
+function selCls(id) { CLS = id; STU = null; renderCls(); renderStu(); document.getElementById('addSB').disabled = false; updateUI(); }
+function renderCls() {
+  const el = document.getElementById('clsList');
+  if (!DB.classes.length) { el.innerHTML = '<div style="font-size:.75rem;color:#bbb;padding:3px 2px">Brak klas</div>'; return; }
+  el.innerHTML = DB.classes.map(c => {
+    const cnt = Object.values(DB.students).filter(s => s.cid === c.id).length;
+    return `<div class="cr ${c.id === CLS ? 'on' : ''}" onclick="selCls('${c.id}')"><span>${c.name}</span><div style="display:flex;align-items:center;gap:6px"><span class="cn">${cnt}</span><button onclick="event.stopPropagation();deleteCls('${c.id}')" title="Usuń klasę" style="background:none;border:none;cursor:pointer;color:#c0531a;font-size:.95rem;line-height:1;padding:0 2px;opacity:.6" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">🗑</button></div></div>`;
+  }).join('');
+}
+function deleteCls(id) {
+  const cls = DB.classes.find(c => c.id === id);
+  if (!cls) return;
+  const cnt = Object.values(DB.students).filter(s => s.cid === id).length;
+  const msg = cnt > 0
+    ? `Usunąć klasę "${cls.name}" wraz z ${cnt} uczniem/uczniami? Tej operacji nie można cofnąć.`
+    : `Usunąć klasę "${cls.name}"?`;
+  if (!confirm(msg)) return;
+  Object.keys(DB.students).forEach(sid => { if (DB.students[sid].cid === id) delete DB.students[sid]; });
+  DB.classes = DB.classes.filter(c => c.id !== id);
+  if (CLS === id) { CLS = null; STU = null; document.getElementById('addSB').disabled = true; }
+  save(); renderCls(); renderStu(); updateUI();
+  showToast('Klasa usunięta');
+}
+
+
+// ════════════════════════════════════════════════════
+// STUDENTS
+// ════════════════════════════════════════════════════
+function mStu() {
+  if (!CLS) return;
+  ['m-im','m-na'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-rok').value = '2025/26';
+  document.getElementById('ov-s').classList.add('on');
+  setTimeout(() => document.getElementById('m-im').focus(), 80);
+}
+function okStu() {
+  const im = document.getElementById('m-im').value.trim();
+  const na = document.getElementById('m-na').value.trim();
+  if (!im || !na) return;
+  const id = 's' + Date.now();
+  DB.students[id] = {
+    id, im, na, sex: document.getElementById('m-sx').value,
+    rok: document.getElementById('m-rok').value,
+    cid: CLS, mode: 'pol',
+    sel: { pz:[], pe:[], rz:[], re:[] },
+    text: { pol:{z:'',e:''}, roc:{z:'',e:''} },
+    extra: {
+      pol: { rel:'', os:'', wsk:'' },
+      roc: { rel:'', os:'', wsk:'', dod:'', inne:'', ipn:'' }
+    }
+  };
+  save(); closeOv('ov-s'); renderStu(); selStu(id);
+}
+function selStu(id) { STU = id; renderStu(); updateUI(); renderAllBanks(); }
+function delStu() {
+  if (!STU || !confirm('Usunąć tego ucznia?')) return;
+  delete DB.students[STU]; STU = null; save(); renderStu(); updateUI();
+}
+function renderStu() {
+  const el = document.getElementById('stuList');
+  if (!CLS) { el.innerHTML = '<div style="font-size:.75rem;color:#bbb;padding:3px 2px">Wybierz klasę</div>'; return; }
+  const list = Object.values(DB.students).filter(s => s.cid === CLS).sort((a,b) => a.na.localeCompare(b.na));
+  if (!list.length) { el.innerHTML = '<div style="font-size:.75rem;color:#bbb;padding:3px 2px">Brak uczniów</div>'; return; }
+  el.innerHTML = list.map(s =>
+    `<div class="sr ${s.id === STU ? 'on' : ''}" onclick="selStu('${s.id}')"><span>${s.na} ${s.im}</span><span class="sx">${s.sex==='f'?'♀':'♂'}</span></div>`
+  ).join('');
+}
+function saveStu() {
+  const s = S(); if (!s) return;
+  s.im = document.getElementById('u-im').value;
+  s.na = document.getElementById('u-na').value;
+  s.rok = document.getElementById('u-rok').value;
+  save(); renderStu(); updateUI();
+}
+function setSex(v) {
+  const s = S(); if (!s) return; s.sex = v;
+  document.getElementById('sb-m').classList.toggle('on', v === 'm');
+  document.getElementById('sb-f').classList.toggle('on', v === 'f');
+  save(); renderAllBanks();
+}
+
+// ════════════════════════════════════════════════════
+// UI UPDATE
+// ════════════════════════════════════════════════════
+function updateUI() {
+  const s = S(), has = !!s;
+  document.getElementById('g-empty').style.display = has ? 'none' : 'block';
+  document.getElementById('g-cont').style.display = has ? 'block' : 'none';
+  document.getElementById('u-empty').style.display = has ? 'none' : 'block';
+  document.getElementById('u-cont').style.display = has ? 'block' : 'none';
+  if (!has) return;
+  const cls = DB.classes.find(c => c.id === s.cid);
+  document.getElementById('bar-name').textContent = s.im + ' ' + s.na;
+  document.getElementById('bar-meta').textContent = (cls ? cls.name + ' · ' : '') + (s.rok || '');
+  const m = s.mode || 'pol';
+  document.getElementById('ms-pol').classList.toggle('on', m === 'pol');
+  document.getElementById('ms-roc').classList.toggle('on', m === 'roc');
+  document.getElementById('mode-pol').style.display = m === 'pol' ? 'block' : 'none';
+  document.getElementById('mode-roc').style.display = m === 'roc' ? 'block' : 'none';
+  updatePill();
+  document.getElementById('u-im').value = s.im;
+  document.getElementById('u-na').value = s.na;
+  document.getElementById('u-rok').value = s.rok || '';
+  document.getElementById('sb-m').classList.toggle('on', s.sex === 'm');
+  document.getElementById('sb-f').classList.toggle('on', s.sex === 'f');
+}
+
+// ════════════════════════════════════════════════════
+// BANKS
+// ════════════════════════════════════════════════════
+function renderAllBanks() {
+  ['pz','pe','rz','re'].forEach(renderBank);
+}
+function renderBank(prefix) {
+  const cont = document.getElementById('bank-' + prefix); if (!cont) return;
+  const s = S();
+  const bank = BANK_MAP[prefix];
+  const isZ = prefix.endsWith('z');
+  cont.innerHTML = '';
+  bank.forEach(g => {
+    let html = `<div class="sg"><div class="sgt ${isZ?'z':'e'}">${g.t}</div><div class="tags">`;
+    g.pos.forEach((it, i) => {
+      const key = `${prefix}~~${g.t}~~pos~~${i}`;
+      const on = s && s.sel[prefix].includes(key) ? 'on' : '';
+      html += `<span class="tag pos ${on}" onclick="tog('${prefix}','${g.t}','pos',${i})">${it[0]}</span>`;
+    });
+    g.neg.forEach((it, i) => {
+      const key = `${prefix}~~${g.t}~~neg~~${i}`;
+      const on = s && s.sel[prefix].includes(key) ? 'on' : '';
+      html += `<span class="tag neg ${on}" onclick="tog('${prefix}','${g.t}','neg',${i})">${it[0]}</span>`;
+    });
+    html += '</div></div>';
+    cont.innerHTML += html;
+  });
+}
+function tog(prefix, gt, type, idx) {
+  const s = S(); if (!s) return;
+  const key = `${prefix}~~${gt}~~${type}~~${idx}`;
+  const arr = s.sel[prefix];
+  const p = arr.indexOf(key);
+  if (p === -1) arr.push(key); else arr.splice(p, 1);
+  save();
+  document.querySelectorAll(`#bank-${prefix} .tag`).forEach(el => {
+    if (el.getAttribute('onclick') === `tog('${prefix}','${gt}','${type}',${idx})`)
+      el.classList.toggle('on', arr.includes(key));
+  });
+}
+
+// ════════════════════════════════════════════════════
+// TRIM WORDS — skraca tekst do max wyrazów, kończy na kropce
+// ════════════════════════════════════════════════════
+function updateWordCount(fieldId, cntId, max) {
+  const el = document.getElementById(fieldId);
+  const cnt = document.getElementById(cntId);
+  if (!el || !cnt) return;
+  const words = el.textContent.trim().split(/\s+/).filter(Boolean).length;
+  const over = words > max;
+  cnt.textContent = `${words} / ${max} wyrazów`;
+  cnt.style.color = over ? '#c0392b' : words > max * 0.9 ? '#e67e22' : '#888';
+  cnt.style.fontWeight = over ? '700' : 'normal';
+}
+
+function trimWords(text, max) {
+  if (!text) return text;
+  const words = text.trim().split(/\s+/);
+  if (words.length <= max) return text;
+  // Przytnij do max wyrazów
+  let cut = words.slice(0, max).join(' ');
+  // Cofnij się do ostatniej pełnej kropki, żeby nie urywać w pół zdania
+  const lastDot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'));
+  if (lastDot > cut.length * 0.5) {
+    cut = cut.slice(0, lastDot + 1);
+  } else {
+    // Jeśli nie ma sensownej kropki, dodaj wielokropek
+    if (!cut.endsWith('.')) cut += '…';
+  }
+  return cut.trim();
+}
+
+// ════════════════════════════════════════════════════
+// GENERATE — serce aplikacji
+// Imię pojawia się raz na początku akapitu.
+// Pierwsze zdanie po imieniu pisane z MAŁEJ litery.
+// Kolejne zdania — normalne zdania (wielka litera).
+// ════════════════════════════════════════════════════
+function generate(mode) {
+  const s = S(); if (!s) return;
+  const f = s.sex === 'f';
+  const im = s.im;
+  const zp = mode === 'pol' ? 'pz' : 'rz';
+  const ep = mode === 'pol' ? 'pe' : 're';
+
+  function build(prefix) {
+    const bank = BANK_MAP[prefix];
+    const sentences = [];
+    s.sel[prefix].forEach(key => {
+      const segs = key.split('~~');
+      const gt = segs[1], type = segs[2], idx = parseInt(segs[3]);
+      const g = bank.find(x => x.t === gt); if (!g) return;
+      const it = g[type][idx]; if (!it) return;
+      sentences.push(f ? it[2] : it[1]);
+    });
+    if (!sentences.length) return '';
+    // Pierwsze zdanie: imię + spacja + tekst z małej litery (po imieniu mała litera)
+    // Kolejne zdania zaczynają się od wielkiej litery (są osobnymi zdaniami po kropce)
+    const first = s.im + ' ' + sentences[0].charAt(0).toLowerCase() + sentences[0].slice(1);
+    const rest = sentences.slice(1);
+    return [first, ...rest].join(' ');
+  }
+
+  let tz = build(zp);
+  let te = build(ep);
+
+  // Ocena roczna trafia na świadectwo — ograniczamy długość
+  if (mode === 'roc') {
+    tz = trimWords(tz, 80);
+    te = trimWords(te, 125);
+  }
+
+  s.text[mode].z = tz;
+  s.text[mode].e = te;
+  save();
+
+  const zid = mode === 'pol' ? 'pw-z' : 'rw-z';
+  const eid = mode === 'pol' ? 'pw-e' : 'rw-e';
+  document.getElementById(zid).textContent = tz;
+  document.getElementById(eid).textContent = te;
+  if (mode === 'roc') {
+    updateWordCount('rw-z', 'rw-z-cnt', 80);
+    updateWordCount('rw-e', 'rw-e-cnt', 125);
+  }
+  fillExtra(mode);
+  goTab(mode === 'pol' ? 'pw' : 'rw');
+}
+
+function fillWynik(mode) {
+  const s = S(); if (!s) return;
+  const zid = mode === 'pol' ? 'pw-z' : 'rw-z';
+  const eid = mode === 'pol' ? 'pw-e' : 'rw-e';
+  document.getElementById(zid).textContent = s.text[mode].z || '';
+  document.getElementById(eid).textContent = s.text[mode].e || '';
+  document.getElementById(mode === 'pol' ? 'pw-info' : 'rw-info').textContent =
+    `${s.im} ${s.na} · ${mode === 'pol' ? 'Ocena półroczna' : 'Ocena roczna'} · rok szkolny ${s.rok || ''}`;
+  fillExtra(mode);
+}
+
+function fillExtra(mode) {
+  const s = S(); if (!s) return;
+  const ex = (s.extra && s.extra[mode]) || {};
+  if (mode === 'pol') {
+    document.getElementById('pw-rel').value = ex.rel || '';
+    document.getElementById('pw-os').value  = ex.os  || '';
+    document.getElementById('pw-wsk').value = ex.wsk || '';
+  } else {
+    document.getElementById('rw-rel').value  = ex.rel  || '';
+    document.getElementById('rw-os').value   = ex.os   || '';
+    document.getElementById('rw-wsk').value  = ex.wsk  || '';
+    document.getElementById('rw-dod').value  = ex.dod  || '';
+    document.getElementById('rw-inne').value = ex.inne || '';
+    document.getElementById('rw-ipn').value  = ex.ipn  || '';
+  }
+}
+
+function saveExtra(mode) {
+  const s = S(); if (!s) return;
+  if (!s.extra) s.extra = { pol:{rel:'',os:'',wsk:''}, roc:{rel:'',os:'',wsk:'',dod:'',inne:'',ipn:''} };
+  if (mode === 'pol') {
+    s.extra.pol.rel = document.getElementById('pw-rel').value;
+    s.extra.pol.os  = document.getElementById('pw-os').value;
+    s.extra.pol.wsk = document.getElementById('pw-wsk').value;
+  } else {
+    s.extra.roc.rel  = document.getElementById('rw-rel').value;
+    s.extra.roc.os   = document.getElementById('rw-os').value;
+    s.extra.roc.wsk  = document.getElementById('rw-wsk').value;
+    s.extra.roc.dod  = document.getElementById('rw-dod').value;
+    s.extra.roc.inne = document.getElementById('rw-inne').value;
+    s.extra.roc.ipn  = document.getElementById('rw-ipn').value;
+  }
+  save();
+}
+
+function saveRes(mode) {
+  const s = S(); if (!s) return;
+  s.text[mode].z = document.getElementById(mode==='pol'?'pw-z':'rw-z').textContent;
+  s.text[mode].e = document.getElementById(mode==='pol'?'pw-e':'rw-e').textContent;
+  saveExtra(mode); save(); alert('Zapisano!');
+}
+
+function copyRes(mode) {
+  const s = S(); if (!s) return;
+  const ex = (s.extra && s.extra[mode]) || {};
+  const z = document.getElementById(mode==='pol'?'pw-z':'rw-z').textContent;
+  const e = document.getElementById(mode==='pol'?'pw-e':'rw-e').textContent;
+  let txt = '';
+  if (z) txt += z + '\n\n';
+  if (e) txt += e + '\n\n';
+  if (ex.rel)  txt += `Religia – ${ex.rel}\n\n`;
+  if (ex.os)   txt += `Szczególne osiągnięcia: ${ex.os}\n\n`;
+  if (ex.wsk)  txt += `Wskazówki: ${ex.wsk}\n\n`;
+  if (mode==='roc') {
+    if (ex.dod)  txt += `Dodatkowe zajęcia: ${ex.dod}\n\n`;
+    if (ex.inne) txt += `Inne zajęcia: ${ex.inne}\n\n`;
+    if (ex.ipn)  txt += `Indywidualny program: ${ex.ipn}\n\n`;
+  }
+  navigator.clipboard.writeText(txt.trim());
+  alert('Skopiowano!');
+}
+
+// ════════════════════════════════════════════════════
+// PODGLĄD DOKUMENTU
+// ════════════════════════════════════════════════════
+function renderDoc() {
+  const s = S();
+  document.getElementById('d-empty').style.display = s ? 'none' : 'block';
+  document.getElementById('d-cont').style.display  = s ? 'block' : 'none';
+  if (!s) return;
+  const mode = s.mode || 'pol';
+  const cls = DB.classes.find(c => c.id === s.cid);
+  const typL = mode === 'pol' ? 'OCENA OPISOWA – PÓŁROCZNA' : 'OCENA OPISOWA – ROCZNA';
+  const wskL = mode === 'pol' ? 'Wskazówki do pracy w II półroczu' : 'Wskazówki do pracy w przyszłym roku';
+  const clsL = (cls ? cls.name : '') + ' – ROK SZKOLNY ' + (s.rok || '').toUpperCase();
+  const ex = (s.extra && s.extra[mode]) || {};
+  const zEl = document.getElementById(mode==='pol'?'pw-z':'rw-z');
+  const eEl = document.getElementById(mode==='pol'?'pw-e':'rw-e');
+  const z = (zEl && zEl.textContent.trim()) || s.text[mode].z || '';
+  const e = (eEl && eEl.textContent.trim()) || s.text[mode].e || '';
+
+  let html = `
+    <div class="doc-nm">${s.im} ${s.na} ……….</div>
+    <div class="doc-tp">${typL}</div>
+    <div class="doc-cl">KLASA ${clsL}</div>
+    ${z ? `<div class="doc-p">${z}</div>` : ''}
+    ${e ? `<div class="doc-p">${e}</div>` : ''}
+    ${ex.rel ? `<div class="doc-nt"><span class="doc-bold">Religia – ${ex.rel}</span></div>` : ''}`;
+
+  if (mode === 'roc') {
+    if (ex.dod)  html += `<div class="doc-nt" style="margin-top:10px"><span class="doc-bold">Dodatkowe zajęcia edukacyjne:</span></div><div class="doc-it">${ex.dod}</div>`;
+    if (ex.inne) html += `<div class="doc-nt" style="margin-top:6px"><span class="doc-bold">Inne zajęcia:</span></div><div class="doc-it">${ex.inne}</div>`;
+    if (ex.ipn)  html += `<div class="doc-nt" style="margin-top:6px"><span class="doc-bold">Indywidualny program lub tok nauki:</span></div><div class="doc-it">${ex.ipn}</div>`;
+  }
+  if (ex.os)  html += `<div class="doc-nt" style="margin-top:10px"><span class="doc-bold">Szczególne osiągnięcia:</span></div><div class="doc-it">${ex.os}</div>`;
+  if (ex.wsk) html += `<div class="doc-nt" style="margin-top:10px"><span class="doc-bold">${wskL}:</span></div><div class="doc-it">– ${ex.wsk}</div>`;
+  html += `<div class="doc-ft">Wychowawca klasy</div>`;
+  document.getElementById('docOut').innerHTML = html;
+}
+
+function copyDoc() {
+  navigator.clipboard.writeText(document.getElementById('docOut').innerText.trim());
+  alert('Skopiowano dokument do schowka!');
+}
+
+// ════════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════════
+function closeOv(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.ov').forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('on'); }));
+document.getElementById('m-cn').addEventListener('keydown', e => { if (e.key === 'Enter') okCls(); });
+document.getElementById('m-na').addEventListener('keydown', e => { if (e.key === 'Enter') okStu(); });
+
+// COPY FIELD
+function copyField(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.innerText.trim();
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Skopiowano';
+    btn.classList.add('ok');
+    showToast('Skopiowano!');
+    setTimeout(() => { btn.textContent = '📋 Kopiuj'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// INIT
+renderCls();
+renderStu();
+</script>
+<div class="toast" id="toast">✓ Skopiowano!</div>
+
+<footer class="footer">
+  <div class="footer-logo">🏫</div>
+  <div><strong>Generator Ocen Opisowych</strong> · klasy 1–3 · edukacja wczesnoszkolna</div>
+  <div style="margin-top:6px">
+    Autor: <a href="https://www.facebook.com/jacek.suliga/" target="_blank"><strong>Jacek Suliga</strong></a>
+    · <a href="https://www.2piny.pl" target="_blank">Stowarzyszenie 2piny</a> · Łódź
+  </div>
+  <div style="margin-top:5px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap">
+    <a href="https://www.facebook.com/profile.php?id=61583779079223" target="_blank" class="footer-badge">🎯 Focusense®</a>
+    <a href="https://www.2piny.pl" target="_blank" class="footer-badge">🧩 LEGO® Serious Play® w pracy z uczniami z ASD i ADHD</a>
+    <a href="https://www.2piny.pl" target="_blank" class="footer-badge">🏫 Stowarzyszenie 2piny</a>
+  </div>
+  <div style="margin-top:6px;opacity:.5;font-size:.71rem">kontakt@2piny.pl · tel. 663 882 124</div>
+  <div style="margin-top:10px">
+    <a href="https://suppi.pl/jaceksuliga" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;text-decoration:none;padding:8px 18px;border-radius:20px;font-size:.8rem;font-weight:700;box-shadow:0 2px 10px rgba(234,88,12,.35);transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">☕ Wesprzyj moje projekty — suppi.pl/jaceksuliga</a>
+  </div>
+</footer>
+</body>
+</html>

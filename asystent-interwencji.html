@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Interwencje">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f13">
+<link rel="manifest" href="manifest.json">
+<title>Asystent Interwencji Szkolnej</title>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --surface: #1a1a22;
+    --surface2: #22222e;
+    --border: #2e2e3e;
+    --text: #e8e8f0;
+    --text-muted: #7070a0;
+    --accent-red: #ff3b55;
+    --accent-blue: #3b82ff;
+    --accent-amber: #f59e0b;
+    --accent-green: #22c55e;
+    --accent-purple: #a855f7;
+    --accent-teal: #14b8a6;
+    --radius: 14px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  .light {
+    --bg: #f0f0f5;
+    --surface: #ffffff;
+    --surface2: #e8e8f0;
+    --border: #d0d0e0;
+    --text: #0f0f20;
+    --text-muted: #6060a0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .app-title { font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .theme-btn { background: var(--surface2); border: none; border-radius: 8px; padding: 6px 10px; color: var(--text); cursor: pointer; font-size: 16px; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 12px 9px 36px;
+    font-family: var(--font); font-size: 14px; color: var(--text); outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent-blue); }
+  .search-wrap input::placeholder { color: var(--text-muted); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+
+  .main { padding: 16px; }
+
+  .alert-bar {
+    background: linear-gradient(135deg, #ff3b55, #ff6b35);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    animation: pulse-red 2.5s infinite;
+  }
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,59,85,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(255,59,85,0); }
+  }
+  .alert-bar-icon { font-size: 24px; }
+  .alert-bar-text { flex: 1; }
+  .alert-bar-text strong { display: block; font-size: 16px; font-weight: 700; color: white; }
+  .alert-bar-text span { font-size: 12px; color: rgba(255,255,255,0.8); }
+
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 10px; }
+
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 12px;
+    cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--card-color, var(--accent-blue)); border-radius: 3px 3px 0 0;
+  }
+  .card:active { transform: scale(0.97); }
+  .card-icon { font-size: 24px; margin-bottom: 8px; }
+  .card-title { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+  .card-sub { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .card.wide { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+  .card.wide::before { width: 3px; height: 100%; top: 0; left: 0; right: auto; border-radius: 3px 0 0 3px; }
+  .card.wide .card-icon { font-size: 28px; margin: 0; }
+  .card.wide .card-body { flex: 1; }
+
+  .contact-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  }
+  .contact-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .contact-info { flex: 1; min-width: 0; }
+  .contact-name { font-size: 14px; font-weight: 600; }
+  .contact-input { background: transparent; border: none; border-bottom: 1px dashed var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; width: 100%; outline: none; padding: 2px 0; margin-top: 4px; }
+  .contact-input::placeholder { color: var(--text-muted); }
+  .call-btn { background: var(--accent-green); border: none; border-radius: 8px; padding: 8px 12px; color: white; font-size: 18px; cursor: pointer; text-decoration: none; display: flex; align-items: center; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg); border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; overflow-y: auto; padding-bottom: 40px; animation: slide-up 0.3s ease; }
+  @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+  .modal-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+  .modal-icon { font-size: 32px; flex-shrink: 0; }
+  .modal-title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+  .modal-close { background: var(--surface2); border: none; border-radius: 8px; padding: 6px 10px; color: var(--text); cursor: pointer; margin-left: auto; font-size: 18px; flex-shrink: 0; }
+  .modal-body { padding: 16px 20px; }
+
+  .step-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .step { display: flex; gap: 12px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: border-color 0.2s, background 0.2s; align-items: flex-start; }
+  .step.done { border-color: var(--accent-green); background: rgba(34,197,94,0.06); }
+  .step-check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; transition: all 0.2s; font-size: 12px; }
+  .step.done .step-check { background: var(--accent-green); border-color: var(--accent-green); color: white; }
+  .step-text { font-size: 14px; line-height: 1.5; flex: 1; }
+  .step.done .step-text { color: var(--text-muted); text-decoration: line-through; }
+  .step-num { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-top: 3px; flex-shrink: 0; min-width: 18px; }
+
+  .alert-box { border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; border-left: 4px solid; }
+  .alert-box.red { background: rgba(255,59,85,0.1); border-color: var(--accent-red); color: #ff8090; }
+  .alert-box.amber { background: rgba(245,158,11,0.1); border-color: var(--accent-amber); color: #fcd34d; }
+  .alert-box.blue { background: rgba(59,130,255,0.1); border-color: var(--accent-blue); color: #93c5fd; }
+  .alert-box.green { background: rgba(34,197,94,0.1); border-color: var(--accent-green); color: #86efac; }
+  .alert-box strong { display: block; font-weight: 700; margin-bottom: 4px; }
+
+  .reset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; color: var(--text-muted); font-family: var(--font); font-size: 13px; cursor: pointer; width: 100%; margin-top: 16px; }
+
+  .note-area { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: var(--mono); font-size: 12px; color: var(--text); width: 100%; min-height: 100px; outline: none; resize: none; margin-top: 10px; }
+  .copy-btn { background: var(--accent-blue); border: none; border-radius: 10px; padding: 10px 16px; color: white; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+
+  .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg); border-top: 1px solid var(--border); padding: 10px 20px 20px; display: flex; gap: 10px; z-index: 40; }
+  .bottom-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 8px; color: var(--text-muted); font-family: var(--font); font-size: 11px; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color 0.2s, border-color 0.2s; }
+  .bottom-btn .icon { font-size: 20px; }
+  .bottom-btn.active { color: var(--accent-blue); border-color: var(--accent-blue); }
+  .bottom-btn.emergency { background: linear-gradient(135deg, #ff3b55, #ff6b35); border-color: transparent; color: white; font-weight: 700; }
+
+  .search-results { display: none; }
+  .search-results.visible { display: block; }
+  .search-result-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; display: flex; gap: 12px; align-items: center; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; background: var(--surface2); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+
+  .footer {
+    background: linear-gradient(135deg, #1a2e22 0%, #1e3828 100%);
+    color: rgba(255,255,255,.8);
+    text-align: center;
+    padding: 20px 24px 32px;
+    font-size: .78rem;
+    line-height: 1.7;
+    margin-top: 32px;
+  }
+  .footer a { color: #a8f0cc; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  .footer-logo { font-size: 1rem; margin-bottom: 4px; }
+  .footer strong { color: #fff; font-weight: 700; }
+  .footer-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #a8f0cc;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .18s;
+  }
+  .footer-badge:hover {
+    background: rgba(255,255,255,.2);
+    border-color: rgba(255,255,255,.4);
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span class="app-title">🏫 Asystent Interwencji</span>
+    <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Szukaj procedury..." oninput="handleSearch(this.value)">
+  </div>
+</div>
+
+<div class="main">
+  <div class="search-results" id="searchResults"></div>
+
+  <div class="view active" id="view-home">
+    <div class="alert-bar" onclick="call112()">
+      <div class="alert-bar-icon">🚨</div>
+      <div class="alert-bar-text">
+        <strong>SZYBKA POMOC — 112</strong>
+        <span>Naciśnij aby zadzwonić w nagłej sytuacji</span>
+      </div>
+      <span style="color:white">›</span>
+    </div>
+
+    <div class="section-label">Kryzys Medyczny</div>
+    <div class="cards-grid">
+      <div class="card" style="--card-color:#ff3b55" onclick="openModal('omdlenie')">
+        <div class="card-icon">😵</div>
+        <div class="card-title">Omdlenie / Zasłabnięcie</div>
+        <div class="card-sub">Pierwsza pomoc krok po kroku</div>
+      </div>
+      <div class="card" style="--card-color:#ff6b35" onclick="openModal('glowa')">
+        <div class="card-icon">🤕</div>
+        <div class="card-title">Uraz Głowy</div>
+        <div class="card-sub">Kiedy dzwonić po pogotowie</div>
+      </div>
+      <div class="card wide" style="--card-color:#ff3b55" onclick="openModal('kiedy112')">
+        <div class="card-icon">🚑</div>
+        <div class="card-body">
+          <div class="card-title">Kiedy wzywać Pogotowie (112)?</div>
+          <div class="card-sub">Lista objawów wymagających natychmiastowej interwencji</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Emocje i Trauma</div>
+    <div class="cards-grid">
+      <div class="card" style="--card-color:#a855f7" onclick="openModal('panika')">
+        <div class="card-icon">😰</div>
+        <div class="card-title">Atak Paniki</div>
+        <div class="card-sub">Technika 5-4-3-2-1</div>
+      </div>
+      <div class="card" style="--card-color:#f59e0b" onclick="openModal('agresja')">
+        <div class="card-icon">😡</div>
+        <div class="card-title">Eskalacja Agresji</div>
+        <div class="card-sub">Procedura szkolna + Low Arousal</div>
+      </div>
+      <div class="card wide" style="--card-color:#a855f7" onclick="openModal('ppe4z')">
+        <div class="card-icon">🫶</div>
+        <div class="card-body">
+          <div class="card-title">Pierwsza Pomoc Emocjonalna — 4xZ</div>
+          <div class="card-sub">Zauważ · Zapytaj · Zaakceptuj · Zareaguj + model FUKO</div>
+        </div>
+      </div>
+      <div class="card wide" style="--card-color:#6366f1" onclick="openModal('depresja')">
+        <div class="card-icon">🌧️</div>
+        <div class="card-body">
+          <div class="card-title">Depresja u ucznia — jak rozpoznać</div>
+          <div class="card-sub">Objawy osiowe, sygnały atypowe, kiedy do psychiatry</div>
+        </div>
+      </div>
+      <div class="card wide" style="--card-color:#ff3b55" onclick="openModal('samobojstwo')">
+        <div class="card-icon">❤️‍🩹</div>
+        <div class="card-body">
+          <div class="card-title">Podejrzenie próby samobójczej</div>
+          <div class="card-sub">Natychmiastowe kroki — nie zostawiaj ucznia samego</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Bezpieczeństwo i Prawo</div>
+    <div class="cards-grid">
+      <div class="card" style="--card-color:#3b82ff" onclick="openModal('niebieska')">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Niebieska Karta</div>
+        <div class="card-sub">8 kroków procedury NK</div>
+      </div>
+      <div class="card" style="--card-color:#f59e0b" onclick="openModal('narkotyki')">
+        <div class="card-icon">🧪</div>
+        <div class="card-title">Uczeń pod wpływem substancji</div>
+        <div class="card-sub">Narkotyki / alkohol</div>
+      </div>
+      <div class="card wide" style="--card-color:#ef4444" onclick="openModal('samookaleczenia')">
+        <div class="card-icon">🩹</div>
+        <div class="card-body">
+          <div class="card-title">Samookaleczenia</div>
+          <div class="card-sub">Pierwsza pomoc + jak rozmawiać z uczniem</div>
+        </div>
+      </div>
+      <div class="card wide" style="--card-color:#ef4444" onclick="openModal('sygnaly')">
+        <div class="card-icon">👁️</div>
+        <div class="card-body">
+          <div class="card-title">Sygnały ostrzegawcze samouszkodzeń</div>
+          <div class="card-sub">Bezpośrednie i pośrednie — co obserwować u ucznia</div>
+        </div>
+      </div>
+      <div class="card wide" style="--card-color:#6366f1" onclick="openModal('cyberprzemoc')">
+        <div class="card-icon">📱</div>
+        <div class="card-body">
+          <div class="card-title">Hejt i cyberprzemoc</div>
+          <div class="card-sub">Zabezpiecz dowody · sprawca · policja · platformy</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="section-label">Specjalne Potrzeby</div>
+    <div class="cards-grid">
+      <div class="card" style="--card-color:#14b8a6" onclick="openModal('asd')">
+        <div class="card-icon">🧩</div>
+        <div class="card-title">Meltdown ASD</div>
+        <div class="card-sub">Instrukcja wyciszenia</div>
+      </div>
+      <div class="card" style="--card-color:#22c55e" onclick="openModal('adhd')">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Uczeń z ADHD</div>
+        <div class="card-sub">Uczeń poza klasą / kryzys</div>
+      </div>
+      <div class="card wide" style="--card-color:#f59e0b" onclick="openModal('agresja_orzeczenie')">
+        <div class="card-icon">📄</div>
+        <div class="card-body">
+          <div class="card-title">Uczeń agresywny z orzeczeniem</div>
+          <div class="card-sub">dokumentacja, sąd rodzinny, policja</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Żałoba i Strata</div>
+    <div class="cards-grid">
+      <div class="card wide" style="--card-color:#64748b" onclick="openModal('smierc_ucznia')">
+        <div class="card-icon">🕯️</div>
+        <div class="card-body">
+          <div class="card-title">Śmierć ucznia w klasie / szkole</div>
+          <div class="card-sub">Jak poinformować klasę · żałoba zbiorowa · postwencja</div>
+        </div>
+      </div>
+      <div class="card wide" style="--card-color:#0ea5e9" onclick="openModal('smierc_rodziny')">
+        <div class="card-icon">💙</div>
+        <div class="card-body">
+          <div class="card-title">Śmierć w rodzinie ucznia</div>
+          <div class="card-sub">Co mówić · czego unikać · jak wspierać długofalowo</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="view" id="view-contacts">
+    <div class="section-label">Kontakty Szkolne</div>
+    <div class="alert-box blue"><strong>💡 Wskazówka</strong>Wpisz numery — będą zapisane w przeglądarce na tym urządzeniu.</div>
+    <div id="contactsList"></div>
+
+    <div class="section-label" style="margin-top:24px">📞 Całodobowe — bezpłatne</div>
+    <div id="hotlines24"></div>
+
+    <div class="section-label" style="margin-top:24px">🕐 Dyżurowe</div>
+    <div id="hotlinesDuty"></div>
+  </div>
+
+  <div class="view" id="view-notes">
+    <div class="section-label">Generator Notatki Służbowej</div>
+    <div class="alert-box blue"><strong>📝 Jak korzystać</strong>Wypełnij pola, a notatka zostanie wygenerowana automatycznie.</div>
+    <div class="alert-box red"><strong>⚖️ RODO — dane wrażliwe</strong>Notatka może zawierać dane szczególnej kategorii (stan zdrowia, zachowanie ucznia). Przechowuj WYŁĄCZNIE w dokumentacji szkolnej. Nie zapisuj na prywatnym telefonie ani dysku. Nie wysyłaj niezabezpieczonym mailem. Podstawa: art. 9 RODO.</div>
+    <div style="display:grid;gap:8px;margin-bottom:12px">
+      <input class="note-area" style="min-height:auto;padding:10px;font-family:var(--font);font-size:14px;border-radius:10px" id="n_data" placeholder="Data i godzina zdarzenia (np. 08.05.2026, godz. 10:30)">
+      <input class="note-area" style="min-height:auto;padding:10px;font-family:var(--font);font-size:14px;border-radius:10px" id="n_miejsce" placeholder="Miejsce zdarzenia (np. korytarz przy sali 14)">
+      <input class="note-area" style="min-height:auto;padding:10px;font-family:var(--font);font-size:14px;border-radius:10px" id="n_uczen" placeholder="Imię i nazwisko ucznia (inicjały)">
+      <input class="note-area" style="min-height:auto;padding:10px;font-family:var(--font);font-size:14px;border-radius:10px" id="n_klasa" placeholder="Klasa / oddział">
+      <textarea class="note-area" id="n_opis" placeholder="Opis zdarzenia — co zaobserwowałeś/aś?" rows="4"></textarea>
+      <textarea class="note-area" id="n_dzialania" placeholder="Podjęte działania (kogo poinformowałeś/aś, co zrobiłeś/aś)" rows="3"></textarea>
+      <input class="note-area" style="min-height:auto;padding:10px;font-family:var(--font);font-size:14px;border-radius:10px" id="n_autor" placeholder="Twoje imię i nazwisko / stanowisko">
+    </div>
+    <button class="copy-btn" onclick="generateNote()">📋 Generuj i skopiuj notatkę</button>
+    <div id="noteOutput" style="display:none;margin-top:12px">
+      <div class="alert-box green"><strong>✅ Skopiowano!</strong>Wklej notatkę do dokumentu lub wiadomości.</div>
+      <textarea class="note-area" id="noteText" rows="12" readonly></textarea>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-logo">🏫</div>
+    <div><strong>Asystent Interwencji Szkolnej</strong> · procedury · kontakty · notatki</div>
+    <div style="margin-top:6px">
+      Autor: <a href="https://www.facebook.com/jacek.suliga/" target="_blank"><strong>Jacek Suliga</strong></a>
+      · <a href="https://www.2piny.pl" target="_blank">Stowarzyszenie 2piny</a> · Łódź
+    </div>
+    <div style="margin-top:5px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap">
+      <a href="https://www.facebook.com/profile.php?id=61583779079223" target="_blank" class="footer-badge">🎯 Focusense®</a>
+      <a href="https://www.2piny.pl" target="_blank" class="footer-badge">🧩 LEGO® Serious Play® w pracy z uczniami z ASD i ADHD</a>
+      <a href="https://www.2piny.pl" target="_blank" class="footer-badge">🏫 Stowarzyszenie 2piny</a>
+    </div>
+    <div style="margin-top:6px;opacity:.5;font-size:.71rem">kontakt@2piny.pl · tel. 663 882 124</div>
+    <div style="margin-top:10px">
+      <a href="https://suppi.pl/jaceksuliga" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;text-decoration:none;padding:8px 18px;border-radius:20px;font-size:.8rem;font-weight:700;box-shadow:0 2px 10px rgba(234,88,12,.35);transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">☕ Wesprzyj moje projekty — suppi.pl/jaceksuliga</a>
+    </div>
+  </footer>
+</div>
+
+<div class="bottom-bar">
+  <button class="bottom-btn active" id="btn-home" onclick="switchView('home')">
+    <span class="icon">🏠</span>Procedury
+  </button>
+  <button class="bottom-btn emergency" onclick="call112()">
+    <span class="icon">🚨</span>112
+  </button>
+  <button class="bottom-btn" id="btn-contacts" onclick="switchView('contacts')">
+    <span class="icon">📞</span>Kontakty
+  </button>
+  <button class="bottom-btn" id="btn-notes" onclick="switchView('notes')">
+    <span class="icon">📝</span>Notatka
+  </button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header" id="modalHeader"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const procedures = {
+  kiedy112: {
+    icon:'🚑', title:'Kiedy wzywać Pogotowie (112)?', sub:'Objawy wymagające natychmiastowej pomocy', color:'#ff3b55',
+    alerts:[{type:'red',title:'🚨 WAŻNE',text:'Nie zostawiaj ucznia samego. Wyślij innego nauczyciela lub ucznia po pomoc.'}],
+    steps:[
+      {text:'Utrata przytomności lub brak reakcji na bodźce'},
+      {text:'Trudności z oddychaniem, duszność, sinienie ust lub twarzy'},
+      {text:'Silny ból w klatce piersiowej, szyi lub ramieniu'},
+      {text:'Napad padaczkowy (po raz pierwszy lub trwający ponad 5 minut)'},
+      {text:'Podejrzenie urazu głowy z utratą przytomności'},
+      {text:'Silna reakcja alergiczna — obrzęk, trudności z oddychaniem'},
+      {text:'Podejrzenie próby samobójczej lub samookaleczenia z krwotokiem'},
+      {text:'Agresja zagrażająca życiu — brak możliwości uspokojenia'},
+    ]
+  },
+  omdlenie: {
+    icon:'😵', title:'Omdlenie / Zasłabnięcie', sub:'Pierwsza pomoc krok po kroku', color:'#ff3b55',
+    alerts:[{type:'amber',title:'⚠️ Uwaga',text:'Nie podnoś ucznia gwałtownie do pozycji siedzącej — to może ponownie wywołać omdlenie.'}],
+    steps:[
+      {text:'Sprawdź bezpieczeństwo — oceń czy uczeń reaguje na głos'},
+      {text:'Połóż ucznia na plecach — unieś nogi ok. 30 cm (poprawa ukrwienia mózgu)'},
+      {text:'Rozluźnij ubranie wokół szyi i pasa'},
+      {text:'Zapewnij świeże powietrze — otwórz okno, wyprowadź innych uczniów'},
+      {text:'Nie dawaj nic do jedzenia lub picia dopóki uczeń nie odzyska pełnej świadomości'},
+      {text:'Poinformuj sekretariat / pedagoga / dyrektora'},
+      {text:'Zadzwoń po rodziców'},
+      {text:'Wezwij pogotowie JEŚLI: brak przytomności po 2 min, drgawki, uraz głowy, cukrzyca'},
+    ]
+  },
+  glowa: {
+    icon:'🤕', title:'Uraz Głowy', sub:'Ocena i postępowanie', color:'#ff6b35',
+    alerts:[
+      {type:'red',title:'🚨 Dzwoń 112 jeśli:',text:'uczeń był nieprzytomny choćby chwilę, wymiotuje, ma nierówne źrenice, traci orientację, odczuwa silny ból głowy.'},
+      {type:'amber',title:'⚠️ Zawsze informuj rodziców',text:'Nawet lekki uraz głowy wymaga obserwacji w domu przez 24h.'}
+    ],
+    steps:[
+      {text:'Oceń przytomność: czy uczeń reaguje na pytania, czy wie gdzie jest?'},
+      {text:'Sprawdź czy jest krwawienie z głowy — jeśli tak, delikatnie uciśnij ranę czystą chusteczką'},
+      {text:'NIE ruszaj ucznia jeśli podejrzewasz uraz kręgosłupa (upadek z wysokości, wypadek)'},
+      {text:'Wezwij pogotowie (112) JEŚLI: utrata przytomności, wymioty, drgawki, zaburzenia mowy lub wzroku'},
+      {text:'Poinformuj rodziców — ZAWSZE, nawet przy pozornie niegroźnym urazie'},
+      {text:'Sporządź notatkę o okolicznościach zdarzenia i świadkach'},
+      {text:'Obserwuj ucznia przez kolejne godziny — objaw "lucid interval" (pozorna poprawa przed pogorszeniem)'},
+    ]
+  },
+  panika: {
+    icon:'😰', title:'Atak Paniki', sub:'Technika grounding 5-4-3-2-1', color:'#a855f7',
+    alerts:[
+      {type:'blue',title:'💡 Czego NIE robić',text:'Nie mów "uspokój się", "weź się w garść", "nic ci nie jest". To nasila panikę.'},
+      {type:'green',title:'✅ Co działa',text:'Kontakt wzrokowy, spokojny głos, pytania o konkrety — ziemia pod stopami, temperatura powietrza.'}
+    ],
+    steps:[
+      {text:'Pozostań spokojny/a — Twój spokój jest zaraźliwy. Powiedz: "Jestem z tobą, jesteś bezpieczny/a."'},
+      {text:'Wyprowadź ucznia z klasy — do spokojnego miejsca (korytarz, gabinet pedagoga)'},
+      {text:'5 — Zapytaj: "Co widzisz? Powiedz mi 5 rzeczy które widzisz wokół siebie."'},
+      {text:'4 — "Dotknij 4 rzeczy wokół ciebie i powiedz mi jak się czują."'},
+      {text:'3 — "Co słyszysz? Wymień 3 dźwięki."'},
+      {text:'2 — "Wyczuj 2 zapachy, albo 2 rzeczy które możesz posmakować."'},
+      {text:'1 — "Jedna rzecz przed tobą — opisz ją dokładnie."'},
+      {text:'Oddychanie przeponowe: wdech 4 sekundy, zatrzymaj 4, wydech 6 sekund'},
+      {text:'Poinformuj pedagoga szkolnego. Skontaktuj się z rodzicami.'},
+    ]
+  },
+  agresja: {
+    icon:'😡', title:'Eskalacja Agresji', sub:'Procedura CEA + podejście Low Arousal', color:'#f59e0b',
+    alerts:[
+      {type:'amber',title:'⚠️ Low Arousal — zasada kluczowa',text:'Nie eskaluj — Twoja reaktywność nakręca ucznia. Mówimy mniej, ruszamy się wolniej, obniżamy ton głosu.'},
+      {type:'red',title:'🚨 Kiedy dzwonić po Policję',text:'Gdy uczeń ma niebezpieczny przedmiot (nóż), gdy jest realne zagrożenie dla zdrowia lub życia.'}
+    ],
+    steps:[
+      {text:'ZAHAMUJ — podejmij próbę zatrzymania agresywnego zachowania. Rozdziel uczniów.'},
+      {text:'IZOLUJ sprawcę od ofiary. Zapewnij bezpieczeństwo wszystkim uczestnikom zdarzenia.'},
+      {text:'POWIADOM — zadzwoń do sekretariatu lub wyślij ucznia po pedagoga/dyrektora.'},
+      {text:'NIE KŁÓĆ SIĘ — niski głos, spokojne ruchy, nie stój nad uczniem (niżej = mniej zagrożenia).'},
+      {text:'Zaprowadź ucznia do pedagoga lub gabinetu dyrektora. ⚖️ UWAGA PRAWNA: fizyczne przytrzymanie ucznia jest dopuszczalne wyłącznie gdy istnieje bezpośrednie zagrożenie życia lub zdrowia — własnego lub innych — i tylko w zakresie niezbędnym do ochrony. Nigdy jako środek dyscyplinarny. W razie wątpliwości skonsultuj się z radcą prawnym szkoły lub organem prowadzącym.'},
+      {text:'Sporządź notatkę o zdarzeniu — co, kiedy, gdzie, świadkowie.'},
+      {text:'⚖️ RODO — notatka zawiera dane wrażliwe ucznia. Przechowuj wyłącznie w dokumentacji szkolnej, nie na prywatnych urządzeniach (art. 9 RODO).'},
+      {text:'Poinformuj wychowawcę — przeprowadza rozmowę dyscyplinującą z uczniem.'},
+      {text:'Powiadom rodziców telefonicznie — ZAWSZE.'},
+      {text:'Przy powtarzających się aktach agresji: wniosek do MOPR lub Sądu Rejonowego (Wydział Rodzinny).'},
+      {text:'Przy zagrożeniu życia — wezwij Policję (997 lub 112) i Pogotowie.'},
+    ]
+  },
+  samobojstwo: {
+    icon:'❤️‍🩹', title:'Kryzys samobójczy — jak pomóc', sub:'10 kroków wsparcia osoby w kryzysie', color:'#ff3b55',
+    alerts:[
+      {type:'red',title:'🚨 Zagrożenie życia — dzwoń 112',text:'Jeśli istnieje bezpośrednie zagrożenie życia — zadzwoń pod 112 natychmiast.'},
+      {type:'blue',title:'📞 Telefony pomocowe',text:'Dzieci i młodzież: 116 111 (całą dobę, bezpłatny)\nDorośli: 116 123 (całą dobę, bezpłatny)\nKonsultacje dla specjalistów: 116 123'}
+    ],
+    steps:[
+      {text:'Zachowaj spokój i łagodność wypowiedzi podczas inicjowania kontaktu.'},
+      {text:'Zaproś osobę do rozmowy: „Jak mogę Ci pomóc?", „Co sprawi, że poczujesz się lepiej?", „Co dotychczas pomagało Ci w pokonywaniu trudności?"'},
+      {text:'Wysłuchaj bez osądzania — okaż zrozumienie i akceptację tego, co czuje.'},
+      {text:'Zaproponuj wsparcie, czas i uwagę — sama obecność ma ogromne znaczenie.'},
+      {text:'Pomóż w rozproszeniu negatywnych myśli: zaproponuj wspólny spacer, wyjście do kina, na zakupy, na siłownię, przejażdżkę rowerem.'},
+      {text:'Pomóż w szukaniu wyjścia z kryzysu: zaproponuj wizytę u psychologa, psychoterapeuty, pedagoga lub psychiatry.'},
+      {text:'Pomóż zmniejszyć lęk i zwiększyć poczucie bezpieczeństwa — np. towarzysząc podczas wizyty u specjalisty.'},
+      {text:'Pomóż zaplanować małe, ale wykonalne w danej chwili kroki.'},
+      {text:'Jeśli nie wiesz jak pomóc — zadzwoń pod numery telefonów pomocowych i skonsultuj swoje działania ze specjalistami.'},
+      {text:'W przypadku zagrożenia życia — zadzwoń pod numer 112!'},
+    ]
+  },
+  niebieska: {
+    icon:'📋', title:'Procedura Niebieska Karta', sub:'8 etapów — kiedy wszcząć i co robić', color:'#3b82ff',
+    alerts:[
+      {type:'blue',title:'📋 Kto może wszcząć procedurę NK',text:'Pracownik socjalny, policjant, pracownik ochrony zdrowia, nauczyciel, przedstawiciel organizacji pozarządowej.'},
+      {type:'amber',title:'⚠️ Ważne',text:'Wszczęcie NK nie wymaga zgody osoby doznającej przemocy. Nie czekaj — działaj.'}
+    ],
+    steps:[
+      {text:'1. INFORMACJA — podejrzenie przemocy domowej. Może zgłosić: nauczyciel, pedagog, pracownik socjalny, policja, ochrona zdrowia.'},
+      {text:'2. WSZCZĘCIE PROCEDURY NK — wypełnij Kartę A (dane rodziny, opis sytuacji). Karta B trafia do osoby doznającej przemocy — zawiera informacje prawne i pomocowe.'},
+      {text:'3. POWOŁANIE Grupy Diagnostyczno-Pomocowej — specjaliści oceniają sytuację rodziny.'},
+      {text:'4a. ODDZIAŁYWANIE na osobę stosującą przemoc — Karta D, diagnoza sprawcy.'},
+      {text:'4b. OPRACOWANIE planu pomocy dla osoby doznającej przemocy — Karta C.'},
+      {text:'5. REALIZACJA planu pomocy i monitorowanie sytuacji rodziny.'},
+      {text:'6. OCENA — ustalenie czy przemoc ustała. Jeśli nie — wniosek do Sądu lub Prokuratury.'},
+      {text:'7. ZAKOŃCZENIE procedury NK — decyzja Grupy Diagnostyczno-Pomocowej.'},
+      {text:'8. MONITORING — obserwacja bezpieczeństwa rodziny przez 9 miesięcy po zakończeniu.'},
+    ]
+  },
+  narkotyki: {
+    icon:'🧪', title:'Uczeń pod wpływem substancji', sub:'Narkotyki / alkohol — procedura', color:'#f59e0b',
+    alerts:[
+      {type:'red',title:'⚖️ KLUCZOWE ROZRÓŻNIENIE PRAWNE',text:'ZAŻYWANIE przez nieletniego = czyn karalny → sąd rodzinny + rodzice (nie Policja). POSIADANIE / DYSTRYBUCJA = przestępstwo → obowiązek zawiadomienia Policji (Ustawa o przeciwdziałaniu narkomanii). Nie mylić tych dwóch sytuacji.'},
+      {type:'amber',title:'💡 Jeśli brak kontaktu z opiekunem',text:'Zapewnij udział nauczyciela lub pedagoga szkolnego przy uczniu przez cały czas.'}
+    ],
+    steps:[
+      {text:'IZOLUJ ucznia od reszty klasy/grupy. Zapewnij stałą obecność pracownika szkoły przy uczniu.'},
+      {text:'USTAL FAKTY — jeśli możliwe: co zażył/posiada, kiedy, od kogo. Nie oskarżaj. Odnotuj obserwowane objawy.'},
+      {text:'POWIADOM DYREKTORA — przekaż informację dot. okoliczności zdarzenia.'},
+      {text:'WEZWIJ RODZICÓW / OPIEKUNÓW — obowiązek powiadomienia w każdym przypadku.'},
+      {text:'Jeśli istnieje zagrożenie zdrowia — wezwij POGOTOWIE (112) natychmiast. To priorytet nad wszystkim innym.'},
+      {text:'Rozważ dowiezienie ucznia (z rodzicem) do placówki służby zdrowia na badanie (alkomat, tester).'},
+      {text:'⚖️ ZAŻYWANIE (brak substancji przy uczniu) — nie wzywaj Policji. Powiadom rodziców + dyrekcję. Przy powtarzaniu: wniosek do sądu rodzinnego o wgląd w sytuację nieletniego.'},
+      {text:'⚖️ POSIADANIE LUB DYSTRYBUCJA — zawiadom Policję NIEZWŁOCZNIE. To obowiązek prawny wynikający z Ustawy o przeciwdziałaniu narkomanii. Zabezpiecz substancję — nie dotykaj bez rękawiczek, nie wyrzucaj.'},
+      {text:'Sporządź notatkę służbową z całego zdarzenia: godzina, objawy, podjęte kroki, kogo poinformowano.'},
+      {text:'⚖️ RODO — notatka zawiera dane wrażliwe ucznia. Przechowuj wyłącznie w dokumentacji szkolnej, nie na prywatnych urządzeniach (art. 9 RODO).'},
+    ]
+  },
+  samookaleczenia: {
+    icon:'🩹', title:'Samouszkodzenia — jak reagować', sub:'Na podstawie poradnika PTS (Kicińska i in., 2022)', color:'#ef4444',
+    alerts:[
+      {type:'blue',title:'💡 Kluczowe rozumienie',text:'Samouszkodzenie to fizyczny objaw psychicznego cierpienia — niewerbalny komunikat: "Boli mnie", "Jestem sam", "Nie radzę sobie". To nie moda, nie manipulacja.'},
+      {type:'red',title:'🚨 Kiedy dzwonić 112',text:'Próba samobójcza na terenie szkoły • Uczeń opuścił szkołę z deklaracją samobójstwa • Natrętne myśli + plan + środki do wykonania • Rany wymagające szwów lub tamowania krwi'}
+    ],
+    steps:[
+      {text:'ZAUWAŻ — sygnały bezpośrednie: blizny, rany, opatrunki, ubranie nieadekwatne do pogody (długie rękawy latem), noszenie żyletek lub ostrych przedmiotów.'},
+      {text:'SYGNAŁY POŚREDNIE: izolowanie się, nagłe zaniedbanie nauki, prace pisemne o bólu/śmierci, zamieszczanie treści o autoagresji w sieci, zgłoszenia rówieśników.'},
+      {text:'PRZYGOTUJ SIĘ do rozmowy — uświadom sobie własne emocje (lęk, bezsilność, złość). To normalne. Nie musisz mieć gotowych odpowiedzi.'},
+      {text:'ZACZNIJ ROZMOWĘ — nazwij obserwację: "Widzę nowe rany na twoich nadgarstkach." Wyraź troskę: "Zasmuciło mnie to, bo myślę że może za tymi ranami coś się kryje." Zaproś: "Powiedz, proszę, co się dzieje."'},
+      {text:'JEŚLI UCZEŃ ODMAWIA ROZMOWY — nie wywieraj presji. Powiedz: "Masz prawo nie chcieć ze mną rozmawiać. Martwię się o ciebie i zależy mi, żeby było ci lepiej."'},
+      {text:'SŁUCHAJ BEZ OCENIANIA — nie pocieszaj, nie dawaj rad, nie przekonuj do innego myślenia. Zamiast "wszystko będzie dobrze" powiedz: "Masz prawo czuć to, co czujesz."'},
+      {text:'NIE MÓW: "Nie przejmuj się!", "Weź się w garść!", "Uszy do góry!", "Przesadzasz", "Inni mają gorzej". To zamyka kontakt i nasila kryzys.'},
+      {text:'ZAPYTAJ o zachowania samobójcze wprost: "Czy zdarza ci się myśleć o zabiciu siebie?" — pytanie wprost NIE zwiększa ryzyka, a pozwala ocenić bezpieczeństwo.'},
+      {text:'OCEŃ BEZPIECZEŃSTWO — pytaj o: nasilenie myśli, plany, posiadane środki, wcześniejsze próby. Przy wysokim ryzyku — działaj natychmiast (112).'},
+      {text:'POWIADOM pedagoga lub psychologa szkolnego — natychmiast po rozmowie. Nie zostawiaj ucznia samego.'},
+      {text:'POINFORMUJ RODZICÓW — spokojnie, rzeczowo, bez alarmowania, ale bez bagatelizowania. Zaproponuj wizytę u specjalisty.'},
+      {text:'SPORZĄDŹ NOTATKĘ — data, godzina, co zaobserwowałeś/aś, co powiedział uczeń, jakie kroki podjęto.'},
+      {text:'⚖️ RODO — notatka zawiera dane zdrowotne ucznia (dane szczególnej kategorii). Przechowuj wyłącznie w dokumentacji szkolnej, nie na prywatnych urządzeniach ani w chmurze prywatnej (art. 9 RODO).'},
+    ]
+  },
+  asd: {
+    icon:'🧩', title:'Meltdown u ucznia z ASD', sub:'Instrukcja wyciszenia krok po kroku', color:'#14b8a6',
+    alerts:[
+      {type:'green',title:'🧩 Pamiętaj',text:'Meltdown to nie wybuch złości — to utrata kontroli nad układem nerwowym. Uczeń cierpi, nie manipuluje.'},
+      {type:'blue',title:'💡 Narzędzia pomocnicze',text:'Słuchawki wygłuszające, fidgety, karta emocji, bezpieczne miejsce — ustal to wcześniej z rodzicem.'}
+    ],
+    steps:[
+      {text:'ZATRZYMAJ aktywność — przerwij lekcję, nie wymagaj niczego od ucznia.'},
+      {text:'ZREDUKUJ stymulację — ścisz głos, przyciemnij światło jeśli możliwe, odsuń innych uczniów.'},
+      {text:'NIE DOTYKAJ — dotyk może nasilić meltdown. Zapytaj: "Czy mogę cię dotknąć?"'},
+      {text:'ZOSTAŃ BLISKO (ale nie za blisko) — Twoja spokojna obecność jest ważna.'},
+      {text:'MNIEJ SŁÓW — krótkie zdania lub cisza. "Jesteś bezpieczny." "Mam czas."'},
+      {text:'DAJ PRZESTRZEŃ — jeśli uczeń potrzebuje się ruszać lub kołysać — to jest ok.'},
+      {text:'OFERTA WSPARCIA — "Czy chcesz słuchawki?" / "Czy chcesz wyjść do innego pokoju?"'},
+      {text:'POINFORMUJ pedagoga — w spokojny sposób, bez dramatyzowania.'},
+      {text:'PO MELTDOWNIE — nie analizuj "co się stało" od razu. Daj czas na regenerację.'},
+    ]
+  },
+  adhd: {
+    icon:'⚡', title:'Uczeń z ADHD w kryzysie', sub:'Gdy uczeń jest poza klasą lub poza kontrolą', color:'#22c55e',
+    alerts:[
+      {type:'green',title:'💡 Strategia prewencyjna',text:'Ustal z uczniem wcześniej "bezpieczne słowo" i "bezpieczne miejsce" do wyjścia gdy czuje że traci kontrolę.'},
+      {type:'blue',title:'📋 Ważne',text:'Uczeń z ADHD zwykle nie "chce" być trudny. Jego układ nerwowy inaczej reguluje pobudzenie.'}
+    ],
+    steps:[
+      {text:'NIE ŚCIGAJ — pościg nasila ucieczkę. Idź wolno, mów spokojnie.'},
+      {text:'NAWIĄŻ KONTAKT — "Hej, widzę że potrzebujesz chwili. To jest ok."'},
+      {text:'DAJ WYBÓR — "Chcesz posiedzieć tutaj czy wyjść na zewnątrz na chwilę?"'},
+      {text:'Aktywność fizyczna może pomóc — krótki spacer po korytarzu, kilka przysiadów.'},
+      {text:'Wróć do klasy z planem — co zrobimy teraz, co uczeń może zrobić samodzielnie.'},
+      {text:'NIE WYTYKAJ publicznie — rozmowa jeden na jeden, po fakcie, w spokoju.'},
+      {text:'Poinformuj wychowawcę — krótka notatka o zdarzeniu.'},
+      {text:'Jeśli uczeń jest agresywny lub niebezpieczny — patrz procedura "Eskalacja Agresji".'},
+    ]
+  },
+  sygnaly: {
+    icon:'👁️', title:'Sygnały ostrzegawcze samouszkodzeń', sub:'Bezpośrednie i pośrednie — co obserwować', color:'#ef4444',
+    alerts:[
+      {type:'amber',title:'⚠️ Pamiętaj',text:'Każdy z tych sygnałów osobno może mieć inne wyjaśnienie. Przy kilku naraz lub przy wyraźnej zmianie zachowania — działaj: podejdź, zapytaj, zaproponuj rozmowę.'},
+      {type:'blue',title:'💡 Cztery kroki pierwszej pomocy emocjonalnej',text:'ZAUWAŻ → ZAPYTAJ → ZAAKCEPTUJ → ZAREAGUJ'}
+    ],
+    steps:[
+      {text:'🔴 BEZPOŚREDNI — Blizny, zadrapania, skaleczenia, siniaki, ślady krwi na ubraniu, liczne i częste opatrunki.'},
+      {text:'🔴 BEZPOŚREDNI — Ubranie nieadekwatne do pogody: długie rękawy i nogawki nawet w upały — ukrywają ślady samouszkodzeń.'},
+      {text:'🔴 BEZPOŚREDNI — Unikanie aktywności odsłaniających ciało: lekcje WF, basen, przebieranie się przy innych.'},
+      {text:'🔴 BEZPOŚREDNI — Noszenie przy sobie ostrych narzędzi: żyletek, nożyków, agrafek, porozginanych spinaczy, igieł.'},
+      {text:'🔴 BEZPOŚREDNI — Długie spędzanie czasu w toalecie lub odosobnionych miejscach.'},
+      {text:'🔴 BEZPOŚREDNI — Zamieszczanie w mediach społecznościowych treści o autoagresji lub przesyłanie takich materiałów.'},
+      {text:'🔴 BEZPOŚREDNI — Zgłoszenia rówieśników dotyczące zaobserwowanych przez nich aktów samouszkodzeń.'},
+      {text:'🟡 POŚREDNI — Długotrwałe przygnębienie, utrata spontaniczności, większa płaczliwość i tendencja do zamartwiania się.'},
+      {text:'🟡 POŚREDNI — Powtarzające się negatywne wypowiedzi o sobie, relacjach z innymi, życiu, przyszłości.'},
+      {text:'🟡 POŚREDNI — Izolowanie się, wycofanie z kontaktów, rezygnowanie z dotychczas lubianych zajęć, powtarzające się nieobecności.'},
+      {text:'🟡 POŚREDNI — Brak dbałości o siebie, wygląd i higienę. Wyraźne, nagłe zaniedbanie w nauce.'},
+      {text:'🟡 POŚREDNI — Poruszanie w pracach pisemnych lub plastycznych tematu bólu, cierpienia, zranienia, śmierci.'},
+      {text:'🟡 POŚREDNI — Wzrost impulsywności, skłonność do konfliktów, wybuchów, zachowań agresywnych lub buntowniczych.'},
+      {text:'🟡 POŚREDNI — Pierwsze sięganie po środki psychoaktywne lub nasilenie ich używania. Zachowania ryzykowne.'},
+    ]
+  },
+  ppe4z: {
+    icon:'🫶', title:'Pierwsza Pomoc Emocjonalna — 4xZ', sub:'Zasada ZAUWAŻ–ZAPYTAJ–ZAAKCEPTUJ–ZAREAGUJ (Kicińska, Palma 2023)', color:'#a855f7',
+    alerts:[
+      {type:'blue',title:'💡 Każdy może udzielić PPE',text:'Pierwsza pomoc emocjonalna to odpowiednik pierwszej pomocy medycznej dla urazów emocjonalnych. Może jej udzielić każdy dorosły — rodzic, nauczyciel, wychowawca.'},
+      {type:'green',title:'✅ Pamiętaj',text:'Twoja rolą nie jest diagnozowanie problemów psychicznych. Masz zauważyć, zapytać, zaakceptować i zareagować.'}
+    ],
+    steps:[
+      {text:'1️⃣ ZAUWAŻ — Zwracaj uwagę na zmiany w funkcjonowaniu ucznia: drażliwość, płaczliwość, wybuchy złości, wycofanie, wrogość. Powiedz: "Widzę, że ostatnio jesteś smutny/a." Nie diagnozuj — to rola specjalisty.'},
+      {text:'2️⃣ ZAPYTAJ — Bądź życzliwy i stonowany. Użyj modelu FUKO: FAKT (co zaobserwowałeś) + UCZUCIE (Twoja reakcja) + KONTEKST (znaczenie) + OCZEKIWANIE (prośba). Np.: "Zauważyłam, że ostatnio jesteś smutna. Niepokoi mnie to. Chciałabym z Tobą porozmawiać."'},
+      {text:'FUKO w praktyce — F: "Słyszałam, jak kilka razy mówiłaś, że wszystko jest bez sensu." U: "Poruszyło mnie to..." K: "...bo myślę, że za tymi słowami kryje się coś poważnego." O: "Proszę, porozmawiaj ze mną."'},
+      {text:'3️⃣ ZAAKCEPTUJ — Słuchaj bez oceniania. Nie pocieszaj ("będzie dobrze"), nie dawaj rad, nie odwołuj się do własnych doświadczeń. Mów: "Masz prawo czuć to, co czujesz." / "Nic dziwnego, że się złościsz." / "Może być ci ciężko."'},
+      {text:'CZEGO UNIKAĆ w rozmowie: dobrych rad, odwoływania się do własnych doświadczeń, specjalistycznego żargonu, zaprzeczania uczuciom, pouczania, oceniania, pytań zaczynających się od "dlaczego".'},
+      {text:'ZAMIAST "dlaczego?" pytaj: "Co mogło sprawić, że tak zareagowałeś?" / "Co powstrzymuje cię przed podjęciem tej decyzji?" Słowo "dlaczego" wzbudza silne poczucie winy.'},
+      {text:'4️⃣ ZAREAGUJ — Pomóż szukać rozwiązań: "Co ci do tej pory najbardziej pomagało?" / "Na kogo możesz liczyć?" / "Czy chcesz usłyszeć moje pomysły?" Zaproponuj konkretny kolejny krok.'},
+      {text:'INFORMUJ ucznia o swoich działaniach: "Skontaktuję się z Twoimi rodzicami i porozmawiam o tym, co przeżywasz." / "Rozmowę z psychologiem możesz odbyć sam albo razem. Jak wolisz?"'},
+      {text:'NIE OBIECUJ tajemnicy — wyjaśnij, że w sytuacji zagrożenia zdrowia lub życia masz obowiązek podzielić się informacją z innymi. Zaproś ucznia do wspólnych ustaleń — kto i jak zostanie poinformowany.'},
+      {text:'Powiadom pedagoga / psychologa szkolnego. Sporządź notatkę. Monitoruj sytuację ucznia.'},
+    ]
+  },
+  depresja: {
+    icon:'🌧️', title:'Depresja u ucznia — jak rozpoznać', sub:'Objawy i sygnały ostrzegawcze (Kicińska, Palma, Witkowska 2022)', color:'#6366f1',
+    alerts:[
+      {type:'amber',title:'⚠️ Ważne rozróżnienie',text:'Przygnębienie trwa godziny–dni i nie dezorganizuje życia. Depresja trwa tygodnie, dezorganizuje codzienne funkcjonowanie i wymaga pomocy specjalisty.'},
+      {type:'red',title:'🚨 Szukaj pomocy lekarza psychiatry natychmiast gdy:',text:'Uczeń ma myśli samobójcze, tendencje lub plan. U dzieci i młodzieży próby samobójcze mogą mieć charakter demonstracyjny — nigdy nie bagatelizuj.'}
+    ],
+    steps:[
+      {text:'😢 EMOCJE — Długotrwały smutek, przygnębienie, płaczliwość. UWAGA: u dzieci i nastolatków częściej niż smutek dominuje DRAŻLIWOŚĆ — łatwe wpadanie w złość lub rozpacz, demonstrowanie wrogości.'},
+      {text:'😶 APATIA — Zobojętnienie, utrata zdolności do przeżywania radości. Uczeń przestaje cieszyć się z rzeczy, które wcześniej sprawiały mu przyjemność. Rezygnacja z hobby, spotkań z rówieśnikami.'},
+      {text:'🧠 MYŚLENIE — Depresyjne myśli ("Wszystko jest bez sensu", "I tak nic mi się nie uda"), niska samoocena ("Jestem beznadziejny"), nieproporcjonalnie pesymistyczna ocena rzeczywistości.'},
+      {text:'😔 POCZUCIE WINY — Nadmierne obwinianie się, nawet o sprawy niezależne od ucznia (np. konflikt między rodzicami). Poczucie bycia bezużytecznym, niepotrzebnym.'},
+      {text:'💤 CIAŁO — Problemy ze snem (bezsenność lub nadmierna senność), zmiany apetytu i masy ciała, brak energii, zmęczenie, bóle głowy, brzucha, napięcie mięśniowe.'},
+      {text:'📚 SZKOŁA — Trudności z koncentracją i zapamiętywaniem. Nagłe zaniedbanie w nauce. Pobudzenie psychoruchowe — uczeń wierci się, nie może skupić, podejmuje bezwiedne bezcelowe działania.'},
+      {text:'👥 RELACJE — Wycofanie z życia towarzyskiego, ograniczenie kontaktu z rówieśnikami. Nadmierna reakcja na uwagi i krytykę — płacz lub silna złość.'},
+      {text:'⚠️ OBJAWY ATYPOWE u nastolatków — Bunt wobec rodziców i szkoły, nieprzestrzeganie zasad, zachowania agresywne i autoagresywne. Mogą maskować depresję.'},
+      {text:'⚠️ OBJAWY ATYPOWE u dzieci — Uporczywe dolegliwości somatyczne bez organicznej przyczyny: bóle brzucha, nudności, bóle głowy, kołatanie serca, moczenie nocne.'},
+      {text:'🚨 SYGNAŁY ALARMOWE — Myśli rezygnacyjne ("Po co ja żyję?"), fantazje o śmierci ("Innym byłoby lepiej, gdyby mnie nie było"), myśli, tendencje lub próby samobójcze → natychmiastowa pomoc specjalisty.'},
+      {text:'Kiedy szukać pomocy: gdy objawy utrudniają codzienne funkcjonowanie w domu, szkole i w grupie rówieśniczej I utrzymują się dłużej niż 2 tygodnie → skieruj do psychiatry dzieci i młodzieży.'},
+    ]
+  },
+  agresja_orzeczenie: {
+    icon:'📄', title:'Uczeń agresywny z orzeczeniem', sub:'Procedura krok po kroku — prawa, sąd', color:'#f59e0b',
+    alerts:[
+      {type:'red',title:'🚨 Priorytet: bezpieczeństwo',text:'Bezpieczeństwo pozostałych uczniów jest priorytetem. Szkoła nie może bagatelizować agresji ucznia z orzeczeniem.'},
+      {type:'amber',title:'⚠️ Ważne prawnie',text:'Każdy akt agresji musi być udokumentowany w notatce służbowej. To podstawa do dalszych działań — wobec rodziców, sądu rodzinnego i organu prowadzącego.'}
+    ],
+    steps:[
+      {text:'🛡️ BEZPIECZEŃSTWO — Jeśli uczeń jest niebezpieczny, natychmiast odizoluj go od reszty grupy. Poproś o pomoc innego nauczyciela, pedagoga lub dyrekcję.'},
+      {text:'📝 DOKUMENTUJ — Każdy akt agresji (fizycznej i słownej) opisz w notatce służbowej: data, godzina, miejsce, opis zdarzenia, świadkowie, podjęte działania. To kluczowe dla dalszych kroków prawnych.'},
+      {text:'📞 RODZICE — Niezwłocznie poinformuj rodziców/opiekunów prawnych. Wezwij ich do szkoły. Zaangażuj ich w ustalenie przyczyny agresji i dalsze kroki (np. konsultacja z psychiatrą lub neurologiem).'},
+      {text:'📋 SPRAWDŹ IPET — Zweryfikuj, czy uczeń ma wdrożone odpowiednie formy pomocy psychologiczno-pedagogicznej. Sprawdź, czy Indywidualny Program Edukacyjno-Terapeutyczny zawiera działania nakierowane na agresję.'},
+      {text:'🧠 SPECJALIŚCI SZKOLNI — Zaangażuj psychologa i pedagoga szkolnego. Rozważ wdrożenie metod takich jak Trening Zastępowania Agresji (TZA) lub inne programy interwencyjne przewidziane w IPET.'},
+      {text:'👥 ZESPÓŁ — Zwołaj posiedzenie zespołu ds. pomocy psychologiczno-pedagogicznej. Oceń skuteczność dotychczasowych działań i zmodyfikuj IPET jeśli to konieczne.'},
+      {text:'⚖️ SĄD RODZINNY — Jeśli zachowanie zagraża życiu lub zdrowiu innych uczniów, a rodzice nie współpracują ze szkołą → szkoła ma OBOWIĄZEK powiadomić sąd rodzinny.'},
+      {text:'🚔 POLICJA — W sytuacjach skrajnych: czynna napaść fizyczna, brak możliwości uspokojenia ucznia, realne zagrożenie życia → wezwij Policję (997 lub 112).'},
+      {text:'🏫 ORGAN PROWADZĄCY — Poinformuj organ prowadzący szkołę jeśli sytuacja wymaga dodatkowych zasobów (np. asystent ucznia, zmiana formy kształcenia).'},
+      {text:'Sporządź pełną dokumentację całego procesu. Przechowuj notatki, protokoły spotkań z rodzicami i decyzje zespołu.'},
+      {text:'⚖️ RODO — dokumentacja zawiera dane wrażliwe ucznia z orzeczeniem (dane zdrowotne, dane o zachowaniu). Przechowuj wyłącznie w dokumentacji szkolnej zgodnie z procedurami IOD szkoły (art. 9 RODO).'},
+    ]
+  },
+  cyberprzemoc: {
+    icon:'📱', title:'Hejt i cyberprzemoc', sub:'Zabezpiecz dowody — działaj — chroń ofiarę', color:'#6366f1',
+    alerts:[
+      {type:'red',title:'🚨 Działaj szybko',text:'Treści w internecie rozprzestrzeniają się w minutach. Im szybciej zabezpieczysz dowody i odizolujesz ofiarę od hejtu, tym mniejsza szkoda psychiczna.'},
+      {type:'amber',title:'⚠️ Nie kasuj dowodów',text:'Zanim cokolwiek zostanie usunięte — zrób zrzuty ekranu. Usunięcie treści przez sprawcę nie kończy sprawy, ale usuwa dowody.'}
+    ],
+    steps:[
+      {text:'👂 WYSŁUCHAJ OFIARĘ — Zapewnij prywatność. Nie bagatelizuj ("to tylko internet"). Powiedz: "Dobrze, że mi o tym powiedziałeś/aś. To co się dzieje jest nieakceptowalne i razem z tym coś zrobimy."'},
+      {text:'📸 ZABEZPIECZ DOWODY — Natychmiast zrób zrzuty ekranu (screenshoty) wszystkich obraźliwych treści: wiadomości, komentarzy, zdjęć, filmów, profili sprawców. Zapisz daty i godziny.'},
+      {text:'🔍 USTAL FAKTY — Zapytaj: Co dokładnie się stało? Gdzie (platforma, aplikacja)? Kiedy zaczęło? Kto jest sprawcą (zna go/ją osobiście)? Czy inne osoby były zaangażowane lub świadkowały?'},
+      {text:'🛡️ CHROŃ OFIARĘ — Doradź tymczasowe zablokowanie sprawcy na wszystkich platformach. Nie zalecaj usuwania konta ofiary — to wtórna wiktymizacja ("to ty musisz zniknąć").'},
+      {text:'📵 PRZERWA OD SIECI — Zaproponuj krótką, dobrowolną przerwę od social mediów — nie jako karę, ale jako chwilę oddechu. Nie wymuszaj — może zwiększyć izolację.'},
+      {text:'🧠 OCEŃ STAN PSYCHICZNY — Zapytaj wprost jak uczeń się czuje, czy ma wsparcie w domu, czy myśli o skrzywdzeniu siebie. Hejt online jest silnym czynnikiem ryzyka depresji i myśli samobójczych.'},
+      {text:'👩‍🏫 POWIADOM PEDAGOGA / PSYCHOLOGA — Przekaż zebrane screenshoty. Nie działaj sam/a — to wymaga skoordynowanej reakcji szkoły.'},
+      {text:'👨‍👩‍👧 POINFORMUJ RODZICÓW OFIARY — Spokojnie, rzeczowo. Pokaż zabezpieczone dowody. Omów wspólne kroki. Zaproponuj wsparcie psychologa szkolnego dla ucznia.'},
+      {text:'⚖️ SPRAWCA — USTAL KIM JEST. Jeśli to uczeń tej szkoły: wezwij go z rodzicami, poinformuj o konsekwencjach (regulamin szkoły, prawo). Jeśli nieznany: pomóż zgłosić na platformie i na Policji.'},
+      {text:'🌐 ZGŁOŚ TREŚCI DO PLATFORMY — Każdy serwis (Instagram, TikTok, Facebook, YouTube) ma formularz zgłaszania hejtu i mowy nienawiści. Zrób to razem z uczniem lub rodzicem.'},
+      {text:'🚔 POLICJA — Zgłoszenie jest zasadne gdy: treści mają charakter gróźb karalnych, doszło do wymuszania lub szantażu (np. "revenge porn"), sprawca jest dorosły, hejt jest zorganizowany przez grupę.'},
+      {text:'📞 TELEFON DLA RODZICÓW I NAUCZYCIELI — 800 100 100 (bezpłatny, pon–czw 10–14, pt 12–15). Specjaliści doradzą jak postępować w konkretnej sytuacji cyberprzemocy.'},
+      {text:'📝 DOKUMENTUJ CAŁY PROCES — Notatka służbowa: co zgłoszono, kiedy, jakie kroki podjęto, kto był informowany. To ważne jeśli sprawa trafi do sądu lub rodziców sprawcy.'},
+    ]
+  },
+  smierc_ucznia: {
+    icon:'🕯️', title:'Śmierć ucznia w klasie / szkole', sub:'Postępowanie wobec klasy, szkoły i żałoby zbiorowej', color:'#64748b',
+    alerts:[
+      {type:'red',title:'🚨 Śmierć samobójcza — szczególne zasady',text:'Przy śmierci samobójczej ucznia obowiązuje protokół postwencji — nie opisuj okoliczności śmierci w klasie, nie romantyzuj, nie organizuj uroczystości mogących wywołać efekt Wertera (naśladownictwo).'},
+      {type:'amber',title:'⚠️ Zadbaj też o siebie',text:'Śmierć ucznia jest traumą również dla nauczyciela. Masz prawo do wsparcia psychologa. Nie musisz być "silny/a" — uczniowie potrzebują prawdziwego człowieka, nie osoby udającej że nic się nie stało.'}
+    ],
+    steps:[
+      {text:'1. NATYCHMIAST — Poinformuj dyrektora szkoły. Dyrektor koordynuje dalsze działania i decyduje o trybie komunikacji w szkole.'},
+      {text:'2. POWOŁAJ SZKOLNY ZESPÓŁ KRYZYSOWY — Dyrektor, pedagog, psycholog szkolny, wychowawca klasy. Jeśli szkoła nie ma psychologa — natychmiast skontaktuj się z poradnią psychologiczno-pedagogiczną po wsparcie.'},
+      {text:'3. POINFORMUJ KLASĘ — Zrób to osobiście, spokojnie, w klasie, przed końcem dnia szkolnego. Nie przez komunikat przez megafon, nie SMS-em. Uczniowie mają prawo dowiedzieć się w bezpiecznym środowisku z ust nauczyciela. Mów: "Chcę wam powiedzieć o czymś bardzo trudnym. Zginął/a nasz/a kolega/koleżanka [imię]."'},
+      {text:'4. CO MÓWIĆ W KLASIE — Podaj tylko fakty które są pewne. Daj przestrzeń na emocje — płacz, milczenie, pytania. Nie wymagaj "normalnej" lekcji w tym dniu. Powiedz: "Nie musicie teraz nic robić. Możecie siedzieć, płakać, rozmawiać."'},
+      {text:'5. CZEGO NIE MÓWIĆ — Nie mów: "Jest teraz w lepszym miejscu", "Przynajmniej nie cierpi", "Musicie być dzielni", "Życie toczy się dalej". To zamyka przestrzeń na żałobę.'},
+      {text:'6. ZIDENTYFIKUJ UCZNIÓW W KRYZYSIE — Obserwuj kto reaguje wyjątkowo silnie — bliskich przyjaciół, uczniów którzy byli świadkami, osoby wcześniej zmagające się z trudnościami. Oni potrzebują indywidualnego kontaktu psychologa.'},
+      {text:'7. POINFORMUJ RODZICÓW WSZYSTKICH UCZNIÓW Z KLASY — Jeszcze tego samego dnia. List lub wiadomość od dyrektora z informacją co się stało, jakie wsparcie szkoła zapewnia i na co zwracać uwagę w domu.'},
+      {text:'8. KOLEJNE DNI — Psycholog dostępny codziennie. Wychowawca codziennie pyta klasę jak się czują. Zezwól na rozmowy o zmarłym — milczenie jest bardziej szkodliwe niż wspominanie.'},
+      {text:'9. UPAMIĘTNIENIE — Klasa może zadecydować o formie pożegnania: wspólne zdjęcie, kartka do rodziny, świeczka. Unikaj tworzenia "ołtarzyków" w szkole przy śmierci samobójczej — mogą wzmacniać efekt naśladownictwa.'},
+      {text:'10. RODZINA ZMARŁEGO UCZNIA — Dyrektor lub wychowawca kontaktuje się z rodziną, wyraża kondolencje, pyta czy szkoła może w czymś pomóc (np. odbiór rzeczy, formalności).'},
+      {text:'11. OBSERWUJ DŁUGOFALOWO — Reakcje żałoby mogą pojawić się z opóźnieniem: tygodnie lub miesiące po śmierci. Szczególnie przy rocznicach, urodzinach, powrocie do szkoły po wakacjach.'},
+      {text:'📞 WSPARCIE DLA SZKOŁY — Centrum Wsparcia: 800 702 222 (całodobowe). Poradnia PP w Twoim rejonie. "Życie warte jest rozmowy" (konsultacje dla specjalistów): www.zwjr.pl'},
+    ]
+  },
+  smierc_rodziny: {
+    icon:'💙', title:'Śmierć w rodzinie ucznia', sub:'Jak wspierać ucznia w żałobie — co mówić, czego unikać', color:'#0ea5e9',
+    alerts:[
+      {type:'blue',title:'💡 Żałoba to proces, nie stan',text:'Uczeń może funkcjonować dobrze przez kilka dni, a potem się załamać. Może też reagować złością, wycofaniem lub pozornym brakiem emocji — wszystkie reakcje są normalne.'},
+      {type:'amber',title:'⚠️ Nie wymagaj powrotu do normalności',text:'Presja "weź się w garść", ocenianie, nadrabianie zaległości tuż po stracie — to jedne z największych błędów szkoły wobec ucznia w żałobie.'}
+    ],
+    steps:[
+      {text:'1. KIEDY UCZEŃ WRACA DO SZKOŁY — Porozmawiaj z nim/nią na osobności zanim wejdzie do klasy. Zapytaj: "Jak się czujesz? Czy jest coś, o czym chciałbyś/chciałabyś żebym wiedział/a?"'},
+      {text:'2. CO POWIEDZIEĆ — Proste, szczere, bez owijania w bawełnę: "Bardzo mi przykro z powodu śmierci Twojej mamy/taty/brata. Jestem tu dla Ciebie." Nie musisz mieć gotowych słów — wystarczy obecność.'},
+      {text:'3. CZEGO NIE MÓWIĆ — Unikaj: "Wiem jak się czujesz", "Przynajmniej był/a stara/y", "Czas leczy rany", "Musisz być teraz silny/a dla rodziny", "On/Ona by chciał/a żebyś się uśmiechał/a". Te słowa ranią.'},
+      {text:'4. POINFORMUJ KLASĘ — Zapytaj ucznia czy i co chce żeby klasa wiedziała. Uszanuj jego/jej decyzję. Jeśli zgadza się na poinformowanie — zrób to krótko i spokojnie, zanim uczeń wejdzie do sali.'},
+      {text:'5. ELASTYCZNOŚĆ SZKOLNA — Skonsultuj z dyrekcją: zwolnienie z odpowiedzi ustnych, przedłużenie terminów prac, możliwość wyjścia z klasy gdy jest za trudno. Zapisz ustalenia i przekaż wszystkim nauczycielom.'},
+      {text:'6. OBSERWUJ SYGNAŁY ALARMOWE — Reaguj gdy: uczeń nie je, nie śpi, izoluje się całkowicie, mówi że "nie ma sensu żyć", zaczyna się samookaleczać, sięga po alkohol lub substancje.'},
+      {text:'7. ZAPROPONUJ WSPARCIE PSYCHOLOGA — Nie nakazuj — zaproponuj: "W szkole jest psycholog, możesz do niego/niej zajrzeć kiedy chcesz. To nie znaczy że jesteś słaby/a — to znaczy że masz wsparcie."'},
+      {text:'8. WSPÓŁPRACA Z RODZINĄ — Skontaktuj się z rodzicem/opiekunem prawnym. Zapytaj jak uczeń funkcjonuje w domu, czy rodzina ma wsparcie, czy potrzebuje informacji o instytucjach pomocowych.'},
+      {text:'9. ROCZNICE I TRUDNE DATY — Zapamiętaj datę śmierci i urodziny bliskiej osoby. Przed tymi datami sprawdź jak uczeń się czuje. To jeden z najbardziej niedocenianych gestów troski.'},
+      {text:'10. DŁUGOFALOWO — Żałoba nie kończy się po pogrzebie ani po miesiącu. Regularnie pytaj (bez naciskania): "Jak sobie radzisz?" — nie tylko w pierwszych tygodniach.'},
+      {text:'📞 TELEFON DLA UCZNIA — 116 111 (całodobowy, bezpłatny). Tumbo Pomaga — wsparcie dla dzieci i młodzieży w żałobie: 800 111 123 (pon–pt 9–11).'},
+    ]
+  }
+};
+
+const contacts = [
+  {key:'pedagog',label:'Pedagog Szkolny',icon:'👩‍🏫'},
+  {key:'psycholog',label:'Psycholog Szkolny',icon:'🧠'},
+  {key:'dyrektor',label:'Dyrektor',icon:'👔'},
+  {key:'sekretariat',label:'Sekretariat',icon:'📠'},
+  {key:'wychowawca',label:'Wychowawca',icon:'🤝'},
+];
+
+let checkStates = {};
+
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  document.querySelector('.theme-btn').textContent = document.body.classList.contains('light') ? '🌙' : '☀️';
+}
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btn-'+name);
+  if (btn) btn.classList.add('active');
+  if (name === 'contacts') renderContacts();
+}
+
+function openModal(key) {
+  const p = procedures[key];
+  if (!p) return;
+  if (!checkStates[key]) checkStates[key] = new Array(p.steps.length).fill(false);
+
+  document.getElementById('modalHeader').innerHTML = `
+    <div class="modal-icon">${p.icon}</div>
+    <div style="flex:1">
+      <div class="modal-title" style="color:${p.color}">${p.title}</div>
+      <div class="modal-sub">${p.sub}</div>
+    </div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
+  `;
+
+  let html = '';
+  if (p.alerts) p.alerts.forEach(a => {
+    html += `<div class="alert-box ${a.type}"><strong>${a.title}</strong>${a.text}</div>`;
+  });
+
+  html += `<div class="divider"></div><div class="step-label">Lista kroków — odhacz wykonane:</div>`;
+
+  p.steps.forEach((s,i) => {
+    const done = checkStates[key][i];
+    html += `<div class="step ${done?'done':''}" onclick="toggleStep('${key}',${i})">
+      <span class="step-num">${i+1}.</span>
+      <div class="step-check">${done?'✓':''}</div>
+      <div class="step-text">${s.text}</div>
+    </div>`;
+  });
+
+  const done = checkStates[key].filter(Boolean).length;
+  html += `<div class="badge" style="margin-top:12px">✅ ${done} / ${p.steps.length} kroków wykonanych</div>
+    <button class="reset-btn" onclick="resetChecks('${key}')">↺ Resetuj checklistę</button>`;
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function toggleStep(key, idx) {
+  checkStates[key][idx] = !checkStates[key][idx];
+  openModal(key);
+}
+
+function resetChecks(key) {
+  checkStates[key] = new Array(procedures[key].steps.length).fill(false);
+  openModal(key);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+const hotlines24 = [
+  {num:'800 702 222', label:'Centrum Wsparcia dla Dorosłych w Kryzysie Psychicznym', tag:'dorośli'},
+  {num:'116 111', label:'Telefon zaufania dla dzieci i młodzieży', tag:'dzieci i młodzież'},
+  {num:'116 123', label:'Telefon wsparcia emocjonalnego dla dorosłych', tag:'dorośli'},
+  {num:'800 121 212', label:'Dziecięcy Telefon Zaufania Rzecznika Praw Dziecka', tag:'dzieci i młodzież'},
+  {num:'800 120 002', label:'Niebieska Linia — ofiary przemocy w rodzinie', tag:'wszyscy'},
+];
+
+const hotlinesDuty = [
+  {num:'800 108 108', label:'Wsparcie po stracie bliskich (żałoba)', hours:'pon–pt 14:00–20:00', tag:'dorośli'},
+  {num:'800 111 123', label:'Tumbo Pomaga — dzieci i młodzież w żałobie', hours:'pon–pt 9:00–11:00', tag:'dzieci i młodzież'},
+  {num:'608 271 402', label:'Telefon zaufania dla mężczyzn', hours:'wt 17–19, śr 18–20, czw 19–21', tag:'mężczyźni'},
+  {num:'12 333 70 88', label:'Dobre Słowa — telefon dla seniorów', hours:'pon–pt 10–12 i 17–19', tag:'seniorzy'},
+  {num:'800 199 990', label:'Narkotyki – Narkomania', hours:'codziennie 16:00–21:00', tag:'młodzież i dorośli'},
+  {num:'800 119 119', label:'Anonimowy telefon i czat zaufania', hours:'codziennie 14:00–22:00', tag:'dzieci i młodzież'},
+  {num:'800 100 100', label:'Bezpieczeństwo dzieci — dla rodziców i nauczycieli', hours:'pon–czw 10–14, pt 12–15', tag:'nauczyciele / rodzice'},
+  {num:'800 800 602', label:'Telefon dla rodziców i opiekunów dzieci w kryzysie', hours:'pon–pt 14:00–19:00', tag:'rodzice'},
+  {num:'801 889 880', label:'Uzależnienia behawioralne', hours:'codziennie 17:00–22:00', tag:'młodzież i dorośli'},
+  {num:'800 012 005', label:'Telefon Pogadania', hours:'codziennie 11:00–22:00', tag:'wszyscy'},
+  {num:'801 888 448', label:'Telefon zaufania HIV/AIDS', hours:'pon–pt 9:00–21:00', tag:'młodzież i dorośli'},
+  {num:'22 635 09 54', label:'Telefon Zaufania dla osób starszych', hours:'pon, śr, czw 17–20', tag:'seniorzy'},
+  {num:'22 484 88 01', label:'Antydepresyjny telefon zaufania', hours:'pon–pt 15:00–20:00', tag:'wszyscy'},
+  {num:'669 981 038', label:'Telefon kryzysowy PFM (ukraiński/rosyjski)', hours:'pon 16–20, śr 10–14, pt 14–18', tag:'ukraina'},
+  {num:'22 566 22 27', label:'Centrum Medyczne Damiana (pol/ros)', hours:'wt 8–13, śr 17–20, pt 8–13', tag:'ukraina'},
+];
+
+function tagColor(tag) {
+  if (tag.includes('dzieci')) return '#a855f7';
+  if (tag.includes('dorośli')) return '#3b82ff';
+  if (tag.includes('nauczyciele') || tag.includes('rodzice')) return '#14b8a6';
+  if (tag.includes('seniorzy')) return '#f59e0b';
+  if (tag.includes('mężczyźni')) return '#22c55e';
+  if (tag.includes('ukraina')) return '#f59e0b';
+  return '#7070a0';
+}
+
+function hotlineCard(h) {
+  const color = tagColor(h.tag);
+  return `<div class="contact-item" style="align-items:flex-start;gap:10px">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:600;line-height:1.3;margin-bottom:4px">${h.label}</div>
+      ${h.hours ? `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">🕐 ${h.hours}</div>` : ''}
+      <span style="background:${color}22;color:${color};font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:0.04em">${h.tag}</span>
+    </div>
+    <a href="tel:${h.num.replace(/\s/g,'')}" style="display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;flex-shrink:0">
+      <span style="background:var(--accent-green);border-radius:8px;padding:8px 10px;font-size:16px">📞</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted);white-space:nowrap">${h.num}</span>
+    </a>
+  </div>`;
+}
+
+function renderContacts() {
+  document.getElementById('contactsList').innerHTML = contacts.map(c => {
+    const saved = localStorage.getItem('contact_'+c.key) || '';
+    return `<div class="contact-item">
+      <div class="contact-avatar">${c.icon}</div>
+      <div class="contact-info">
+        <div class="contact-name">${c.label}</div>
+        <input class="contact-input" id="ci_${c.key}" placeholder="Wpisz numer..." value="${saved}"
+          onchange="saveContact('${c.key}',this.value)" oninput="updateCall('${c.key}',this.value)">
+      </div>
+      <a class="call-btn" id="cb_${c.key}" ${saved?`href="tel:${saved}"`:'style="opacity:.3;pointer-events:none"'}>📞</a>
+    </div>`;
+  }).join('');
+
+  document.getElementById('hotlines24').innerHTML = hotlines24.map(hotlineCard).join('');
+  document.getElementById('hotlinesDuty').innerHTML = hotlinesDuty.map(hotlineCard).join('');
+}
+
+function saveContact(key, val) {
+  localStorage.setItem('contact_'+key, val.trim());
+  updateCall(key, val);
+}
+
+function updateCall(key, val) {
+  const btn = document.getElementById('cb_'+key);
+  if (!btn) return;
+  if (val.trim()) { btn.href = 'tel:'+val.trim(); btn.style.opacity='1'; btn.style.pointerEvents='auto'; }
+  else { btn.removeAttribute('href'); btn.style.opacity='0.3'; btn.style.pointerEvents='none'; }
+}
+
+function handleSearch(q) {
+  const res = document.getElementById('searchResults');
+  const home = document.getElementById('view-home');
+  if (!q.trim()) { res.classList.remove('visible'); home.style.display='block'; return; }
+  home.style.display = 'none';
+  res.classList.add('visible');
+  const lower = q.toLowerCase();
+  const matches = Object.entries(procedures).filter(([k,p]) =>
+    p.title.toLowerCase().includes(lower) || p.sub.toLowerCase().includes(lower) ||
+    p.steps.some(s => s.text.toLowerCase().includes(lower))
+  );
+  if (!matches.length) { res.innerHTML='<div style="color:var(--text-muted);padding:20px 0;text-align:center">Nie znaleziono procedury</div>'; return; }
+  res.innerHTML = matches.map(([k,p]) => `<div class="search-result-item" onclick="openModal('${k}')">
+    <span style="font-size:24px">${p.icon}</span>
+    <div>
+      <div style="font-weight:600;font-size:14px;color:${p.color}">${p.title}</div>
+      <div style="font-size:12px;color:var(--text-muted)">${p.sub}</div>
+    </div>
+  </div>`).join('');
+}
+
+function generateNote() {
+  const g = id => document.getElementById(id).value || '___________';
+  const text = `NOTATKA SŁUŻBOWA\n\nData i czas: ${g('n_data')}\nMiejsce: ${g('n_miejsce')}\nDotyczące ucznia/uczennicy: ${g('n_uczen')} (klasa: ${g('n_klasa')})\n\nOPIS ZDARZENIA:\n${g('n_opis')}\n\nPODJĘTE DZIAŁANIA:\n${g('n_dzialania')}\n\nSporządził/a: ${g('n_autor')}\n\n---\nWygenerowano: ${new Date().toLocaleDateString('pl-PL')}`;
+  document.getElementById('noteText').value = text;
+  document.getElementById('noteOutput').style.display = 'block';
+  navigator.clipboard?.writeText(text).catch(()=>{});
+}
+
+function call112() {
+  if (confirm('Zadzwonić pod numer 112?')) window.location.href = 'tel:112';
+}
+</script>
+</body>
+</html>
