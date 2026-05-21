@@ -4,699 +4,285 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Narzędzia dla Nauczycieli · Stowarzyszenie 2piny</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f7f8fc;
-  --surface: #ffffff;
-  --border: #e4e7f0;
-  --text: #111827;
-  --muted: #6b7280;
-  --hint: #9ca3af;
+  --ink:#0d0d0d;--ink2:#1a1a1a;--paper:#fafaf8;--muted:#6e6e6e;--faint:#f0f0ec;--line:#d8d8d2;
+  --red:#d94f2b;--green:#1a6b42;--blue:#1540a0;--purple:#5b21b6;--amber:#b45309;
+  --r:14px;--rs:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
 
-  --red: #e05a2b;
-  --red-bg: #fff3ee;
-  --red-border: #fad3c2;
+nav{position:sticky;top:0;z-index:100;background:rgba(250,250,248,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:0 40px;height:58px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-mark{width:30px;height:30px;background:var(--ink);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--paper);letter-spacing:-.5px}
+.nav-name{font-size:14px;font-weight:500;color:var(--ink2);letter-spacing:-.01em}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-links a{font-size:13px;font-weight:500;color:var(--muted);padding:5px 12px;border-radius:var(--rs);transition:background .15s,color .15s}
+.nav-links a:hover{background:var(--faint);color:var(--ink)}
+.nav-cta{background:var(--ink)!important;color:var(--paper)!important;padding:6px 16px!important;border-radius:100px!important;font-size:12px!important}
+.nav-cta:hover{opacity:.85}
 
-  --green: #1a7a4a;
-  --green-bg: #edf7f2;
-  --green-border: #b9e0ce;
+.hero{max-width:1100px;margin:0 auto;padding:96px 40px 80px;display:grid;grid-template-columns:1fr 320px;gap:80px;align-items:center}
+.hero-kicker{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:24px}
+.hero-kicker-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-family:'DM Serif Display',Georgia,serif;font-size:clamp(42px,5.5vw,64px);font-weight:400;line-height:1.05;letter-spacing:-.02em;color:var(--ink);margin-bottom:28px}
+h1 em{font-style:italic;color:var(--muted)}
+.hero-sub{font-size:16px;color:var(--muted);line-height:1.7;max-width:480px;margin-bottom:40px;font-weight:300}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--muted);padding:5px 12px;border-radius:100px;border:1px solid var(--line);background:var(--paper)}
+.pill-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.hero-aside{display:flex;flex-direction:column;gap:12px}
+.hero-stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;transition:box-shadow .2s}
+.hero-stat:hover{box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.stat-num{font-family:'DM Serif Display',serif;font-size:36px;font-weight:400;color:var(--ink);line-height:1;margin-bottom:4px}
+.stat-label{font-size:12px;color:var(--muted);font-weight:400}
+.hero-quote{background:var(--ink);color:var(--paper);border-radius:var(--r);padding:20px 22px}
+.hero-quote p{font-family:'DM Serif Display',serif;font-size:15px;font-style:italic;line-height:1.6;opacity:.9;margin-bottom:12px}
+.hero-quote-attr{font-size:11px;opacity:.45;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
 
-  --blue: #1a52a8;
-  --blue-bg: #eef3fc;
-  --blue-border: #bcd0f5;
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero-kicker{animation:fadeUp .6s ease both}
+h1{animation:fadeUp .6s .1s ease both}
+.hero-sub{animation:fadeUp .6s .2s ease both}
+.hero-pills{animation:fadeUp .6s .3s ease both}
+.hero-aside{animation:fadeUp .7s .15s ease both}
 
-  --accent: #1a52a8;
-  --radius: 12px;
-  --radius-sm: 8px;
-}
+.tools-wrap{border-top:1px solid var(--line)}
+.tools-inner{max-width:1100px;margin:0 auto;padding:80px 40px}
+.section-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:48px}
+.section-title{font-family:'DM Serif Display',serif;font-size:32px;font-weight:400;letter-spacing:-.02em}
+.section-count{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.05em}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+.tools-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.tool-card{background:#fff;padding:36px 32px 32px;display:flex;flex-direction:column;gap:0;transition:background .2s;position:relative;cursor:pointer}
+.tool-card:hover{background:var(--faint)}
+.tool-num{font-family:'DM Serif Display',serif;font-size:13px;color:var(--line);font-weight:400;margin-bottom:20px;letter-spacing:.05em}
+.tool-icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px;flex-shrink:0}
+.tool-card.c-red .tool-icon-wrap{background:#fef2ee}
+.tool-card.c-green .tool-icon-wrap{background:#edf7f2}
+.tool-card.c-blue .tool-icon-wrap{background:#eef3fc}
+.tool-card.c-purple .tool-icon-wrap{background:#f5f3ff}
+.tool-name{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;letter-spacing:-.02em;line-height:1.2;margin-bottom:10px;color:var(--ink)}
+.tool-desc{font-size:13px;color:var(--muted);line-height:1.7;flex:1;font-weight:300;margin-bottom:28px}
+.tool-footer{display:flex;align-items:center;justify-content:space-between}
+.tool-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tool-tag{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:100px;border:1px solid}
+.tool-card.c-red .tool-tag{color:var(--red);border-color:#fad3c2;background:#fff3ee}
+.tool-card.c-green .tool-tag{color:var(--green);border-color:#b9e0ce;background:#edf7f2}
+.tool-card.c-blue .tool-tag{color:var(--blue);border-color:#bcd0f5;background:#eef3fc}
+.tool-card.c-purple .tool-tag{color:var(--purple);border-color:#ddd6fe;background:#f5f3ff}
+.tool-arrow{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);transition:all .2s;flex-shrink:0}
+.tool-card:hover .tool-arrow{background:var(--ink);border-color:var(--ink);color:#fff;transform:translateX(2px)}
+.badge-beta{display:inline-flex;align-items:center;background:#fffbeb;color:var(--amber);border:1px solid #fde68a;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:100px;margin-bottom:10px;width:fit-content}
+.tool-card.coming{background:var(--paper);cursor:default}
+.tool-card.coming:hover{background:var(--paper)}
+.tool-card.coming .tool-arrow{display:none}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', -apple-system, sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-}
+.about-wrap{border-top:1px solid var(--line);background:var(--ink);color:var(--paper)}
+.about-inner{max-width:1100px;margin:0 auto;padding:80px 40px;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.about-eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,250,248,.3);margin-bottom:24px}
+.about-name{font-family:'DM Serif Display',serif;font-size:40px;font-weight:400;letter-spacing:-.02em;line-height:1.1;margin-bottom:6px}
+.about-role{font-size:13px;color:rgba(250,250,248,.45);margin-bottom:32px;font-weight:300}
+.about-bio{font-size:14px;color:rgba(250,250,248,.6);line-height:1.8;margin-bottom:14px;font-weight:300}
+.creds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(250,250,248,.1);border:1px solid rgba(250,250,248,.1);border-radius:var(--r);overflow:hidden;margin-top:40px}
+.cred-box{padding:20px;background:rgba(250,250,248,.04)}
+.cred-val{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;color:var(--paper);margin-bottom:4px}
+.cred-label{font-size:11px;color:rgba(250,250,248,.35);line-height:1.4}
+.about-right{display:flex;flex-direction:column;gap:16px;padding-top:8px}
+.acard{background:rgba(250,250,248,.05);border:1px solid rgba(250,250,248,.08);border-radius:var(--r);padding:22px 24px}
+.acard-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(250,250,248,.3);margin-bottom:16px}
+.contact-row{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(250,250,248,.65);margin-bottom:10px}
+.contact-row:last-child{margin-bottom:0}
+.contact-icon{width:28px;height:28px;background:rgba(250,250,248,.08);border:1px solid rgba(250,250,248,.08);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.contact-row a{color:rgba(250,250,248,.85)}
+.contact-row a:hover{color:#fff;text-decoration:underline}
+blockquote{font-family:'DM Serif Display',serif;font-size:17px;font-style:italic;color:rgba(250,250,248,.7);line-height:1.65;margin:0}
 
-a { text-decoration: none; color: inherit; }
+footer{background:var(--ink2);border-top:1px solid rgba(250,250,248,.06)}
+.footer-inner{max-width:1100px;margin:0 auto;padding:28px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-brand{font-size:13px;font-weight:500;color:rgba(250,250,248,.5)}
+.footer-copy{font-size:12px;color:rgba(250,250,248,.25)}
+.footer-claude{font-size:12px;color:rgba(250,250,248,.25)}
+.footer-claude a{color:rgba(250,250,248,.4)}
+.footer-claude a:hover{color:rgba(250,250,248,.7)}
 
-/* ── NAV ── */
-nav {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: -.01em;
-}
-.nav-dot {
-  width: 28px; height: 28px;
-  background: var(--accent);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #fff;
-}
-.nav-links {
-  display: flex;
-  gap: 4px;
-}
-.nav-links a {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--muted);
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  transition: background .15s, color .15s;
-}
-.nav-links a:hover {
-  background: var(--bg);
-  color: var(--text);
-}
+.fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;display:inline-flex;align-items:center;gap:8px;background:#c0304a;color:#fff;font-size:14px;font-weight:600;padding:14px 28px;border-radius:100px;box-shadow:0 8px 32px rgba(192,48,74,.35);transition:transform .2s,box-shadow .2s;white-space:nowrap;letter-spacing:-.01em}
+.fab:hover{transform:translateX(-50%) translateY(-3px);box-shadow:0 14px 40px rgba(192,48,74,.45)}
 
-/* ── HERO ── */
-.hero {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 72px 40px 64px;
-  text-align: center;
-}
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--blue-bg);
-  color: var(--blue);
-  border: 1px solid var(--blue-border);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .02em;
-  padding: 5px 14px;
-  border-radius: 100px;
-  margin-bottom: 28px;
-}
-.hero-badge::before {
-  content: '';
-  width: 6px; height: 6px;
-  background: var(--blue);
-  border-radius: 50%;
-}
-h1 {
-  font-size: clamp(32px, 5vw, 52px);
-  font-weight: 700;
-  letter-spacing: -.03em;
-  line-height: 1.1;
-  color: var(--text);
-  margin-bottom: 20px;
-}
-h1 span { color: var(--accent); }
-.hero-sub {
-  font-size: 17px;
-  color: var(--muted);
-  max-width: 560px;
-  margin: 0 auto 40px;
-  line-height: 1.65;
-}
-.hero-pills {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  font-size: 13px;
-  color: var(--muted);
-  padding: 6px 14px;
-  border-radius: 100px;
-  font-weight: 500;
-}
-.pill-check { color: var(--green); font-size: 15px; }
-
-/* ── TOOLS ── */
-.tools-section {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 0 40px 80px;
-}
-.section-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--hint);
-  margin-bottom: 24px;
-}
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.tool-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 32px 28px 28px;
-  display: flex;
-  flex-direction: column;
-  transition: box-shadow .2s, transform .2s, border-color .2s;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.tool-card:hover {
-  box-shadow: 0 8px 32px rgba(0,0,0,.08);
-  transform: translateY(-3px);
-}
-.tool-card.red:hover { border-color: var(--red-border); }
-.tool-card.green:hover { border-color: var(--green-border); }
-.tool-card.blue:hover { border-color: var(--blue-border); }
-
-.tool-card::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-}
-.tool-card.red::after { background: var(--red); }
-.tool-card.green::after { background: var(--green); }
-.tool-card.blue::after { background: var(--blue); }
-
-.tool-icon {
-  width: 64px; height: 64px;
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 30px;
-  margin-bottom: 24px;
-  flex-shrink: 0;
-}
-.tool-card.red .tool-icon { background: var(--red-bg); }
-.tool-card.green .tool-icon { background: var(--green-bg); }
-.tool-card.blue .tool-icon { background: var(--blue-bg); }
-
-.tool-name {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -.02em;
-  line-height: 1.25;
-  margin-bottom: 10px;
-}
-.tool-desc {
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.65;
-  flex: 1;
-  margin-bottom: 24px;
-}
-.tool-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 24px;
-}
-.tool-tag {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .02em;
-  padding: 3px 10px;
-  border-radius: 100px;
-}
-.tool-card.red .tool-tag { background: var(--red-bg); color: var(--red); }
-.tool-card.green .tool-tag { background: var(--green-bg); color: var(--green); }
-.tool-card.blue .tool-tag { background: var(--blue-bg); color: var(--blue); }
-
-.tool-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 11px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
-  transition: opacity .15s;
-  color: #fff;
-}
-.tool-btn:hover { opacity: .88; }
-.tool-card.red .tool-btn { background: var(--red); }
-.tool-card.green .tool-btn { background: var(--green); }
-.tool-card.blue .tool-btn { background: var(--blue); }
-.tool-btn-arrow { font-size: 16px; }
-
-/* ── ABOUT ── */
-.about-section {
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.about-inner {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 72px 40px;
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 64px;
-  align-items: start;
-}
-.about-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--hint);
-  margin-bottom: 20px;
-}
-.about-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 24px;
-}
-.avatar {
-  width: 64px; height: 64px;
-  background: var(--blue-bg);
-  border: 2px solid var(--blue-border);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700;
-  color: var(--blue);
-  flex-shrink: 0;
-}
-.about-name {
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  line-height: 1.1;
-}
-.about-role {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-.about-bio {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.75;
-  margin-bottom: 14px;
-}
-.creds-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 32px;
-}
-.cred-box {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 16px;
-}
-.cred-val {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--text);
-}
-.cred-label {
-  font-size: 11px;
-  color: var(--hint);
-  margin-top: 3px;
-  line-height: 1.4;
-}
-
-/* aside */
-.about-aside {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.aside-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-}
-.aside-card-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--hint);
-  margin-bottom: 14px;
-}
-.contact-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text);
-  margin-bottom: 10px;
-}
-.contact-row:last-child { margin-bottom: 0; }
-.contact-icon {
-  width: 28px; height: 28px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-.contact-row a { color: var(--accent); }
-.contact-row a:hover { text-decoration: underline; }
-blockquote {
-  font-size: 14px;
-  font-style: italic;
-  color: var(--muted);
-  line-height: 1.7;
-  border-left: 3px solid var(--blue-border);
-  padding-left: 14px;
-  margin: 0;
-}
-
-/* ── FOOTER ── */
-footer {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 32px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.footer-brand {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-}
-.footer-copy {
-  font-size: 12px;
-  color: var(--hint);
-  text-align: center;
-}
-.footer-suppi {
-  font-size: 12px;
-  color: var(--hint);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.footer-suppi a {
-  color: var(--accent);
-}
-.footer-suppi a:hover { text-decoration: underline; }
-
-.footer-wesprzyj {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  margin-top: 8px;
-}
-.footer-wesprzyj a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff0f5;
-  border: 1px solid #f5c0d0;
-  color: #c0304a;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 10px 22px;
-  border-radius: 100px;
-  text-decoration: none;
-  transition: background .2s, transform .2s;
-}
-.footer-wesprzyj a:hover {
-  background: #ffe0eb;
-  transform: translateY(-2px);
-}
-
-/* ── PŁYWAJĄCY PRZYCISK ── */
-.fab-suppi {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #c0304a;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 16px 36px;
-  border-radius: 100px;
-  text-decoration: none;
-  box-shadow: 0 6px 28px rgba(192,48,74,.4);
-  transition: transform .2s, box-shadow .2s;
-  white-space: nowrap;
-}
-.fab-suppi:hover {
-  transform: translateX(-50%) translateY(-3px);
-  box-shadow: 0 12px 36px rgba(192,48,74,.5);
-}
-@media (max-width: 800px) {
-  .fab-suppi { font-size: 14px; padding: 14px 24px; bottom: 16px; }
-}
-
-.badge-beta {
-  display: inline-flex;
-  align-items: center;
-  background: #fff8e6;
-  color: #a06000;
-  border: 1px solid #f5d480;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  padding: 3px 9px;
-  border-radius: 100px;
-  margin-bottom: 12px;
-  width: fit-content;
-}
-.tool-card.coming {
-  background: var(--bg);
-  border: 1.5px dashed var(--border);
-  cursor: default;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  gap: 8px;
-  min-height: 280px;
-}
-.tool-card.coming:hover {
-  box-shadow: none;
-  transform: none;
-  border-color: var(--border);
-}
-.coming-icon { font-size: 32px; opacity: .25; }
-.coming-label { font-size: 13px; font-weight: 600; color: var(--hint); }
-.coming-sub { font-size: 12px; color: var(--hint); line-height: 1.5; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 800px) {
-  nav { padding: 0 20px; }
-  .nav-links { display: none; }
-  .hero { padding: 48px 20px 40px; }
-  .tools-section { padding: 0 20px 60px; }
-  .tools-grid { grid-template-columns: 1fr; }
-  .about-inner { grid-template-columns: 1fr; padding: 48px 20px; gap: 32px; }
-  .creds-grid { grid-template-columns: 1fr 1fr; }
-  footer { padding: 24px 20px; flex-direction: column; text-align: center; }
+@media(max-width:900px){
+  nav{padding:0 20px}
+  .hide-mob{display:none}
+  .hero{grid-template-columns:1fr;padding:60px 20px 48px;gap:40px}
+  .hero-aside{display:grid;grid-template-columns:1fr 1fr}
+  .hero-quote{grid-column:1/-1}
+  .tools-inner{padding:60px 20px}
+  .section-header{flex-direction:column;gap:4px}
+  .tools-grid{grid-template-columns:1fr}
+  .about-inner{grid-template-columns:1fr;padding:60px 20px;gap:48px}
+  .creds-grid{grid-template-columns:1fr 1fr}
+  .footer-inner{padding:24px 20px;flex-direction:column;text-align:center}
+  .fab{font-size:13px;padding:12px 22px;bottom:16px}
 }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-brand">
-    <div class="nav-dot">2P</div>
-    Stowarzyszenie 2piny
+  <div class="nav-logo">
+    <div class="nav-mark">2P</div>
+    <span class="nav-name">Stowarzyszenie 2piny</span>
   </div>
   <div class="nav-links">
-    <a href="#narzedzia">Narzędzia</a>
-    <a href="#autor">Autor</a>
-    <a href="https://2piny.pl" target="_blank">2piny.pl ↗</a>
+    <a href="#narzedzia" class="hide-mob">Narzędzia</a>
+    <a href="#autor" class="hide-mob">Autor</a>
+    <a href="https://2piny.pl" target="_blank" class="hide-mob">2piny.pl ↗</a>
+    <a href="https://suppi.pl/jaceksuliga" target="_blank" class="nav-cta">Wesprzyj ❤️</a>
   </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero">
-  <div class="hero-badge">Darmowe narzędzia edukacyjne</div>
-  <h1>Dokumentacja bez <span>zbędnego wysiłku.</span></h1>
-  <p class="hero-sub">Trzy aplikacje offline dla nauczycieli i pedagogów specjalnych. Działają w przeglądarce — bez logowania, bez chmury, bez zbierania danych.</p>
-  <div class="hero-pills">
-    <span class="pill"><span class="pill-check">✓</span> 100% offline</span>
-    <span class="pill"><span class="pill-check">✓</span> RODO-safe</span>
-    <span class="pill"><span class="pill-check">✓</span> Bezpłatne</span>
-    <span class="pill"><span class="pill-check">✓</span> Działa na każdym urządzeniu</span>
-  </div>
-</section>
-
-<!-- TOOLS -->
-<section class="tools-section" id="narzedzia">
-  <p class="section-label">Narzędzia — wybierz i kliknij</p>
-  <div class="tools-grid">
-
-    <!-- 1 -->
-    <a href="asystent-interwencji.html" class="tool-card red">
-      <span class="badge-beta">⚗ Wersja beta</span>
-      <div class="tool-icon">🏫</div>
-      <div class="tool-name">Asystent Interwencji Szkolnej</div>
-      <p class="tool-desc">Krok po kroku przez każdą trudną sytuację — agresja, kryzys psychiczny, procedury z sądem i policją. Gotowe szablony notatek służbowych.</p>
-      <div class="tool-tags">
-        <span class="tool-tag">Interwencja</span>
-        <span class="tool-tag">Notatki</span>
-        <span class="tool-tag">Procedury</span>
-      </div>
-      <div class="tool-btn">
-        <span>Otwórz narzędzie</span>
-        <span class="tool-btn-arrow">→</span>
-      </div>
-    </a>
-
-    <!-- 2 -->
-    <a href="ocenaopisowa1-3.html" class="tool-card green">
-      <div class="tool-icon">📝</div>
-      <div class="tool-name">Generator Ocen Opisowych</div>
-      <p class="tool-desc">Opisy semestralne i roczne dla klas 1–3. Banki gotowych sformułowań z edukacji polonistycznej, matematycznej i zachowania. Kopiowanie tekstu bezpośrednio na świadectwo. Eksport do PDF.</p>
-      <div class="tool-tags">
-        <span class="tool-tag">Klasy 1–3</span>
-        <span class="tool-tag">Edukacja wczesnoszkolna</span>
-        <span class="tool-tag">PDF</span>
-      </div>
-      <div class="tool-btn">
-        <span>Otwórz narzędzie</span>
-        <span class="tool-btn-arrow">→</span>
-      </div>
-    </a>
-
-    <!-- 3 -->
-    <a href="formularzIPETWOPFUbezAI.html" class="tool-card blue">
-      <div class="tool-icon">📋</div>
-      <div class="tool-name">Formularz IPET & WOPFU</div>
-      <p class="tool-desc">Interaktywny formularz IPET i Wielospecjalistycznej Oceny Poziomu Funkcjonowania Ucznia. Zgodny z rozporządzeniem MEN, gotowy do wydruku.</p>
-      <div class="tool-tags">
-        <span class="tool-tag">Pedagogika specjalna</span>
-        <span class="tool-tag">IPET</span>
-        <span class="tool-tag">WOPFU</span>
-      </div>
-      <div class="tool-btn">
-        <span>Otwórz narzędzie</span>
-        <span class="tool-btn-arrow">→</span>
-      </div>
-    </a>
-
-    <!-- wkrótce -->
-    <div class="tool-card coming">
-      <div class="coming-icon">🔧</div>
-      <div class="coming-label">Nowe narzędzie — wkrótce</div>
-      <div class="coming-sub">Kolejne aplikacje są w&nbsp;przygotowaniu.<br>Wracaj regularnie!</div>
+  <div class="hero-left">
+    <div class="hero-kicker">
+      <span class="hero-kicker-dot"></span>
+      Stowarzyszenie 2piny · Łódź
     </div>
-
+    <h1>Narzędzia,<br>które <em>naprawdę</em><br>działają.</h1>
+    <p class="hero-sub">Aplikacje dla nauczycieli i pedagogów specjalnych — od dokumentacji po interaktywne gry edukacyjne. Bez logowania, bez subskrypcji.</p>
+    <div class="hero-pills">
+      <span class="pill"><span class="pill-dot" style="background:var(--green)"></span>Dokumentacja offline</span>
+      <span class="pill"><span class="pill-dot" style="background:var(--blue)"></span>RODO-safe</span>
+      <span class="pill"><span class="pill-dot" style="background:var(--purple)"></span>Gry z AI</span>
+      <span class="pill"><span class="pill-dot" style="background:var(--amber)"></span>Bezpłatne</span>
+    </div>
+  </div>
+  <div class="hero-aside">
+    <div class="hero-stat">
+      <div class="stat-num">20+</div>
+      <div class="stat-label">lat doświadczenia jako nauczyciel wspomagający</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">gotowe narzędzia działające w przeglądarce</div>
+    </div>
+    <div class="hero-quote">
+      <p>„Nauczyciel nie powinien tracić czasu na formatowanie dokumentów."</p>
+      <div class="hero-quote-attr">Jacek Suliga · 2piny</div>
+    </div>
   </div>
 </section>
-<section class="about-section" id="autor">
-  <div class="about-inner">
-    <div>
-      <p class="about-eyebrow">Autor narzędzi</p>
-      <div class="about-header">
-        <div class="avatar">JS</div>
+
+<div class="tools-wrap">
+  <div class="tools-inner" id="narzedzia">
+    <div class="section-header">
+      <div class="section-title">Wszystkie narzędzia</div>
+      <div class="section-count">4 dostępne</div>
+    </div>
+    <div class="tools-grid">
+
+      <a href="asystent-interwencji.html" class="tool-card c-red">
+        <div class="tool-num">01</div>
+        <span class="badge-beta">⚗ Wersja beta</span>
+        <div class="tool-icon-wrap">🏫</div>
+        <div class="tool-name">Asystent Interwencji Szkolnej</div>
+        <p class="tool-desc">Krok po kroku przez każdą trudną sytuację — agresja, kryzys psychiczny, procedury z sądem i policją. Gotowe szablony notatek służbowych.</p>
+        <div class="tool-footer">
+          <div class="tool-tags"><span class="tool-tag">Interwencja</span><span class="tool-tag">Notatki</span><span class="tool-tag">Offline</span></div>
+          <div class="tool-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="ocenaopisowa1-3.html" class="tool-card c-green">
+        <div class="tool-num">02</div>
+        <div class="tool-icon-wrap">📝</div>
+        <div class="tool-name">Generator Ocen Opisowych</div>
+        <p class="tool-desc">Opisy semestralne i roczne dla klas 1–3. Banki gotowych sformułowań z edukacji polonistycznej, matematycznej i zachowania. Eksport do PDF.</p>
+        <div class="tool-footer">
+          <div class="tool-tags"><span class="tool-tag">Klasy 1–3</span><span class="tool-tag">PDF</span><span class="tool-tag">Offline</span></div>
+          <div class="tool-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="formularzIPETWOPFUbezAI.html" class="tool-card c-blue">
+        <div class="tool-num">03</div>
+        <div class="tool-icon-wrap">📋</div>
+        <div class="tool-name">Formularz IPET & WOPFU</div>
+        <p class="tool-desc">Interaktywny formularz IPET i Wielospecjalistycznej Oceny Poziomu Funkcjonowania Ucznia. Zgodny z rozporządzeniem MEN, gotowy do wydruku.</p>
+        <div class="tool-footer">
+          <div class="tool-tags"><span class="tool-tag">IPET</span><span class="tool-tag">WOPFU</span><span class="tool-tag">Offline</span></div>
+          <div class="tool-arrow">→</div>
+        </div>
+      </a>
+
+      <a href="edugames.html" class="tool-card c-purple">
+        <div class="tool-num">04</div>
+        <div class="tool-icon-wrap">🎮</div>
+        <div class="tool-name">EduGames</div>
+        <p class="tool-desc">Milionerzy, The Floor, 1 z 10 i Monopoly. Wgraj własny PDF — AI generuje pytania z materiału. Wymaga klucza Anthropic API. Dane nie są przechowywane.</p>
+        <div class="tool-footer">
+          <div class="tool-tags"><span class="tool-tag">Gry</span><span class="tool-tag">AI + PDF</span></div>
+          <div class="tool-arrow">→</div>
+        </div>
+      </a>
+
+      <div class="tool-card coming" style="grid-column:1/-1;flex-direction:row;align-items:center;gap:16px;padding:24px 32px;min-height:auto">
+        <div style="font-size:24px;opacity:.2">🔧</div>
         <div>
-          <div class="about-name">Jacek Suliga</div>
-          <div class="about-role">Pedagog specjalny · Prezes Stowarzyszenia 2piny</div>
+          <div style="font-size:13px;font-weight:500;color:var(--muted)">Nowe narzędzie — wkrótce</div>
+          <div style="font-size:12px;color:var(--line);margin-top:2px">Kolejne aplikacje są w przygotowaniu. Wracaj regularnie.</div>
         </div>
       </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="about-wrap" id="autor">
+  <div class="about-inner">
+    <div>
+      <div class="about-eyebrow">Autor narzędzi</div>
+      <div class="about-name">Jacek Suliga</div>
+      <div class="about-role">Pedagog specjalny · Prezes Stowarzyszenia 2piny · Łódź</div>
       <p class="about-bio">Od ponad 20 lat pracuje z uczniami jako nauczyciel wspomagający — z ADHD, ASD, dysleksją i trudnościami w uczeniu się. Twórca metody Focusense® — programu rozwijania koncentracji z zastosowaniem strzelectwa laserowego.</p>
       <p class="about-bio">Prowadzi Mobilną Akademię Programowania oraz warsztaty robotyki edukacyjnej. Certyfikat LEGO Education. Trener i szkoleniowiec rad pedagogicznych. Wszystkie narzędzia buduje z myślą o realnych potrzebach nauczycieli — bez marketingu, bez subskrypcji.</p>
       <div class="creds-grid">
-        <div class="cred-box">
-          <div class="cred-val">20+</div>
-          <div class="cred-label">lat jako nauczyciel wspomagający</div>
-        </div>
-        <div class="cred-box">
-          <div class="cred-val">Focusense®</div>
-          <div class="cred-label">autorska metoda pracy z uwagą</div>
-        </div>
-        <div class="cred-box">
-          <div class="cred-val">LEGO®</div>
-          <div class="cred-label">certyfikat Education</div>
-        </div>
+        <div class="cred-box"><div class="cred-val">20+</div><div class="cred-label">lat jako nauczyciel wspomagający</div></div>
+        <div class="cred-box"><div class="cred-val">Focusense®</div><div class="cred-label">autorska metoda pracy z uwagą</div></div>
+        <div class="cred-box"><div class="cred-val">LEGO®</div><div class="cred-label">certyfikat Education</div></div>
       </div>
     </div>
-
-    <div class="about-aside">
-      <div class="aside-card">
-        <div class="aside-card-title">Kontakt</div>
-        <div class="contact-row">
-          <div class="contact-icon">🌐</div>
-          <a href="https://2piny.pl" target="_blank">2piny.pl</a>
-        </div>
-        <div class="contact-row">
-          <div class="contact-icon">📍</div>
-          <span>Łódź, Polska</span>
-        </div>
-        <div class="contact-row">
-          <div class="contact-icon">🎯</div>
-          <a href="https://www.facebook.com/focusense" target="_blank">Focusense®</a>
-          <span style="color:var(--hint);font-size:13px;">· Mobilna Akademia Programowania</span>
-        </div>
-        <div class="contact-row">
-          <div class="contact-icon">📞</div>
-          <a href="tel:+48663882124">663 882 124</a>
-        </div>
+    <div class="about-right">
+      <div class="acard">
+        <div class="acard-title">Kontakt</div>
+        <div class="contact-row"><div class="contact-icon">🌐</div><a href="https://2piny.pl" target="_blank">2piny.pl</a></div>
+        <div class="contact-row"><div class="contact-icon">📍</div><span>Łódź, Polska</span></div>
+        <div class="contact-row"><div class="contact-icon">🎯</div><a href="https://www.facebook.com/focusense" target="_blank">Focusense®</a></div>
+        <div class="contact-row"><div class="contact-icon">📞</div><a href="tel:+48663882124">663 882 124</a></div>
       </div>
-      <div class="aside-card">
-        <blockquote>„Nauczyciel nie powinien tracić czasu na formatowanie dokumentów. Ma pracować z&nbsp;dzieckiem."</blockquote>
+      <div class="acard">
+        <blockquote>„Nauczyciel nie powinien tracić czasu na formatowanie dokumentów. Ma pracować z dzieckiem."</blockquote>
       </div>
-      <div class="aside-card">
-        <div class="aside-card-title">Stowarzyszenie 2piny</div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.65;">Organizacja non-profit wspierająca edukację specjalną, robotykę edukacyjną i innowacyjne metody pracy z dziećmi ze specjalnymi potrzebami edukacyjnymi.</p>
+      <div class="acard">
+        <div class="acard-title">Stowarzyszenie 2piny</div>
+        <p style="font-size:13px;color:rgba(250,250,248,.5);line-height:1.7;font-weight:300">Organizacja non-profit wspierająca edukację specjalną, robotykę edukacyjną i innowacyjne metody pracy z dziećmi ze specjalnymi potrzebami edukacyjnymi.</p>
       </div>
     </div>
   </div>
-</section>
+</div>
 
-<!-- FOOTER -->
 <footer>
-  <div class="footer-brand">© 2025 Stowarzyszenie 2piny · Łódź</div>
-  <div class="footer-copy">Narzędzia bezpłatne · działają offline · dane nie opuszczają Twojego urządzenia</div>
-  <div class="footer-suppi">
-    Stworzono z&nbsp;❤️&nbsp;przy pomocy&nbsp;<a href="https://support.claude.ai" target="_blank">Claude · Anthropic</a>
-  </div>
-  <div class="footer-wesprzyj">
-    <a href="https://suppi.pl/jaceksuliga" target="_blank">❤️ Wesprzyj moje projekty</a>
+  <div class="footer-inner">
+    <div class="footer-brand">© 2025 Stowarzyszenie 2piny · Łódź</div>
+    <div class="footer-copy">Dokumentacja 100% offline · EduGames wymaga klucza API · Bezpłatne</div>
+    <div class="footer-claude">Stworzono z ❤️ przy pomocy <a href="https://support.claude.ai" target="_blank">Claude · Anthropic</a></div>
   </div>
 </footer>
 
-<!-- PŁYWAJĄCY PRZYCISK -->
-<a class="fab-suppi" href="https://suppi.pl/jaceksuliga" target="_blank">
-  ❤️ Wesprzyj moje projekty
-</a>
+<a class="fab" href="https://suppi.pl/jaceksuliga" target="_blank">❤️ Wesprzyj moje projekty</a>
 
 </body>
 </html>
