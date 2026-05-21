@@ -2053,17 +2053,19 @@ ${pdfText.slice(0, 12000)}`;
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
         messages: [{ role: "user", content: prompt }]
       })
     });
 
-    const data = await response.json();
+    let data;
+    const rawText = await response.text();
+    try { data = JSON.parse(rawText); } catch(e) { throw new Error("Odpowiedź nie jest JSON: " + rawText.slice(0,200)); }
     if (!response.ok || data.error) {
-      throw new Error(data.error?.message || `Błąd API: HTTP ${response.status}`);
+      throw new Error("HTTP " + response.status + ": " + (data.error?.message || JSON.stringify(data.error) || rawText.slice(0,200)));
     }
-    const text = (data.content || []).map(b => b.text || "").join("");
+    const text = (data.content || []).map(b => b.text || "").join(""); console.log("AI response:", text.slice(0,200));
     const si = text.indexOf("[");
     const ei = text.lastIndexOf("]");
     if (si === -1 || ei === -1) throw new Error("AI nie zwróciło JSON: " + text.slice(0, 100));
