@@ -2002,6 +2002,13 @@ function App() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [drag, setDrag] = useState(false);
+  const [pastedText, setPastedText] = useState('');
+  const [editingQuestions, setEditingQuestions] = useState(null); // questions being edited before play
+  const [savedBanks, setSavedBanks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('edugames_banks') || '[]'); } catch(e) { return []; }
+  });
+  const [showBank, setShowBank] = useState(false);
+  const [bankName, setBankName] = useState('');
   const fref = useRef();
 
   useEffect(() => {
@@ -2017,6 +2024,25 @@ function App() {
     const txt = await readPDFText(f);
     setPdfText(txt);
     setStep(2);
+  }
+
+  // ---- QUESTION BANK (localStorage) ----
+  function saveBank(qs, name) {
+    const bank = { name: name || `Zestaw ${new Date().toLocaleDateString('pl')}`, questions: qs, game: selGame, date: new Date().toISOString() };
+    const updated = [bank, ...savedBanks].slice(0, 20);
+    setSavedBanks(updated);
+    try { localStorage.setItem('edugames_banks', JSON.stringify(updated)); } catch(e) {}
+  }
+  function deleteBank(idx) {
+    const updated = savedBanks.filter((_,i) => i !== idx);
+    setSavedBanks(updated);
+    try { localStorage.setItem('edugames_banks', JSON.stringify(updated)); } catch(e) {}
+  }
+  function loadBank(bank) {
+    setQuestions(bank.questions);
+    setSelGame(bank.game);
+    setShowBank(false);
+    setStep(4);
   }
 
   // ---- AI QUESTION GENERATOR ----
@@ -2081,17 +2107,23 @@ ${pdfText.slice(0, 12000)}`;
       let qs;
       if (mode === 'ai') {
         setProgress(30);
-        qs = await generateQuestionsAI(pdfText, selGame);
+        const src = pastedText.trim().length > 100 ? pastedText : pdfText;
+        qs = await generateQuestionsAI(src, selGame);
       } else {
         qs = getQuestionsForGame(selGame);
       }
       setProgress(80);
       await new Promise(r => setTimeout(r, 200));
       if (!qs || qs.length === 0) throw new Error('Nie udało się wygenerować pytań z tego materiału.');
-      setQuestions(qs);
       setProgress(100);
-      await new Promise(r => setTimeout(r, 300));
-      setStep(4);
+      await new Promise(r => setTimeout(r, 200));
+      if (mode === 'ai') {
+        setEditingQuestions(qs); // show editor first
+        setStep(2); // stay on step 2 but show editor
+      } else {
+        setQuestions(qs);
+        setStep(4);
+      }
     } catch(e) {
       setError(e.message);
     } finally {
@@ -2194,10 +2226,26 @@ ${pdfText.slice(0, 12000)}`;
               </div>
 
               <div style={{marginBottom:16}}>
-                <div style={{fontSize:12, color:'var(--text-dim)', marginBottom:6}}>Plik PDF z materiałem</div>
-                <div
+                <div style={{fontSize:12, color:'var(--text-dim)', marginBottom:8}}>Materiał do analizy</div>
+                
+                {/* Tabs: PDF vs paste */}
+                <div style={{display:'flex', gap:8, marginBottom:12}}>
+                  {['pdf','text'].map(t => (
+                    <div key={t} onClick={()=>{setPastedText('');if(t==='pdf')setPastedText('');}} style={{
+                      padding:'6px 16px', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:600,
+                      background: (t==='text' && pastedText.trim().length>0) || (t==='pdf' && pastedText.trim().length===0) ? 'var(--blue)' : 'var(--bg3)',
+                      color: (t==='text' && pastedText.trim().length>0) || (t==='pdf' && pastedText.trim().length===0) ? '#000' : 'var(--text-dim)',
+                      border:'1px solid var(--border)',
+                    }}>
+                      {t==='pdf' ? '📄 PDF' : '📝 Wklej tekst'}
+                    </div>
+                  ))}
+                </div>
+
+                {/* PDF upload */}
+                {pastedText.trim().length === 0 && <div
                   className={`upload ${drag?'drag':''}`}
-                  style={{padding:'20px', borderRadius:10}}
+                  style={{padding:'20px', borderRadius:10, marginBottom:8}}
                   onClick={()=>fref.current.click()}
                   onDragOver={e=>{e.preventDefault();setDrag(true)}}
                   onDragLeave={()=>setDrag(false)}
@@ -2216,6 +2264,23 @@ ${pdfText.slice(0, 12000)}`;
                     </>
                   )}
                   <input type="file" accept=".pdf" ref={fref} onChange={e=>handleFile(e.target.files[0])} />
+                </div>}
+
+                {/* Text paste */}
+                <div>
+                  <textarea
+                    placeholder="...lub wklej tutaj tekst z podręcznika, notatek, prezentacji"
+                    value={pastedText}
+                    onChange={e=>setPastedText(e.target.value)}
+                    style={{
+                      width:'100%', minHeight:120, background:'var(--bg3)',
+                      border:`1px solid ${pastedText.trim().length>50?'var(--green)':'var(--border)'}`,
+                      borderRadius:10, padding:'12px 14px', fontFamily:"'Exo 2',sans-serif",
+                      fontSize:13, color:'var(--text)', outline:'none', resize:'vertical',
+                      lineHeight:1.6,
+                    }}
+                  />
+                  {pastedText.trim().length > 0 && <div style={{fontSize:11,color:'var(--green)',marginTop:3}}>✓ {pastedText.trim().length} znaków · AI użyje tego tekstu</div>}
                 </div>
               </div>
 
@@ -2223,7 +2288,7 @@ ${pdfText.slice(0, 12000)}`;
 
               <button
                 className="btn btnp"
-                disabled={!apiKey.startsWith('sk-ant') || !file}
+                disabled={!apiKey.startsWith('sk-ant') || (!file && pastedText.trim().length < 50)}
                 onClick={()=>setStep(2)}
                 style={{width:'100%', justifyContent:'center'}}
               >
@@ -2236,7 +2301,7 @@ ${pdfText.slice(0, 12000)}`;
             </div>}
           </>}
 
-          {step===2 && !loading && <>
+          {step===2 && !loading && !editingQuestions && !showBank && <>
             <div className="fbar">
               <span style={{fontSize:22}}>{mode==='ai'?'🤖':'📚'}</span>
               <div>
@@ -2257,8 +2322,91 @@ ${pdfText.slice(0, 12000)}`;
             {error && <div className="err">{error}</div>}
             <div className="arow">
               <button className="btn btng" onClick={()=>{setStep(1);setSelGame(null);}}>← Wróć</button>
-              <button className="btn btnp" disabled={!selGame} onClick={startGame}>Generuj pytania →</button>
+              {savedBanks.length > 0 && <button className="btn btng" onClick={()=>setShowBank(true)} style={{borderColor:'rgba(160,96,255,0.4)',color:'var(--purple)'}}>🗂 Bank ({savedBanks.length})</button>}
+              <button className="btn btnp" disabled={!selGame || (mode==='ai' && !apiKey.startsWith('sk-ant')) || (mode==='ai' && !file && pastedText.trim().length < 50)} onClick={startGame}>Generuj pytania →</button>
             </div>
+          </>}
+
+          {/* ── QUESTION EDITOR ── */}
+          {step===2 && editingQuestions && !loading && <>
+            <div style={{background:'var(--bg2)',border:'1px solid rgba(48,144,255,0.2)',borderRadius:14,padding:20,marginBottom:20}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:10}}>
+                <div style={{fontFamily:'Orbitron',fontSize:13,color:'var(--blue)'}}>
+                  EDYTOR PYTAŃ · {editingQuestions.length} pytań
+                </div>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  <input
+                    placeholder="Nazwa zestawu..."
+                    value={bankName}
+                    onChange={e=>setBankName(e.target.value)}
+                    style={{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:8,padding:'7px 12px',fontSize:12,color:'var(--text)',outline:'none',fontFamily:"'Exo 2',sans-serif"}}
+                  />
+                  <button className="btn btng" style={{fontSize:11}} onClick={()=>{saveBank(editingQuestions,bankName);setBankName('');}}>💾 Zapisz w banku</button>
+                  <button className="btn btnp" style={{fontSize:12}} onClick={()=>{setQuestions(editingQuestions);setEditingQuestions(null);setStep(4);}}>▶ Graj →</button>
+                </div>
+              </div>
+
+              <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:480,overflowY:'auto'}}>
+                {editingQuestions.map((q,qi) => (
+                  <div key={qi} style={{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:10,padding:14}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:8}}>
+                      <span style={{fontFamily:'Orbitron',fontSize:10,color:'var(--text-dim)',paddingTop:2,flexShrink:0}}>#{qi+1}</span>
+                      <textarea
+                        value={q.question}
+                        onChange={e=>{const qs=[...editingQuestions];qs[qi]={...qs[qi],question:e.target.value};setEditingQuestions(qs);}}
+                        style={{flex:1,background:'transparent',border:'none',color:'var(--text)',fontSize:13,fontFamily:"'Exo 2',sans-serif",resize:'none',outline:'none',lineHeight:1.5}}
+                        rows={2}
+                      />
+                      <button onClick={()=>setEditingQuestions(editingQuestions.filter((_,i)=>i!==qi))} style={{background:'rgba(255,64,96,0.1)',border:'1px solid rgba(255,64,96,0.2)',borderRadius:6,color:'var(--red)',cursor:'pointer',padding:'4px 10px',fontSize:12,flexShrink:0}}>✕</button>
+                    </div>
+                    {q.answers && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                      {q.answers.map((a,ai)=>(
+                        <div key={ai} style={{display:'flex',alignItems:'center',gap:6}}>
+                          <div onClick={()=>{const qs=[...editingQuestions];qs[qi]={...qs[qi],correct:ai};setEditingQuestions(qs);}} style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${q.correct===ai?'var(--green)':'var(--border)'}`,background:q.correct===ai?'var(--green)':'transparent',cursor:'pointer',flexShrink:0}}/>
+                          <input
+                            value={a}
+                            onChange={e=>{const qs=[...editingQuestions];const ans=[...qs[qi].answers];ans[ai]=e.target.value;qs[qi]={...qs[qi],answers:ans};setEditingQuestions(qs);}}
+                            style={{flex:1,background:'transparent',border:'none',borderBottom:`1px solid ${q.correct===ai?'var(--green)':'var(--border)'}`,color:q.correct===ai?'var(--green)':'var(--text)',fontSize:12,fontFamily:"'Exo 2',sans-serif",outline:'none',padding:'2px 4px'}}
+                          />
+                        </div>
+                      ))}
+                    </div>}
+                    {q.answer && <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4}}>
+                      <span style={{fontSize:11,color:'var(--text-dim)'}}>Odpowiedź:</span>
+                      <input value={q.answer} onChange={e=>{const qs=[...editingQuestions];qs[qi]={...qs[qi],answer:e.target.value};setEditingQuestions(qs);}} style={{flex:1,background:'transparent',border:'none',borderBottom:'1px solid var(--border)',color:'var(--green)',fontSize:12,fontFamily:"'Exo 2',sans-serif",outline:'none',padding:'2px 4px'}}/>
+                    </div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button className="btn btng" onClick={()=>setEditingQuestions(null)}>← Wróć</button>
+          </>}
+
+          {/* ── BANK PYTAŃ ── */}
+          {showBank && step===2 && !loading && !editingQuestions && <>
+            <div style={{background:'var(--bg2)',border:'1px solid rgba(160,96,255,0.2)',borderRadius:14,padding:20,marginBottom:16}}>
+              <div style={{fontFamily:'Orbitron',fontSize:13,color:'var(--purple)',marginBottom:16}}>
+                BANK PYTAŃ · {savedBanks.length} zestawów
+              </div>
+              {savedBanks.length === 0 && <div style={{fontSize:13,color:'var(--text-dim)',textAlign:'center',padding:'24px 0'}}>Brak zapisanych zestawów.<br/>Wygeneruj pytania i zapisz je tutaj.</div>}
+              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                {savedBanks.map((bank,i)=>(
+                  <div key={i} style={{background:'var(--bg3)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+                    <div>
+                      <div style={{fontWeight:600,fontSize:14}}>{bank.name}</div>
+                      <div style={{fontSize:11,color:'var(--text-dim)',marginTop:2}}>
+                        {bank.questions?.length} pytań · {GAMES.find(g=>g.id===bank.game)?.name} · {new Date(bank.date).toLocaleDateString('pl')}
+                      </div>
+                    </div>
+                    <div style={{display:'flex',gap:8}}>
+                      <button className="btn btnp" style={{fontSize:11,padding:'7px 16px'}} onClick={()=>loadBank(bank)}>▶ Graj</button>
+                      <button onClick={()=>deleteBank(i)} style={{background:'rgba(255,64,96,0.1)',border:'1px solid rgba(255,64,96,0.2)',borderRadius:8,color:'var(--red)',cursor:'pointer',padding:'7px 12px',fontSize:12}}>✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button className="btn btng" onClick={()=>setShowBank(false)}>← Wróć</button>
           </>}
 
           {loading && <div className="spin-wrap">
