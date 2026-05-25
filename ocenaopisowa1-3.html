@@ -563,11 +563,14 @@ textarea { resize: vertical; }
             <div class="tab" onclick="goTab('rw')">✦ Wynik</div>
           </div>
           <div id="tab-rz"><div class="note note-b">Zaznacz zdania opisujące zachowanie w całym roku szkolnym.</div><div id="bank-rz"></div></div>
-          <div id="tab-re" style="display:none"><div class="note note-b">Zaznacz osiągnięcia edukacyjne z całego roku szkolnego.</div><div id="bank-re"></div></div>
+          <div id="tab-re" style="display:none">
+            <div class="note note-b">Zaznacz osiągnięcia edukacyjne z całego roku szkolnego.</div>
+            <div id="re-coverage" style="background:#fff;border:1px solid #d0dae6;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.78rem"></div>
+            <div id="bank-re"></div>
           <div id="tab-rw" style="display:none">
             <div class="note note-g" id="rw-info"></div>
-            <div class="rc"><div class="rch"><span>📌 Zachowanie</span><div style="display:flex;align-items:center;gap:8px"><span id="rw-z-cnt" style="font-size:.72rem;color:#888"></span><button class="copy-btn" onclick="copyField('rw-z',this)">📋 Kopiuj</button></div></div><div class="rtext" id="rw-z" contenteditable="true" data-ph="Tu pojawi się tekst zachowania…" oninput="updateWordCount('rw-z','rw-z-cnt',80)"></div></div>
-            <div class="rc"><div class="rch"><span>📚 Obowiązkowe zajęcia edukacyjne</span><div style="display:flex;align-items:center;gap:8px"><span id="rw-e-cnt" style="font-size:.72rem;color:#888"></span><button class="copy-btn" onclick="copyField('rw-e',this)">📋 Kopiuj</button></div></div><div class="rtext" id="rw-e" contenteditable="true" data-ph="Tu pojawi się tekst zajęć edukacyjnych…" oninput="updateWordCount('rw-e','rw-e-cnt',125)"></div></div>
+            <div class="rc"><div class="rch"><span>📌 Zachowanie</span><button class="copy-btn" onclick="copyField('rw-z',this)">📋 Kopiuj</button></div><div class="rtext" id="rw-z" contenteditable="true" data-ph="Tu pojawi się tekst zachowania…"></div></div>
+            <div class="rc"><div class="rch"><span>📚 Obowiązkowe zajęcia edukacyjne</span><button class="copy-btn" onclick="copyField('rw-e',this)">📋 Kopiuj</button></div><div class="rtext" id="rw-e" contenteditable="true" data-ph="Tu pojawi się tekst zajęć edukacyjnych…"></div></div>
             <div class="fg2" style="margin-bottom:6px">
               <div class="fg"><label>Religia / etyka</label><input id="rw-rel" type="text" placeholder="celujący" oninput="saveExtra('roc')"></div>
               <div class="fg"><label>Szczególne osiągnięcia</label><input id="rw-os" type="text" oninput="saveExtra('roc')"></div>
@@ -826,7 +829,7 @@ const BANK_E = [
      "Swobodnie i rzeczowo prezentuje własne zdanie, dobierając formy komunikowania się odpowiednie do sytuacji.",
      "Swobodnie i rzeczowo prezentuje własne zdanie, dobierając formy komunikowania się odpowiednie do sytuacji."],
     ["posługuje się bogatym słownictwem",
-     "Posługuje się bogatym i zróżnicowanym słownictwem, co wyraźnie wzbogaca jej wypowiedzi ustne.",
+     "Posługuje się bogatym i zróżnicowanym słownictwem, co wyraźnie wzbogaca jego wypowiedzi ustne.",
      "Posługuje się bogatym i zróżnicowanym słownictwem, co wyraźnie wzbogaca jej wypowiedzi ustne."],
     ["nadaje właściwą intonację zdaniom",
      "Nadaje właściwą intonację zdaniom pytającym, oznajmującym i rozkazującym — mówi wyraźnie i melodyjnie.",
@@ -849,6 +852,12 @@ const BANK_E = [
     ["uczestniczy w inscenizacjach",
      "Z zaangażowaniem uczestniczy w inscenizacjach i przedstawieniach klasowych — naturalnie wciela się w powierzone role.",
      "Z zaangażowaniem uczestniczy w inscenizacjach i przedstawieniach klasowych — naturalnie wciela się w powierzone role."],
+    ["rozróżnia zdania różnych typów",
+     "Pewnie rozróżnia zdania oznajmujące, pytające i rozkazujące — właściwie dobiera formę wypowiedzi do sytuacji komunikacyjnej.",
+     "Pewnie rozróżnia zdania oznajmujące, pytające i rozkazujące — właściwie dobiera formę wypowiedzi do sytuacji komunikacyjnej."],
+    ["zadaje pytania i formułuje prośby",
+     "Umiejętnie zadaje pytania, formułuje prośby i polecenia, dostosowując styl wypowiedzi do rozmówcy i sytuacji.",
+     "Umiejętnie zadaje pytania, formułuje prośby i polecenia, dostosowując styl wypowiedzi do rozmówcy i sytuacji."],
   ], neg:[
     ["niechętnie wypowiada się przed grupą",
      "Niechętnie wypowiada się przed grupą i potrzebuje zachęty, by zabrać głos.",
@@ -862,6 +871,9 @@ const BANK_E = [
     ["ma trudności z pamięciowym opanowaniem tekstów",
      "Ma trudności z pamięciowym opanowaniem wiersza — wymaga wielokrotnych powtórzeń i dodatkowego wsparcia.",
      "Ma trudności z pamięciowym opanowaniem wiersza — wymaga wielokrotnych powtórzeń i dodatkowego wsparcia."],
+    ["ma trudności z formułowaniem dłuższych wypowiedzi",
+     "Ma trudności z samodzielnym formułowaniem dłuższych, spójnych wypowiedzi ustnych — buduje głównie zdania krótkie lub równoważniki zdań.",
+     "Ma trudności z samodzielnym formułowaniem dłuższych, spójnych wypowiedzi ustnych — buduje głównie zdania krótkie lub równoważniki zdań."],
   ]},
   { t:"Czytanie", pos:[
     ["czyta biegle całymi zdaniami",
@@ -879,6 +891,18 @@ const BANK_E = [
     ["sięga po książki z własnej inicjatywy",
      "Sięga po książki z własnej inicjatywy — czytelnictwo stało się jego pasją, o której chętnie opowiada.",
      "Sięga po książki z własnej inicjatywy — czytelnictwo stało się jej pasją, o której chętnie opowiada."],
+    ["rozróżnia głoski i litery",
+     "Pewnie rozróżnia głoski i odpowiadające im litery, bezbłędnie dzieli wyrazy na sylaby i głoski.",
+     "Pewnie rozróżnia głoski i odpowiadające im litery, bezbłędnie dzieli wyrazy na sylaby i głoski."],
+    ["rozróżnia samogłoski i spółgłoski",
+     "Sprawnie rozróżnia samogłoski i spółgłoski — swobodnie stosuje tę wiedzę przy analizie i syntezie wyrazów.",
+     "Sprawnie rozróżnia samogłoski i spółgłoski — swobodnie stosuje tę wiedzę przy analizie i syntezie wyrazów."],
+    ["korzysta ze słowników i encyklopedii",
+     "Samodzielnie korzysta ze słowników i encyklopedii, umiejętnie wyszukując i weryfikując potrzebne informacje.",
+     "Samodzielnie korzysta ze słowników i encyklopedii, umiejętnie wyszukując i weryfikując potrzebne informacje."],
+    ["odróżnia fikcję od rzeczywistości",
+     "Sprawnie odróżnia literaturę fikcjonalną od tekstów informacyjnych i rozumie cechy charakterystyczne obu form.",
+     "Sprawnie odróżnia literaturę fikcjonalną od tekstów informacyjnych i rozumie cechy charakterystyczne obu form."],
   ], neg:[
     ["czyta sylabami",
      "Czyta sylabami — pracujemy systematycznie nad płynnością i tempem czytania.",
@@ -889,6 +913,9 @@ const BANK_E = [
     ["czyta niechętnie",
      "Szybko traci zainteresowanie podczas czytania i wymaga zachęty do wytrwałości.",
      "Szybko traci zainteresowanie podczas czytania i wymaga zachęty do wytrwałości."],
+    ["ma trudności z analizą głoskową",
+     "Ma trudności z analizą i syntezą głoskową wyrazów — wymaga systematycznego wsparcia w zakresie świadomości fonologicznej.",
+     "Ma trudności z analizą i syntezą głoskową wyrazów — wymaga systematycznego wsparcia w zakresie świadomości fonologicznej."],
   ]},
   { t:"Pisanie i ortografia", pos:[
     ["pisze czytelnie i estetycznie",
@@ -912,6 +939,12 @@ const BANK_E = [
     ["stosuje wielką literę i znaki interpunkcyjne",
      "Prawidłowo stosuje wielką literę na początku zdania oraz znaki interpunkcyjne, co świadczy o rozumieniu struktury tekstu.",
      "Prawidłowo stosuje wielką literę na początku zdania oraz znaki interpunkcyjne, co świadczy o rozumieniu struktury tekstu."],
+    ["zna zasady pisowni wyrazów z trudnością ortograficzną",
+     "Zna i stosuje zasady pisowni wyrazów z ó/u, rz/ż, ch/h — popełnia nieliczne błędy ortograficzne wymagające jedynie utrwalenia.",
+     "Zna i stosuje zasady pisowni wyrazów z ó/u, rz/ż, ch/h — popełnia nieliczne błędy ortograficzne wymagające jedynie utrwalenia."],
+    ["samodzielnie redaguje opowiadanie",
+     "Samodzielnie redaguje kilkuzdaniowe opowiadanie z zachowaniem logicznego następstwa zdarzeń — posiada wyraźne wprowadzenie, rozwinięcie i zakończenie.",
+     "Samodzielnie redaguje kilkuzdaniowe opowiadanie z zachowaniem logicznego następstwa zdarzeń — posiada wyraźne wprowadzenie, rozwinięcie i zakończenie."],
   ], neg:[
     ["pisze niestarannie",
      "Pisze niestarannie i nieczytelnie — wymaga systematycznej pracy nad kaligrafią.",
@@ -925,6 +958,45 @@ const BANK_E = [
     ["ma trudności z redagowaniem wypowiedzi",
      "Ma trudności z samodzielnym redagowaniem dłuższych wypowiedzi pisemnych — wymaga wsparcia na każdym etapie pracy.",
      "Ma trudności z samodzielnym redagowaniem dłuższych wypowiedzi pisemnych — wymaga wsparcia na każdym etapie pracy."],
+    ["nie stosuje zasad ortograficznych",
+     "Nie stosuje poznanych zasad ortograficznych — błędy ortograficzne są liczne i powtarzające się, wymagają intensywnego utrwalania.",
+     "Nie stosuje poznanych zasad ortograficznych — błędy ortograficzne są liczne i powtarzające się, wymagają intensywnego utrwalania."],
+  ]},
+  { t:"Nauka o języku (gramatyka)", pos:[
+    ["rozpoznaje rzeczowniki, czasowniki i przymiotniki",
+     "Pewnie rozpoznaje w tekście rzeczowniki, czasowniki i przymiotniki — sprawnie wskazuje i nazywa poznane części mowy.",
+     "Pewnie rozpoznaje w tekście rzeczowniki, czasowniki i przymiotniki — sprawnie wskazuje i nazywa poznane części mowy."],
+    ["wskazuje i grupuje części mowy",
+     "Wskazuje rzeczowniki, czasowniki i przymiotniki w zdaniu i poprawnie je grupuje według poznanych kategorii.",
+     "Wskazuje rzeczowniki, czasowniki i przymiotniki w zdaniu i poprawnie je grupuje według poznanych kategorii."],
+    ["rozumie funkcję części mowy w zdaniu",
+     "Rozumie rolę rzeczownika, czasownika i przymiotnika w zdaniu — samodzielnie tworzy wypowiedzi z ich świadomym użyciem.",
+     "Rozumie rolę rzeczownika, czasownika i przymiotnika w zdaniu — samodzielnie tworzy wypowiedzi z ich świadomym użyciem."],
+    ["bezbłędnie klasyfikuje wyrazy",
+     "Bezbłędnie klasyfikuje wyrazy jako rzeczowniki, czasowniki lub przymiotniki i potrafi uzasadnić swój wybór.",
+     "Bezbłędnie klasyfikuje wyrazy jako rzeczowniki, czasowniki lub przymiotniki i potrafi uzasadnić swój wybór."],
+    ["rozróżnia rodzaje zdań",
+     "Pewnie rozróżnia zdania oznajmujące, pytające i rozkazujące oraz poprawnie stosuje odpowiednie znaki interpunkcyjne na końcu zdania.",
+     "Pewnie rozróżnia zdania oznajmujące, pytające i rozkazujące oraz poprawnie stosuje odpowiednie znaki interpunkcyjne na końcu zdania."],
+    ["wyodrębnia podmiot i orzeczenie",
+     "Poprawnie wyodrębnia podmiot i orzeczenie w zdaniu — rozumie podstawową strukturę gramatyczną wypowiedzi.",
+     "Poprawnie wyodrębnia podmiot i orzeczenie w zdaniu — rozumie podstawową strukturę gramatyczną wypowiedzi."],
+    ["zna pojęcie wyrazu podstawowego i pochodnego",
+     "Rozumie pojęcie rodziny wyrazów i potrafi wskazać wyrazy pokrewne — dostrzega związki słowotwórcze między wyrazami.",
+     "Rozumie pojęcie rodziny wyrazów i potrafi wskazać wyrazy pokrewne — dostrzega związki słowotwórcze między wyrazami."],
+    ["stosuje odmianę przez przypadki",
+     "Poprawnie odmienia rzeczowniki i przymiotniki przez przypadki — świadomie stosuje tę wiedzę w wypowiedziach pisemnych i ustnych.",
+     "Poprawnie odmienia rzeczowniki i przymiotniki przez przypadki — świadomie stosuje tę wiedzę w wypowiedziach pisemnych i ustnych."],
+  ], neg:[
+    ["myli części mowy",
+     "Ma trudności z rozróżnieniem rzeczownika, czasownika i przymiotnika — wymaga dalszego utrwalenia tych pojęć.",
+     "Ma trudności z rozróżnieniem rzeczownika, czasownika i przymiotnika — wymaga dalszego utrwalenia tych pojęć."],
+    ["rozpoznaje części mowy z pomocą nauczyciela",
+     "Rozpoznaje rzeczowniki, czasowniki i przymiotniki głównie z pomocą nauczyciela — potrzebuje systematycznego wsparcia w tym zakresie.",
+     "Rozpoznaje rzeczowniki, czasowniki i przymiotniki głównie z pomocą nauczyciela — potrzebuje systematycznego wsparcia w tym zakresie."],
+    ["ma trudności z budową zdania",
+     "Ma trudności z wyodrębnianiem podmiotu i orzeczenia oraz z rozróżnianiem typów zdań — wymaga systematycznego utrwalania wiadomości gramatycznych.",
+     "Ma trudności z wyodrębnianiem podmiotu i orzeczenia oraz z rozróżnianiem typów zdań — wymaga systematycznego utrwalania wiadomości gramatycznych."],
   ]},
   { t:"Matematyka", pos:[
     ["biegle liczy i porównuje liczby",
@@ -936,6 +1008,12 @@ const BANK_E = [
     ["opanował tabliczkę mnożenia",
      "Opanował tabliczkę mnożenia i sprawnie posługuje się nią przy rozwiązywaniu zadań.",
      "Opanowała tabliczkę mnożenia i sprawnie posługuje się nią przy rozwiązywaniu zadań."],
+    ["sprawnie dzieli w zakresie tabliczki mnożenia",
+     "Sprawnie wykonuje dzielenie w zakresie tabliczki mnożenia — dostrzega związek między mnożeniem a dzieleniem i biegle go wykorzystuje.",
+     "Sprawnie wykonuje dzielenie w zakresie tabliczki mnożenia — dostrzega związek między mnożeniem a dzieleniem i biegle go wykorzystuje."],
+    ["wykonuje działania pisemne",
+     "Poprawnie wykonuje pisemne dodawanie i odejmowanie liczb wielocyfrowych, stosując właściwy algorytm.",
+     "Poprawnie wykonuje pisemne dodawanie i odejmowanie liczb wielocyfrowych, stosując właściwy algorytm."],
     ["samodzielnie rozwiązuje zadania tekstowe",
      "Samodzielnie i poprawnie rozwiązuje zadania tekstowe o różnym stopniu trudności, dobierając właściwe działania i uzasadniając wybór.",
      "Samodzielnie i poprawnie rozwiązuje zadania tekstowe o różnym stopniu trudności, dobierając właściwe działania i uzasadniając wybór."],
@@ -951,6 +1029,9 @@ const BANK_E = [
     ["posługuje się kalendarzem",
      "Posługuje się kalendarzem, zna nazwy dni tygodnia i miesięcy oraz podaje je we właściwej kolejności.",
      "Posługuje się kalendarzem, zna nazwy dni tygodnia i miesięcy oraz podaje je we właściwej kolejności."],
+    ["szacuje wyniki działań",
+     "Potrafi oszacować wynik działania przed jego wykonaniem — sprawnie zaokrągla liczby i ocenia wiarygodność otrzymanego wyniku.",
+     "Potrafi oszacować wynik działania przed jego wykonaniem — sprawnie zaokrągla liczby i ocenia wiarygodność otrzymanego wyniku."],
     ["wykazuje logiczne myślenie",
      "Wykazuje logiczne myślenie matematyczne — dostrzega zależności, wyciąga wnioski i potrafi wyjaśnić tok rozumowania.",
      "Wykazuje logiczne myślenie matematyczne — dostrzega zależności, wyciąga wnioski i potrafi wyjaśnić tok rozumowania."],
@@ -964,6 +1045,12 @@ const BANK_E = [
     ["uczy się tabliczki mnożenia",
      "Uczy się tabliczki mnożenia, jednak wymaga jeszcze wielu powtórzeń, by posługiwać się nią płynnie.",
      "Uczy się tabliczki mnożenia, jednak wymaga jeszcze wielu powtórzeń, by posługiwać się nią płynnie."],
+    ["ma trudności z dzieleniem",
+     "Ma trudności z wykonywaniem działań dzielenia — wymaga dalszego utrwalania związku między mnożeniem a dzieleniem.",
+     "Ma trudności z wykonywaniem działań dzielenia — wymaga dalszego utrwalania związku między mnożeniem a dzieleniem."],
+    ["ma trudności z działaniami pisemnymi",
+     "Ma trudności z wykonywaniem pisemnych działań na liczbach wielocyfrowych — wymaga wsparcia przy stosowaniu algorytmów.",
+     "Ma trudności z wykonywaniem pisemnych działań na liczbach wielocyfrowych — wymaga wsparcia przy stosowaniu algorytmów."],
   ]},
   { t:"Przyroda i środowisko", pos:[
     ["wykazuje dużą wiedzę przyrodniczą",
@@ -981,10 +1068,55 @@ const BANK_E = [
     ["orientuje się w otoczeniu",
      "Dobrze orientuje się w najbliższym otoczeniu — zna swój adres, nazwy ulic i instytucji użyteczności publicznej.",
      "Dobrze orientuje się w najbliższym otoczeniu — zna swój adres, nazwy ulic i instytucji użyteczności publicznej."],
+    ["opisuje zmiany w przyrodzie w ciągu roku",
+     "Trafnie opisuje zmiany zachodzące w przyrodzie w poszczególnych porach roku — obserwuje otoczenie i wyciąga wnioski.",
+     "Trafnie opisuje zmiany zachodzące w przyrodzie w poszczególnych porach roku — obserwuje otoczenie i wyciąga wnioski."],
+    ["orientuje się na mapie i w terenie",
+     "Posługuje się planem i mapą — rozpoznaje kierunki świata i potrafi odczytać podstawowe informacje z mapy.",
+     "Posługuje się planem i mapą — rozpoznaje kierunki świata i potrafi odczytać podstawowe informacje z mapy."],
+    ["przeprowadza proste obserwacje i eksperymenty",
+     "Z zainteresowaniem przeprowadza proste obserwacje i eksperymenty przyrodnicze — formułuje spostrzeżenia i wyciąga wnioski.",
+     "Z zainteresowaniem przeprowadza proste obserwacje i eksperymenty przyrodnicze — formułuje spostrzeżenia i wyciąga wnioski."],
+    ["zna budowę ciała człowieka",
+     "Zna podstawowe organy wewnętrzne człowieka i rozumie ich rolę — dba o prawidłowe nawyki zdrowotne i higieniczne.",
+     "Zna podstawowe organy wewnętrzne człowieka i rozumie ich rolę — dba o prawidłowe nawyki zdrowotne i higieniczne."],
   ], neg:[
     ["ma podstawową wiedzę przyrodniczą",
      "Ma podstawową wiedzę na temat otaczającego świata — niektóre zagadnienia przyrodnicze wymagają jeszcze utrwalenia.",
      "Ma podstawową wiedzę na temat otaczającego świata — niektóre zagadnienia przyrodnicze wymagają jeszcze utrwalenia."],
+    ["ma trudności z obserwacją i wyciąganiem wniosków",
+     "Ma trudności z samodzielnym prowadzeniem obserwacji i formułowaniem wniosków — wymaga ukierunkowania ze strony nauczyciela.",
+     "Ma trudności z samodzielnym prowadzeniem obserwacji i formułowaniem wniosków — wymaga ukierunkowania ze strony nauczyciela."],
+  ]},
+  { t:"Edukacja społeczna", pos:[
+    ["zna symbole narodowe",
+     "Zna symbole narodowe Polski — godło, flagę i hymn — i zachowuje właściwą postawę podczas uroczystości patriotycznych.",
+     "Zna symbole narodowe Polski — godło, flagę i hymn — i zachowuje właściwą postawę podczas uroczystości patriotycznych."],
+    ["rozumie prawa i obowiązki ucznia",
+     "Rozumie swoje prawa i obowiązki jako ucznia — świadomie przestrzega regulaminu szkolnego i klasowego.",
+     "Rozumie swoje prawa i obowiązki jako ucznia — świadomie przestrzega regulaminu szkolnego i klasowego."],
+    ["rozumie role społeczne w rodzinie",
+     "Rozumie role poszczególnych członków rodziny i potrafi opisać jej funkcje — dostrzega wartość życia rodzinnego.",
+     "Rozumie role poszczególnych członków rodziny i potrafi opisać jej funkcje — dostrzega wartość życia rodzinnego."],
+    ["zna instytucje użyteczności publicznej",
+     "Zna instytucje użyteczności publicznej w swojej miejscowości i rozumie ich rolę w życiu społecznym.",
+     "Zna instytucje użyteczności publicznej w swojej miejscowości i rozumie ich rolę w życiu społecznym."],
+    ["rozumie zasady życia demokratycznego",
+     "Rozumie, na czym polega podejmowanie decyzji w demokratyczny sposób — uczestniczy w głosowaniach klasowych i szanuje ich wynik.",
+     "Rozumie, na czym polega podejmowanie decyzji w demokratyczny sposób — uczestniczy w głosowaniach klasowych i szanuje ich wynik."],
+    ["rozpoznaje zagrożenia i reaguje na nie",
+     "Zna podstawowe zasady bezpiecznego zachowania się w różnych sytuacjach i wie, jak reagować w sytuacji zagrożenia.",
+     "Zna podstawowe zasady bezpiecznego zachowania się w różnych sytuacjach i wie, jak reagować w sytuacji zagrożenia."],
+    ["wykazuje postawę obywatelską",
+     "Wykazuje świadomość przynależności do społeczności lokalnej, regionalnej i narodowej — interesuje się wydarzeniami z życia szkoły i okolicy.",
+     "Wykazuje świadomość przynależności do społeczności lokalnej, regionalnej i narodowej — interesuje się wydarzeniami z życia szkoły i okolicy."],
+  ], neg:[
+    ["ma ograniczoną wiedzę społeczną",
+     "Ma ograniczoną wiedzę na temat ról społecznych i instytucji — wymaga wzmocnienia w obszarze edukacji obywatelskiej.",
+     "Ma ograniczoną wiedzę na temat ról społecznych i instytucji — wymaga wzmocnienia w obszarze edukacji obywatelskiej."],
+    ["ma trudności z respektowaniem norm społecznych",
+     "Ma trudności z przestrzeganiem norm społecznych i szkolnych — nad tą sferą pracujemy systematycznie.",
+     "Ma trudności z przestrzeganiem norm społecznych i szkolnych — nad tą sferą pracujemy systematycznie."],
   ]},
   { t:"Zajęcia plastyczne i techniczne", pos:[
     ["tworzy oryginalne prace plastyczne",
@@ -999,10 +1131,19 @@ const BANK_E = [
     ["starannie wykonuje prace techniczne",
      "Starannie i dokładnie wykonuje prace techniczne — zawsze przestrzega zasad bezpiecznej pracy.",
      "Starannie i dokładnie wykonuje prace techniczne — zawsze przestrzega zasad bezpiecznej pracy."],
+    ["rozpoznaje dziedziny sztuki",
+     "Rozpoznaje wybrane dziedziny sztuki — malarstwo, rzeźbę, architekturę — i potrafi opisać swoje odczucia estetyczne.",
+     "Rozpoznaje wybrane dziedziny sztuki — malarstwo, rzeźbę, architekturę — i potrafi opisać swoje odczucia estetyczne."],
+    ["planuje i realizuje prace konstrukcyjne",
+     "Planuje i samodzielnie realizuje proste prace konstrukcyjne z różnorodnych materiałów, łącząc kreatywność z dbałością o precyzję wykonania.",
+     "Planuje i samodzielnie realizuje proste prace konstrukcyjne z różnorodnych materiałów, łącząc kreatywność z dbałością o precyzję wykonania."],
   ], neg:[
     ["ma trudności z pracami plastycznymi",
      "Prace plastyczne sprawiają mu trudność — wymaga wsparcia i więcej czasu przy czynnościach wymagających precyzji.",
      "Prace plastyczne sprawiają jej trudność — wymaga wsparcia i więcej czasu przy czynnościach wymagających precyzji."],
+    ["nie przestrzega zasad bezpiecznej pracy",
+     "Wymaga przypominania o zasadach bezpiecznego posługiwania się narzędziami i przyborami podczas zajęć technicznych.",
+     "Wymaga przypominania o zasadach bezpiecznego posługiwania się narzędziami i przyborami podczas zajęć technicznych."],
   ]},
   { t:"Muzyka i rytmika", pos:[
     ["śpiewa czysto i rytmicznie",
@@ -1014,10 +1155,22 @@ const BANK_E = [
     ["rozpoznaje instrumenty muzyczne",
      "Rozpoznaje i nazywa podstawowe instrumenty muzyczne oraz rozróżnia rodzaje głosów.",
      "Rozpoznaje i nazywa podstawowe instrumenty muzyczne oraz rozróżnia rodzaje głosów."],
+    ["gra na instrumencie",
+     "Gra na instrumencie perkusyjnym lub melodycznym — z zaangażowaniem uczestniczy w muzycznych zabawach rytmicznych.",
+     "Gra na instrumencie perkusyjnym lub melodycznym — z zaangażowaniem uczestniczy w muzycznych zabawach rytmicznych."],
+    ["rozróżnia muzykę poważną i ludową",
+     "Rozróżnia muzykę poważną, ludową i popularną — chętnie wyraża swoje odczucia po wysłuchaniu różnorodnych utworów.",
+     "Rozróżnia muzykę poważną, ludową i popularną — chętnie wyraża swoje odczucia po wysłuchaniu różnorodnych utworów."],
+    ["wyraża muzykę ruchem",
+     "Chętnie wyraża muzykę ruchem — uczestniczy w zabawach tanecznych i improwizacjach ruchowych z właściwym poczuciem rytmu.",
+     "Chętnie wyraża muzykę ruchem — uczestniczy w zabawach tanecznych i improwizacjach ruchowych z właściwym poczuciem rytmu."],
   ], neg:[
     ["uczestniczy biernie w zajęciach muzycznych",
      "Uczestniczy biernie w zajęciach muzycznych — wymaga zachęty do aktywności wokalnej i ruchowej.",
      "Uczestniczy biernie w zajęciach muzycznych — wymaga zachęty do aktywności wokalnej i ruchowej."],
+    ["ma trudności z odtwarzaniem rytmu",
+     "Ma trudności z odtwarzaniem wzorców rytmicznych — wymaga dodatkowych ćwiczeń rozwijających poczucie rytmu i koordynację.",
+     "Ma trudności z odtwarzaniem wzorców rytmicznych — wymaga dodatkowych ćwiczeń rozwijających poczucie rytmu i koordynację."],
   ]},
   { t:"Wychowanie fizyczne i zdrowie", pos:[
     ["wykazuje dużą sprawność fizyczną",
@@ -1035,31 +1188,70 @@ const BANK_E = [
     ["przestrzega zasad bezpieczeństwa",
      "Zna i przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych i zabaw na świeżym powietrzu.",
      "Zna i przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych i zabaw na świeżym powietrzu."],
+    ["wykazuje sprawność w lekkoatletyce",
+     "Wykazuje dobrą sprawność w ćwiczeniach lekkoatletycznych — biega szybko i wytrzymale, skacze i rzuca z właściwą techniką.",
+     "Wykazuje dobrą sprawność w ćwiczeniach lekkoatletycznych — biega szybko i wytrzymale, skacze i rzuca z właściwą techniką."],
+    ["aktywnie uczestniczy w zajęciach na świeżym powietrzu",
+     "Z entuzjazmem uczestniczy w zajęciach na świeżym powietrzu — inicjuje zabawy ruchowe i zachęca innych do aktywności.",
+     "Z entuzjazmem uczestniczy w zajęciach na świeżym powietrzu — inicjuje zabawy ruchowe i zachęca innych do aktywności."],
+    ["umie pływać",
+     "Opanował podstawową technikę pływania — pewnie i bezpiecznie porusza się w wodzie.",
+     "Opanowała podstawową technikę pływania — pewnie i bezpiecznie porusza się w wodzie."],
   ], neg:[
     ["ma przeciętną sprawność fizyczną",
      "Ma przeciętną sprawność fizyczną — niektóre ćwiczenia wymagają od niego dodatkowego wysiłku i ćwiczenia.",
      "Ma przeciętną sprawność fizyczną — niektóre ćwiczenia wymagają od niej dodatkowego wysiłku i ćwiczenia."],
+    ["niechętnie uczestniczy w zajęciach ruchowych",
+     "Niechętnie uczestniczy w zajęciach wychowania fizycznego — wymaga zachęty do podjęcia aktywności ruchowej.",
+     "Niechętnie uczestniczy w zajęciach wychowania fizycznego — wymaga zachęty do podjęcia aktywności ruchowej."],
+    ["nie przestrzega zasad bezpieczeństwa",
+     "Nie zawsze przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych — wymaga stałego nadzoru i przypomnień.",
+     "Nie zawsze przestrzega zasad bezpiecznego zachowania podczas zajęć ruchowych — wymaga stałego nadzoru i przypomnień."],
   ]},
-  { t:"Informatyka i język angielski", pos:[
-    ["sprawnie obsługuje komputer",
-     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych.",
-     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych."],
-    ["zna zasady bezpieczeństwa w sieci",
-     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online.",
-     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online."],
+  { t:"Język angielski", pos:[
     ["opanował język angielski na poziomie klasy",
      "Opanował słownictwo i podstawowe struktury języka angielskiego na poziomie klasy — bez trudu rozumie polecenia i proste teksty.",
      "Opanowała słownictwo i podstawowe struktury języka angielskiego na poziomie klasy — bez trudu rozumie polecenia i proste teksty."],
     ["aktywnie uczestniczy w zajęciach j. angielskiego",
      "Aktywnie uczestniczy w zajęciach języka angielskiego — chętnie odpowiada, śpiewa piosenki i uczestniczy w grach językowych.",
      "Aktywnie uczestniczy w zajęciach języka angielskiego — chętnie odpowiada, śpiewa piosenki i uczestniczy w grach językowych."],
+    ["rozumie proste polecenia i teksty w j. angielskim",
+     "Rozumie proste polecenia i teksty w języku angielskim — reaguje właściwie na typowe zwroty i instrukcje nauczyciela.",
+     "Rozumie proste polecenia i teksty w języku angielskim — reaguje właściwie na typowe zwroty i instrukcje nauczyciela."],
+    ["swobodnie komunikuje się po angielsku",
+     "Swobodnie posługuje się podstawowym słownictwem i wyrażeniami języka angielskiego w prostych sytuacjach komunikacyjnych.",
+     "Swobodnie posługuje się podstawowym słownictwem i wyrażeniami języka angielskiego w prostych sytuacjach komunikacyjnych."],
+    ["chętnie recytuje wiersze i śpiewa piosenki po angielsku",
+     "Chętnie recytuje rymowanki i śpiewa piosenki w języku angielskim — ma dobrą wymowę i poczucie melodii języka.",
+     "Chętnie recytuje rymowanki i śpiewa piosenki w języku angielskim — ma dobrą wymowę i poczucie melodii języka."],
   ], neg:[
     ["wymaga wsparcia w nauce j. angielskiego",
      "Wymaga dodatkowego wsparcia w nauce języka angielskiego — systematycznie pracujemy nad poszerzaniem słownictwa.",
      "Wymaga dodatkowego wsparcia w nauce języka angielskiego — systematycznie pracujemy nad poszerzaniem słownictwa."],
+    ["ma trudności z rozumieniem poleceń po angielsku",
+     "Ma trudności z rozumieniem poleceń i typowych zwrotów w języku angielskim — wymaga częstego powtarzania i wizualnego wsparcia.",
+     "Ma trudności z rozumieniem poleceń i typowych zwrotów w języku angielskim — wymaga częstego powtarzania i wizualnego wsparcia."],
+  ]},
+  { t:"Informatyka", pos:[
+    ["sprawnie obsługuje komputer",
+     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych.",
+     "Sprawnie posługuje się komputerem i bez trudności korzysta z podstawowych aplikacji edukacyjnych."],
+    ["zna zasady bezpieczeństwa w sieci",
+     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online.",
+     "Zna i stosuje zasady bezpiecznego korzystania z internetu oraz zachowuje ostrożność w kontaktach online."],
+    ["tworzy proste dokumenty i prezentacje",
+     "Potrafi stworzyć prosty dokument tekstowy i prezentację multimedialną, korzystając z wybranych funkcji edytora.",
+     "Potrafi stworzyć prosty dokument tekstowy i prezentację multimedialną, korzystając z wybranych funkcji edytora."],
+    ["korzysta z internetu w sposób świadomy",
+     "Świadomie i celowo korzysta z zasobów internetu — potrafi wyszukać potrzebne informacje i krytycznie ocenić ich wiarygodność.",
+     "Świadomie i celowo korzysta z zasobów internetu — potrafi wyszukać potrzebne informacje i krytycznie ocenić ich wiarygodność."],
+  ], neg:[
     ["ma trudności z obsługą komputera",
      "Ma trudności z samodzielną obsługą komputera i wymaga wsparcia przy wykonywaniu ćwiczeń cyfrowych.",
      "Ma trudności z samodzielną obsługą komputera i wymaga wsparcia przy wykonywaniu ćwiczeń cyfrowych."],
+    ["nie przestrzega zasad bezpieczeństwa w sieci",
+     "Wymaga systematycznego przypominania o zasadach bezpiecznego korzystania z internetu i odpowiedzialnego zachowania w sieci.",
+     "Wymaga systematycznego przypominania o zasadach bezpiecznego korzystania z internetu i odpowiedzialnego zachowania w sieci."],
   ]}
 ];
 
@@ -1234,8 +1426,35 @@ function updateUI() {
 // ════════════════════════════════════════════════════
 // BANKS
 // ════════════════════════════════════════════════════
+function renderCoverage() {
+  const el = document.getElementById('re-coverage'); if (!el) return;
+  const s = S();
+  const zaznaczone = s ? new Set(s.sel['re'].map(k => k.split('~~')[1])) : new Set();
+  const pokryte   = OBSZARY_OBOWIAZKOWE.filter(o => o.grupy.some(g => zaznaczone.has(g))).length;
+  const wszystkie = OBSZARY_OBOWIAZKOWE.length;
+  const kolor     = pokryte === wszystkie ? '#1e7d5a' : pokryte >= wszystkie - 1 ? '#a06800' : '#9e1f1f';
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <span style="font-weight:700;color:${kolor}">📋 Obszary na świadectwie: ${pokryte} / ${wszystkie}</span>
+    <span style="font-size:.71rem;color:#7a92a8">wymagane przez rozp. MEN</span>
+  </div><div style="display:flex;flex-wrap:wrap;gap:5px">`;
+
+  OBSZARY_OBOWIAZKOWE.forEach(o => {
+    const ok = o.grupy.some(g => zaznaczone.has(g));
+    html += `<span style="padding:3px 9px;border-radius:12px;font-size:.73rem;font-weight:600;
+      background:${ok ? '#d4f0e4' : '#fdeee5'};
+      color:${ok ? '#1a5e3a' : '#7a2e10'};
+      border:1.5px solid ${ok ? '#c0e8d4' : '#f4d0bc'}">
+      ${ok ? '✓' : '○'} ${o.nazwa}</span>`;
+  });
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 function renderAllBanks() {
   ['pz','pe','rz','re'].forEach(renderBank);
+  renderCoverage();
 }
 function renderBank(prefix) {
   const cont = document.getElementById('bank-' + prefix); if (!cont) return;
@@ -1270,37 +1489,7 @@ function tog(prefix, gt, type, idx) {
     if (el.getAttribute('onclick') === `tog('${prefix}','${gt}','${type}',${idx})`)
       el.classList.toggle('on', arr.includes(key));
   });
-}
-
-// ════════════════════════════════════════════════════
-// TRIM WORDS — skraca tekst do max wyrazów, kończy na kropce
-// ════════════════════════════════════════════════════
-function updateWordCount(fieldId, cntId, max) {
-  const el = document.getElementById(fieldId);
-  const cnt = document.getElementById(cntId);
-  if (!el || !cnt) return;
-  const words = el.textContent.trim().split(/\s+/).filter(Boolean).length;
-  const over = words > max;
-  cnt.textContent = `${words} / ${max} wyrazów`;
-  cnt.style.color = over ? '#c0392b' : words > max * 0.9 ? '#e67e22' : '#888';
-  cnt.style.fontWeight = over ? '700' : 'normal';
-}
-
-function trimWords(text, max) {
-  if (!text) return text;
-  const words = text.trim().split(/\s+/);
-  if (words.length <= max) return text;
-  // Przytnij do max wyrazów
-  let cut = words.slice(0, max).join(' ');
-  // Cofnij się do ostatniej pełnej kropki, żeby nie urywać w pół zdania
-  const lastDot = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'));
-  if (lastDot > cut.length * 0.5) {
-    cut = cut.slice(0, lastDot + 1);
-  } else {
-    // Jeśli nie ma sensownej kropki, dodaj wielokropek
-    if (!cut.endsWith('.')) cut += '…';
-  }
-  return cut.trim();
+  if (prefix === 're') renderCoverage();
 }
 
 // ════════════════════════════════════════════════════
@@ -1309,12 +1498,40 @@ function trimWords(text, max) {
 // Pierwsze zdanie po imieniu pisane z MAŁEJ litery.
 // Kolejne zdania — normalne zdania (wielka litera).
 // ════════════════════════════════════════════════════
+
+// Obowiązkowe obszary edukacyjne na świadectwie rocznym (rozp. MEN z 14.02.2017)
+// Każda tablica zawiera nazwy grup z BANK_E — wystarczy jedno zdanie z dowolnej grupy danego obszaru
+const OBSZARY_OBOWIAZKOWE = [
+  { nazwa: 'Edukacja polonistyczna',  grupy: ['Mówienie i słuchanie', 'Czytanie', 'Pisanie i ortografia', 'Nauka o języku (gramatyka)'] },
+  { nazwa: 'Edukacja matematyczna',   grupy: ['Matematyka'] },
+  { nazwa: 'Edukacja przyrodnicza',   grupy: ['Przyroda i środowisko'] },
+  { nazwa: 'Edukacja społeczna',      grupy: ['Edukacja społeczna'] },
+  { nazwa: 'Edukacja artystyczna',    grupy: ['Zajęcia plastyczne i techniczne', 'Muzyka i rytmika'] },
+  { nazwa: 'Wychowanie fizyczne',     grupy: ['Wychowanie fizyczne i zdrowie'] },
+  { nazwa: 'Język obcy nowożytny',    grupy: ['Język angielski'] },
+];
+
 function generate(mode) {
   const s = S(); if (!s) return;
   const f = s.sex === 'f';
   const im = s.im;
   const zp = mode === 'pol' ? 'pz' : 'rz';
   const ep = mode === 'pol' ? 'pe' : 're';
+
+  // Walidacja dla oceny rocznej — sprawdź obowiązkowe obszary
+  if (mode === 'roc') {
+    const zaznaczone = new Set(s.sel['re'].map(k => k.split('~~')[1]));
+    const brakujace = OBSZARY_OBOWIAZKOWE
+      .filter(o => !o.grupy.some(g => zaznaczone.has(g)))
+      .map(o => `• ${o.nazwa}`);
+    if (brakujace.length > 0) {
+      const lista = brakujace.join('\n');
+      const kontynuuj = confirm(
+        `⚠️ Uwaga — brak zdań z ${brakujace.length} obowiązkowego obszaru na świadectwie:\n\n${lista}\n\nNa świadectwie rocznym każdy obszar musi być opisany.\n\nKliknij OK, aby wygenerować mimo to, lub Anuluj, aby uzupełnić.`
+      );
+      if (!kontynuuj) { goTab('re'); return; }
+    }
+  }
 
   function build(prefix) {
     const bank = BANK_MAP[prefix];
@@ -1334,15 +1551,8 @@ function generate(mode) {
     return [first, ...rest].join(' ');
   }
 
-  let tz = build(zp);
-  let te = build(ep);
-
-  // Ocena roczna trafia na świadectwo — ograniczamy długość
-  if (mode === 'roc') {
-    tz = trimWords(tz, 80);
-    te = trimWords(te, 125);
-  }
-
+  const tz = build(zp);
+  const te = build(ep);
   s.text[mode].z = tz;
   s.text[mode].e = te;
   save();
@@ -1351,10 +1561,6 @@ function generate(mode) {
   const eid = mode === 'pol' ? 'pw-e' : 'rw-e';
   document.getElementById(zid).textContent = tz;
   document.getElementById(eid).textContent = te;
-  if (mode === 'roc') {
-    updateWordCount('rw-z', 'rw-z-cnt', 80);
-    updateWordCount('rw-e', 'rw-e-cnt', 125);
-  }
   fillExtra(mode);
   goTab(mode === 'pol' ? 'pw' : 'rw');
 }
