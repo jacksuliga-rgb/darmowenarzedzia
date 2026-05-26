@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deeskalacja z nastolatkiem — Gra Symulacyjna | 2piny</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#0f0f13;color:#e8e8f0;min-height:100vh}
+    textarea,input{font-family:'DM Sans',sans-serif!important}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:#2e2e3e;border-radius:999px}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .msg-in{animation:fadeIn 0.3s ease}
+    .btn-hover:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .btn-hover:active{transform:translateY(0)}
+  </style>
+</head>
+<body>
+<nav style="background:#1a1a22;border-bottom:1px solid #2e2e3e;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;">
+  <a href="https://jacksuliga-rgb.github.io/darmowenarzedzia/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+    <div style="width:28px;height:28px;background:#1d4ed8;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;">2P</div>
+    <span style="font-weight:700;font-size:14px;color:#e8e8f0;">Stowarzyszenie 2piny</span>
+  </a>
+  <a href="https://jacksuliga-rgb.github.io/darmowenarzedzia/" style="font-size:12px;color:#7070a0;text-decoration:none;">← Wszystkie narzędzia</a>
+</nav>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef, useCallback} = React;
+
+const PROXY = "https://edugames-proxy.jacksuliga.workers.dev";
+
+/* ─── SCENARIOS ─── */
+const SCENARIOS = [
+  {
+    id: 1,
+    emoji: "🏠",
+    color: "#3b82ff",
+    title: "Powrót ze szkoły",
+    subtitle: "Kacper, 14 lat",
+    trudnosc: "Średni",
+    opis: "Kacper właśnie wrócił ze szkoły po koszmarnym dniu: za głośno na korytarzu, kłótnia z najlepszym przyjacielem, niespodziewana klasówka z matmy. Wchodzi do kuchni, rzuca plecak i siada przy stole wpatrując się w blat. Na twoje wejście reaguje milczeniem.",
+    startEmotion: 8,
+    teenName: "Kacper",
+    context: `Wcielasz się w Kacpra, 14-letniego chłopca. Właśnie wróciłeś ze szkoły po okropnym dniu: było za głośno na korytarzu (nie do zniesienia), pokłóciłeś się z najlepszym przyjacielem Mateuszem, miałeś niespodziewaną klasówkę z matematyki i pewnie ją oblajesz. Siedzisz przy kuchennym stole, plecak wciąż na plecach, wpatrzony w blat.
+
+Czujesz się przytłoczony, zły i bliski płaczu — ale nigdy byś tego nie przyznał. Nie chcesz rozmawiać. Chcesz, żeby wszyscy zostawili cię w spokoju.`
+  },
+  {
+    id: 2,
+    emoji: "🎮",
+    color: "#a855f7",
+    title: "Przegrana w grze",
+    subtitle: "Zosia, 14 lat",
+    trudnosc: "Trudny",
+    opis: "Zosia właśnie przegrała ważny mecz rankingowy przez lag internetu. Gdy wchodzisz do jej pokoju, trzaska drzwiami i rzuca słuchawkami na łóżko. Siedzi odwrócona tyłem, ręce skrzyżowane na piersi.",
+    startEmotion: 9,
+    teenName: "Zosia",
+    context: `Wcielasz się w Zosię, 14-letnią dziewczynę. Właśnie przegrałaś ważny mecz rankingowy w ulubionej grze przez lag internetu — pół godziny pracy z dymem. Jesteś wściekła. Trzasnęłaś drzwiami i rzuciłaś słuchawkami. Siedzisz odwrócona tyłem, ręce skrzyżowane.
+
+Masz poczucie, że nic ci w życiu nie wychodzi. Absolutnie nie chcesz teraz żadnych "dorosłych mądrości". Każda próba dawania rad wywołuje u ciebie eskalację frustracji.`
+  },
+  {
+    id: 3,
+    emoji: "👥",
+    color: "#22c55e",
+    title: "Wykluczenie z grupy",
+    subtitle: "Marek, 14 lat",
+    trudnosc: "Łatwy",
+    opis: "Marek dowiedział się, że jego znajomi planowali wyjście bez niego i celowo go nie zaprosili. Siedzi na ławce w szkolnym korytarzu z kapturem nasuniętym na głowę, głową opartą o ścianę.",
+    startEmotion: 7,
+    teenName: "Marek",
+    context: `Wcielasz się w Marka, 14-letniego chłopca. Właśnie dowiedziałeś się, że twoi znajomi planowali wyjście — i celowo cię nie zaprosili. Czujesz się zraniony, upokorzony i wściekły jednocześnie. Siedzisz na szkolnej ławce, kaptur nasuniętym na głowę.
+
+Nie ufasz dorosłym. Spodziewasz się, że albo zbagatelizują twoją sytuację ("przesadzasz") albo dadzą ci bezużyteczne rady ("znajdź sobie nowych przyjaciół"). Jesteś wyczulony na fałszywe współczucie.`
+  }
+];
+
+/* ─── HELPERS ─── */
+function emotionColor(l) {
+  if (l <= 2) return '#22c55e';
+  if (l <= 4) return '#84cc16';
+  if (l <= 6) return '#eab308';
+  if (l <= 8) return '#f97316';
+  return '#ef4444';
+}
+function emotionLabel(l) {
+  if (l <= 2) return 'Spokojny/a 😌';
+  if (l <= 4) return 'Lekkie napięcie';
+  if (l <= 6) return 'Napięty/a 😤';
+  if (l <= 8) return 'Bardzo wzburzony/a 😡';
+  return 'Kryzys 🌋';
+}
+function ratingStyle(r) {
+  if (r === 'dobra') return {bg: 'rgba(34,197,94,0.08)', border: '#22c55e', text: '#22c55e', icon: '✅', label: 'Dobra robota!'};
+  if (r === 'ok')    return {bg: 'rgba(234,179,8,0.08)',  border: '#eab308', text: '#eab308', icon: '⚠️', label: 'Jest co poprawić'};
+  return {bg: 'rgba(239,68,68,0.08)', border: '#ef4444', text: '#ef4444', icon: '❌', label: 'Wymaga poprawy'};
+}
+
+/* ─── API ─── */
+async function callClaude(apiKey, system, messages, maxTokens = 350) {
+  const res = await fetch(PROXY, {
+    method: "POST",
+    headers: {"Content-Type": "application/json", "x-api-key": apiKey},
+    body: JSON.stringify({model: "claude-haiku-4-5-20251001", max_tokens: maxTokens, system, messages})
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}${body ? ': ' + body.slice(0, 100) : ''}`);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+function parseJSON(text) {
+  const m = text.match(/\{[\s\S]*\}/);
+  if (m) return JSON.parse(m[0]);
+  throw new Error('Brak poprawnego JSON w odpowiedzi');
+}
+
+async function fetchTeenResponse(apiKey, scenario, history, currentEmotion) {
+  const system = `${scenario.context}
+
+TWÓJ AKTUALNY POZIOM EMOCJONALNY: ${currentEmotion}/10
+(10 = maksymalnie rozregulowany/przebodźcowany, 1 = spokojny i gotowy na rozmowę)
+
+ZASADY:
+- Odpowiadaj WYŁĄCZNIE jako ${scenario.teenName}. Nigdy nie wychodź z roli.
+- Jeśli dorosły waliduje emocje / słucha / daje przestrzeń bez oceniania → nowyPoziom spada o 1-2
+- Jeśli dorosły minimalizuje, moralizuje, naciska lub daje rady bez pytania → nowyPoziom rośnie o 1-2
+- Odpowiedzi KRÓTKIE i realistyczne (1-4 zdania max) — nastolatkowie nie wygłaszają mów gdy są wzburzeni
+- Możesz używać urwanych zdań, monosylabów, westchnięć, "nie wiem", wzruszenia ramionami
+- Odpowiadaj po polsku
+- Zwróć TYLKO i wyłącznie JSON (bez żadnego tekstu przed ani po):
+  {"odpowiedz":"...","nowyPoziom":X,"mysl":"wewnętrzna myśl nastolatka o tej wiadomości (1 zdanie)"}
+- nowyPoziom musi być liczbą całkowitą 1-10`;
+
+  const raw = await callClaude(apiKey, system, history, 300);
+  return parseJSON(raw);
+}
+
+async function fetchSupervisorFeedback(apiKey, adultMessages) {
+  const system = `Jesteś ekspertem od komunikacji z nastolatkami i technik deeskalacji (NVC, podejście trauma-informowane, regulacja emocjonalna).
+
+Oceń OSTATNIE wiadomości dorosłego do przebodźcowanego nastolatka i daj konstruktywną informację zwrotną.
+
+Zwróć TYLKO i wyłącznie JSON (bez żadnego tekstu przed ani po):
+{"ocena":"dobra"|"ok"|"wymaga_pracy","komentarz":"Ocena 2-3 zdania — co konkretnie działa lub co nie działa i dlaczego","wskazowka":"JEDNA konkretna, zdaniowa wskazówka — co powiedzieć lub jak to powiedzieć w kolejnej wiadomości"}
+
+Kryteria oceny:
+• Walidacja emocji (\"Słyszę, że jesteś zmęczony\") vs. minimalizowanie (\"Nie przesadzaj\")
+• Aktywne słuchanie i milczenie vs. dawanie rad bez pytania
+• Spokojny, ciepły ton vs. moralizowanie / lecturowanie
+• Pytania otwarte (\"Co się stało?\") vs. zamknięte (\"Czy jesteś smutny?\")
+• Szanowanie granic i tempa nastolatka vs. nacisk na natychmiastową rozmowę
+• Skupienie na relacji i bezpieczeństwie vs. rozwiązywaniu problemu`;
+
+  const msgs = [{
+    role: "user",
+    content: `Ostatnie wiadomości dorosłego do nastolatka:\n${adultMessages.map((m, i) => `${i + 1}. "${m}"`).join('\n')}`
+  }];
+  const raw = await callClaude(apiKey, system, msgs, 400);
+  return parseJSON(raw);
+}
+
+/* ─── SETUP SCREEN ─── */
+function SetupScreen({apiKey, setApiKey, onNext}) {
+  const valid = apiKey.startsWith('sk-ant');
+  return (
+    <div style={{maxWidth: 520, margin: '0 auto', padding: '40px 20px'}}>
+      <div style={{textAlign: 'center', marginBottom: 36}}>
+        <div style={{fontSize: 60, marginBottom: 14}}>🎭</div>
+        <h1 style={{fontSize: 26, fontWeight: 700, marginBottom: 10, lineHeight: 1.2}}>
+          Deeskalacja z nastolatkiem
+        </h1>
+        <p style={{color: '#9090b0', fontSize: 14, lineHeight: 1.7}}>
+          Gra symulacyjna dla specjalistów pracujących z młodzieżą.<br/>
+          Ćwicz techniki deeskalacji i otrzymuj feedback od AI-Superwizora.
+        </p>
+      </div>
+
+      {/* How it works */}
+      <div style={{background: '#1a1a22', border: '1px solid #2e2e3e', borderRadius: 16, padding: 20, marginBottom: 16}}>
+        <div style={{fontSize: 11, fontWeight: 700, color: '#7070a0', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.07em'}}>
+          Jak działa gra
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+          {[
+            ['🧑', 'Wcielasz się w dorosłego i piszesz wiadomości do przebodźcowanego nastolatka'],
+            ['🤖', 'AI odgrywa nastolatka i reaguje autentycznie na jakość twojej komunikacji'],
+            ['📊', 'Po każdych 3 wiadomościach Superwizor ocenia twoją technikę i daje wskazówkę'],
+            ['📈', 'Obserwuj poziom emocjonalny nastolatka — twoim celem jest go obniżyć']
+          ].map(([ico, txt], i) => (
+            <div key={i} style={{display: 'flex', gap: 12, alignItems: 'flex-start'}}>
+              <span style={{fontSize: 20, flexShrink: 0, lineHeight: 1}}>{ico}</span>
+              <span style={{fontSize: 13, color: '#b0b0c0', lineHeight: 1.6}}>{txt}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* API Key */}
+      <div style={{background: '#1a1a22', border: '1px solid #2e2e3e', borderRadius: 16, padding: 20}}>
+        <label style={{fontSize: 11, fontWeight: 700, color: '#7070a0', display: 'block', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.07em'}}>
+          Klucz Anthropic API
+        </label>
+        <input
+          type="password"
+          placeholder="sk-ant-api03-..."
+          value={apiKey}
+          onChange={e => {
+            setApiKey(e.target.value);
+            try { localStorage.setItem('deesc_apikey', e.target.value); } catch(e) {}
+          }}
+          style={{
+            width: '100%', background: '#0f0f13',
+            border: `1px solid ${valid ? '#22c55e' : apiKey ? '#f97316' : '#2e2e3e'}`,
+            borderRadius: 10, padding: '11px 14px', color: '#e8e8f0',
+            fontSize: 14, fontFamily: 'monospace', outline: 'none', marginBottom: 8
+          }}
+        />
+        {apiKey && !valid && (
+          <p style={{fontSize: 11, color: '#f97316', marginBottom: 10}}>⚠ Klucz powinien zaczynać się od sk-ant-...</p>
+        )}
+        {valid && (
+          <p style={{fontSize: 11, color: '#22c55e', marginBottom: 10}}>✓ Klucz wygląda poprawnie</p>
+        )}
+        <p style={{fontSize: 11, color: '#7070a0', marginBottom: 20, lineHeight: 1.5}}>
+          Klucz jest zapisywany wyłącznie lokalnie w twojej przeglądarce i nie jest nigdzie wysyłany poza API Anthropic.{' '}
+          <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style={{color: '#3b82ff', textDecoration: 'none'}}>
+            Pobierz klucz →
+          </a>
+        </p>
+        <button
+          onClick={onNext}
+          disabled={!valid}
+          className="btn-hover"
+          style={{
+            width: '100%', padding: '13px', border: 'none', borderRadius: 10,
+            background: valid ? '#1d4ed8' : '#22222e',
+            color: valid ? '#fff' : '#505070',
+            fontSize: 15, fontWeight: 600, cursor: valid ? 'pointer' : 'not-allowed',
+            transition: 'all .2s'
+          }}
+        >
+          Wybierz scenariusz →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SCENARIO SCREEN ─── */
+function ScenarioScreen({onSelect, onBack}) {
+  const [hovered, setHovered] = useState(null);
+  return (
+    <div style={{maxWidth: 540, margin: '0 auto', padding: '32px 20px'}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24}}>
+        <button onClick={onBack} style={{background: 'none', border: '1px solid #2e2e3e', borderRadius: 8, padding: '6px 12px', color: '#9090b0', fontSize: 13, cursor: 'pointer'}}>
+          ← Wróć
+        </button>
+        <div>
+          <h2 style={{fontSize: 20, fontWeight: 700}}>Wybierz scenariusz</h2>
+          <p style={{fontSize: 12, color: '#7070a0', marginTop: 2}}>Każdy scenariusz to inne wyzwanie komunikacyjne</p>
+        </div>
+      </div>
+      <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+        {SCENARIOS.map(s => (
+          <button
+            key={s.id}
+            onClick={() => onSelect(s)}
+            onMouseEnter={() => setHovered(s.id)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              background: '#1a1a22',
+              border: `1px solid ${hovered === s.id ? s.color : '#2e2e3e'}`,
+              borderRadius: 14, padding: '18px 20px',
+              textAlign: 'left', cursor: 'pointer',
+              transition: 'border-color .2s, box-shadow .2s',
+              boxShadow: hovered === s.id ? `0 0 0 1px ${s.color}20, 0 4px 20px ${s.color}10` : 'none',
+              display: 'flex', gap: 16, alignItems: 'flex-start'
+            }}
+          >
+            <span style={{fontSize: 34, flexShrink: 0, lineHeight: 1.1}}>{s.emoji}</span>
+            <div style={{flex: 1}}>
+              <div style={{display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2}}>
+                <span style={{fontSize: 15, fontWeight: 700, color: s.color}}>{s.title}</span>
+                <span style={{fontSize: 10, color: '#7070a0', background: '#22222e', padding: '2px 7px', borderRadius: 999}}>
+                  {s.trudnosc}
+                </span>
+              </div>
+              <div style={{fontSize: 12, color: '#7070a0', marginBottom: 8}}>{s.subtitle}</div>
+              <div style={{fontSize: 13, color: '#b0b0c0', lineHeight: 1.6}}>{s.opis}</div>
+              <div style={{marginTop: 10, display: 'flex', alignItems: 'center', gap: 8}}>
+                <span style={{fontSize: 11, color: '#7070a0'}}>Poziom stresu startowy:</span>
+                <div style={{width: 64, height: 4, background: '#2e2e3e', borderRadius: 999}}>
+                  <div style={{width: `${s.startEmotion * 10}%`, height: '100%', background: emotionColor(s.startEmotion), borderRadius: 999}}/>
+                </div>
+                <span style={{fontSize: 11, fontWeight: 700, color: emotionColor(s.startEmotion)}}>{s.startEmotion}/10</span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── GAME SCREEN ─── */
+function GameScreen({scenario, apiKey, onEnd}) {
+  const [messages, setMessages] = useState([]);
+  const [emotion, setEmotion] = useState(scenario.startEmotion);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [adultCount, setAdultCount] = useState(0);
+  const [ended, setEnded] = useState(false);
+  const [error, setError] = useState('');
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+  const msgsRef = useRef(messages);
+  const emotionRef = useRef(emotion);
+  const adultCountRef = useRef(adultCount);
+  msgsRef.current = messages;
+  emotionRef.current = emotion;
+  adultCountRef.current = adultCount;
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({behavior: 'smooth'});
+  }, [messages, loading]);
+
+  const sendMessage = useCallback(async () => {
+    const text = input.trim();
+    if (!text || loading || ended) return;
+    setInput('');
+    setError('');
+
+    const prevMsgs = msgsRef.current;
+    const prevEmotion = emotionRef.current;
+    const prevAdultCount = adultCountRef.current;
+    const newAdultCount = prevAdultCount + 1;
+    setAdultCount(newAdultCount);
+
+    const withAdult = [...prevMsgs, {role: 'adult', text}];
+    setMessages(withAdult);
+    setLoading(true);
+
+    try {
+      // Build conversation history for Claude (only teen/adult turns)
+      const history = withAdult
+        .filter(m => m.role === 'teen' || m.role === 'adult')
+        .map(m => ({role: m.role === 'teen' ? 'assistant' : 'user', content: m.text}));
+
+      // Get teen response
+      const teenResp = await fetchTeenResponse(apiKey, scenario, history, prevEmotion);
+      const newEmotion = Math.max(1, Math.min(10, Math.round(teenResp.nowyPoziom)));
+
+      let updated = [...withAdult, {
+        role: 'teen',
+        text: teenResp.odpowiedz || '...',
+        emotion: newEmotion,
+        mysl: teenResp.mysl
+      }];
+
+      setEmotion(newEmotion);
+
+      // Supervisor feedback every 3 adult messages
+      if (newAdultCount % 3 === 0) {
+        const lastThree = withAdult
+          .filter(m => m.role === 'adult')
+          .slice(-3)
+          .map(m => m.text);
+        try {
+          const sup = await fetchSupervisorFeedback(apiKey, lastThree);
+          updated = [...updated, {
+            role: 'supervisor',
+            rating: sup.ocena,
+            komentarz: sup.komentarz,
+            wskazowka: sup.wskazowka,
+            round: Math.floor(newAdultCount / 3)
+          }];
+        } catch (supErr) {
+          // Supervisor failed silently — game continues
+        }
+      }
+
+      setMessages(updated);
+
+      // End conditions
+      if (newEmotion <= 2 || newAdultCount >= 15) {
+        setEnded(true);
+      }
+    } catch (err) {
+      setError(`Błąd API: ${err.message}. Sprawdź klucz i spróbuj ponownie.`);
+      setAdultCount(prevAdultCount); // revert count on error
+      setMessages(prevMsgs); // revert messages on error
+    } finally {
+      setLoading(false);
+      if (!ended) inputRef.current?.focus();
+    }
+  }, [input, loading, ended, apiKey, scenario]);
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  const msgsUntilSupervisor = 3 - (adultCount % 3);
+  const supervisorMsgs = messages.filter(m => m.role === 'supervisor');
+  const goodCount = supervisorMsgs.filter(m => m.rating === 'dobra').length;
+  const lastEmotion = messages.filter(m => m.role === 'teen' && m.emotion).slice(-1)[0]?.emotion ?? scenario.startEmotion;
+
+  return (
+    <div style={{
+      maxWidth: 640, margin: '0 auto',
+      display: 'flex', flexDirection: 'column',
+      height: 'calc(100vh - 52px)'
+    }}>
+      {/* ── HEADER ── */}
+      <div style={{
+        background: '#1a1a22', borderBottom: '1px solid #2e2e3e',
+        padding: '10px 16px', flexShrink: 0
+      }}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+            <span style={{fontSize: 26}}>{scenario.emoji}</span>
+            <div>
+              <div style={{fontSize: 14, fontWeight: 700, color: scenario.color}}>{scenario.title}</div>
+              <div style={{fontSize: 11, color: '#7070a0'}}>
+                {scenario.subtitle} · {adultCount}/15 wiadomości
+              </div>
+            </div>
+          </div>
+          {ended && (
+            <button
+              onClick={() => onEnd({messages, emotion: lastEmotion, adultCount, goodCount, supervisorCount: supervisorMsgs.length})}
+              className="btn-hover"
+              style={{
+                background: '#22c55e', color: '#000', border: 'none',
+                borderRadius: 8, padding: '7px 14px',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .2s'
+              }}
+            >
+              Podsumowanie →
+            </button>
+          )}
+        </div>
+        {/* Emotion bar */}
+        <div>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4}}>
+            <span style={{fontSize: 10, color: '#7070a0', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600}}>
+              Stan emocjonalny — {scenario.teenName}
+            </span>
+            <span style={{fontSize: 11, fontWeight: 700, color: emotionColor(lastEmotion)}}>
+              {emotionLabel(lastEmotion)}
+            </span>
+          </div>
+          <div style={{height: 5, background: '#2e2e3e', borderRadius: 999, overflow: 'hidden'}}>
+            <div style={{
+              height: '100%', width: `${lastEmotion * 10}%`,
+              background: emotionColor(lastEmotion),
+              borderRadius: 999, transition: 'all 0.6s ease'
+            }}/>
+          </div>
+        </div>
+      </div>
+
+      {/* ── MESSAGES ── */}
+      <div style={{flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 10}}>
+
+        {/* Scenario intro */}
+        <div className="msg-in" style={{
+          background: '#1a1a22',
+          border: `1px solid ${scenario.color}40`,
+          borderRadius: 14, padding: '14px 16px'
+        }}>
+          <div style={{fontSize: 11, fontWeight: 700, color: scenario.color, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.07em'}}>
+            📍 SYTUACJA WYJŚCIOWA
+          </div>
+          <p style={{fontSize: 13, color: '#c0c0d8', lineHeight: 1.7}}>{scenario.opis}</p>
+          <div style={{
+            marginTop: 12, padding: '8px 12px',
+            background: 'rgba(255,255,255,0.04)', borderRadius: 8,
+            fontSize: 12, color: '#7070a0'
+          }}>
+            💬 <strong style={{color: '#9090b0'}}>Twoja rola:</strong> Jesteś dorosłym, który wchodzi do pomieszczenia i próbuje nawiązać kontakt. Wpisz swoją pierwszą wiadomość poniżej.
+          </div>
+        </div>
+
+        {messages.map((m, i) => {
+          /* ADULT message */
+          if (m.role === 'adult') return (
+            <div key={i} className="msg-in" style={{display: 'flex', justifyContent: 'flex-end'}}>
+              <div style={{maxWidth: '78%'}}>
+                <div style={{fontSize: 10, color: '#7070a0', textAlign: 'right', marginBottom: 3, fontWeight: 600}}>
+                  TY (dorosły)
+                </div>
+                <div style={{
+                  background: '#1d4ed8',
+                  borderRadius: '14px 14px 4px 14px',
+                  padding: '10px 14px', fontSize: 14, lineHeight: 1.6
+                }}>
+                  {m.text}
+                </div>
+              </div>
+            </div>
+          );
+
+          /* TEEN message */
+          if (m.role === 'teen') return (
+            <div key={i} className="msg-in" style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3}}>
+              <div style={{fontSize: 10, color: '#7070a0', marginLeft: 2, fontWeight: 600}}>
+                {scenario.subtitle.toUpperCase()}
+              </div>
+              <div style={{maxWidth: '78%'}}>
+                <div style={{
+                  background: '#22222e',
+                  border: '1px solid #2e2e3e',
+                  borderRadius: '4px 14px 14px 14px',
+                  padding: '10px 14px', fontSize: 14, lineHeight: 1.6
+                }}>
+                  {m.text}
+                </div>
+                {m.emotion != null && (
+                  <div style={{display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, marginLeft: 2}}>
+                    <div style={{width: 48, height: 3, background: '#2e2e3e', borderRadius: 999}}>
+                      <div style={{
+                        width: `${m.emotion * 10}%`, height: '100%',
+                        background: emotionColor(m.emotion), borderRadius: 999
+                      }}/>
+                    </div>
+                    <span style={{fontSize: 10, color: emotionColor(m.emotion), fontWeight: 600}}>
+                      {m.emotion}/10
+                    </span>
+                    {m.mysl && (
+                      <span style={{fontSize: 10, color: '#505070', fontStyle: 'italic'}}>
+                        · „{m.mysl}"
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+
+          /* SUPERVISOR message */
+          if (m.role === 'supervisor') {
+            const st = ratingStyle(m.rating);
+            return (
+              <div key={i} className="msg-in" style={{
+                background: st.bg,
+                border: `1px solid ${st.border}40`,
+                borderRadius: 14, padding: '14px 16px',
+                margin: '4px 0'
+              }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  marginBottom: 10
+                }}>
+                  <span style={{fontSize: 18}}>🎓</span>
+                  <span style={{fontSize: 11, fontWeight: 700, color: '#9090b0', textTransform: 'uppercase', letterSpacing: '0.07em'}}>
+                    SUPERWIZOR — Runda {m.round}
+                  </span>
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: `${st.border}25`,
+                    color: st.text,
+                    padding: '2px 8px', borderRadius: 999
+                  }}>
+                    {st.icon} {st.label}
+                  </span>
+                </div>
+                <p style={{fontSize: 13, color: '#d0d0e0', lineHeight: 1.7, marginBottom: 10}}>
+                  {m.komentarz}
+                </p>
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: 8, padding: '8px 12px',
+                  display: 'flex', gap: 8, alignItems: 'flex-start'
+                }}>
+                  <span style={{fontSize: 16, flexShrink: 0}}>💡</span>
+                  <div>
+                    <span style={{fontSize: 10, fontWeight: 700, color: '#7070a0', textTransform: 'uppercase', letterSpacing: '0.05em'}}>
+                      WSKAZÓWKA:{' '}
+                    </span>
+                    <span style={{fontSize: 13, color: '#e8e8f0', lineHeight: 1.6}}>{m.wskazowka}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })}
+
+        {/* Loading dots */}
+        {loading && (
+          <div style={{display: 'flex', alignItems: 'center', gap: 4, padding: '4px 0'}}>
+            <span style={{fontSize: 10, color: '#7070a0', marginRight: 4}}>{scenario.teenName} pisze...</span>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: '#7070a0',
+                animation: `bounce 1.2s ${i * 0.18}s infinite ease-in-out`
+              }}/>
+            ))}
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: 'rgba(239,68,68,0.1)', border: '1px solid #ef444440',
+            borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#fca5a5',
+            lineHeight: 1.5
+          }}>
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* End banners */}
+        {ended && lastEmotion <= 2 && (
+          <div className="msg-in" style={{
+            background: 'rgba(34,197,94,0.1)', border: '1px solid #22c55e40',
+            borderRadius: 14, padding: '20px', textAlign: 'center'
+          }}>
+            <div style={{fontSize: 40, marginBottom: 8}}>🏆</div>
+            <div style={{fontWeight: 700, color: '#22c55e', fontSize: 16, marginBottom: 4}}>
+              Udało się! {scenario.teenName} wyregulował/a się.
+            </div>
+            <div style={{fontSize: 13, color: '#9090b0'}}>
+              Świetna robota — to efekt dobrej komunikacji.
+            </div>
+          </div>
+        )}
+        {ended && adultCount >= 15 && lastEmotion > 2 && (
+          <div className="msg-in" style={{
+            background: 'rgba(234,179,8,0.08)', border: '1px solid #eab30840',
+            borderRadius: 14, padding: '20px', textAlign: 'center'
+          }}>
+            <div style={{fontSize: 40, marginBottom: 8}}>⏱️</div>
+            <div style={{fontWeight: 700, color: '#eab308', fontSize: 16, marginBottom: 4}}>
+              Sesja zakończona — limit 15 wiadomości
+            </div>
+            <div style={{fontSize: 13, color: '#9090b0'}}>
+              Sprawdź wyniki i wskazówki w podsumowaniu.
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef}/>
+      </div>
+
+      {/* ── INPUT ── */}
+      {!ended ? (
+        <div style={{
+          flexShrink: 0, padding: '10px 14px',
+          borderTop: '1px solid #2e2e3e',
+          background: '#1a1a22'
+        }}>
+          <div style={{display: 'flex', gap: 8, marginBottom: 6}}>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder={`Napisz do ${scenario.teenName}... (Enter = wyślij, Shift+Enter = nowa linia)`}
+              disabled={loading}
+              rows={2}
+              style={{
+                flex: 1, background: '#0f0f13',
+                border: '1px solid #2e2e3e',
+                borderRadius: 10, padding: '10px 12px',
+                color: '#e8e8f0', fontSize: 14, outline: 'none',
+                resize: 'none', lineHeight: 1.5
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              style={{
+                width: 46, flexShrink: 0, border: 'none', borderRadius: 10,
+                background: input.trim() && !loading ? '#1d4ed8' : '#22222e',
+                color: input.trim() && !loading ? '#fff' : '#505070',
+                fontSize: 20, cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+                transition: 'all .2s', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >
+              ↑
+            </button>
+          </div>
+          <div style={{
+            fontSize: 10, color: '#505070', textAlign: 'center',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          }}>
+            <span>Wiadomość {adultCount}/15</span>
+            <span>
+              {msgsUntilSupervisor === 3 && adultCount > 0
+                ? 'Superwizor po 3 wiadomościach'
+                : `Superwizor za ${msgsUntilSupervisor} ${msgsUntilSupervisor === 1 ? 'wiadomość' : 'wiadomości'}`
+              }
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          flexShrink: 0, padding: '14px 16px',
+          borderTop: '1px solid #2e2e3e',
+          background: '#1a1a22', textAlign: 'center'
+        }}>
+          <button
+            onClick={() => onEnd({messages, emotion: lastEmotion, adultCount, goodCount, supervisorCount: supervisorMsgs.length})}
+            className="btn-hover"
+            style={{
+              background: '#1d4ed8', color: '#fff', border: 'none',
+              borderRadius: 10, padding: '12px 40px',
+              fontSize: 15, fontWeight: 600, cursor: 'pointer', transition: 'all .2s'
+            }}
+          >
+            Zobacz podsumowanie →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── SUMMARY SCREEN ─── */
+function SummaryScreen({data, scenario, onRestart, onNewScenario}) {
+  const {messages, emotion, adultCount, goodCount, supervisorCount} = data;
+  const finalEmotion = emotion;
+  const drop = scenario.startEmotion - finalEmotion;
+  const successPct = Math.max(0, Math.round((drop / scenario.startEmotion) * 100));
+  const supervisorMsgs = messages.filter(m => m.role === 'supervisor');
+
+  const trophy = finalEmotion <= 2 ? '🏆' : finalEmotion <= 4 ? '🥈' : finalEmotion <= 6 ? '📚' : '💪';
+  const summaryText = finalEmotion <= 2
+    ? 'Doskonale — nastolatek wyregulował się całkowicie!'
+    : finalEmotion <= 4
+    ? 'Dobra robota — widoczny postęp deeskalacji.'
+    : finalEmotion <= 6
+    ? 'Niezły start — jest jeszcze potencjał do poprawy.'
+    : 'Trudna sesja — warto przejrzeć wskazówki Superwizora.';
+
+  return (
+    <div style={{maxWidth: 520, margin: '0 auto', padding: '32px 20px'}}>
+      <div style={{textAlign: 'center', marginBottom: 28}}>
+        <div style={{fontSize: 54, marginBottom: 10}}>{trophy}</div>
+        <h1 style={{fontSize: 22, fontWeight: 700, marginBottom: 6}}>Sesja zakończona</h1>
+        <p style={{color: '#9090b0', fontSize: 13}}>{scenario.title} · {scenario.subtitle}</p>
+        <p style={{color: '#c0c0d8', fontSize: 14, marginTop: 8, fontWeight: 500}}>{summaryText}</p>
+      </div>
+
+      {/* Stats */}
+      <div style={{background: '#1a1a22', border: '1px solid #2e2e3e', borderRadius: 16, padding: 20, marginBottom: 16}}>
+        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center', marginBottom: 16}}>
+          {[
+            {val: `${finalEmotion}/10`, label: 'Końcowy poziom stresu', color: emotionColor(finalEmotion)},
+            {val: adultCount, label: 'Wysłanych wiadomości', color: '#3b82ff'},
+            {val: `${goodCount}/${supervisorCount}`, label: 'Dobrych ocen', color: '#22c55e'}
+          ].map((s, i) => (
+            <div key={i} style={{background: '#0f0f13', borderRadius: 10, padding: '12px 8px'}}>
+              <div style={{fontSize: 22, fontWeight: 700, color: s.color}}>{s.val}</div>
+              <div style={{fontSize: 10, color: '#7070a0', marginTop: 2, lineHeight: 1.4}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        {/* Progress bar */}
+        <div>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6}}>
+            <span style={{fontSize: 11, color: '#7070a0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em'}}>
+              Skuteczność deeskalacji
+            </span>
+            <span style={{fontSize: 16, fontWeight: 700, color: successPct >= 60 ? '#22c55e' : successPct >= 30 ? '#eab308' : '#ef4444'}}>
+              {successPct}%
+            </span>
+          </div>
+          <div style={{height: 8, background: '#2e2e3e', borderRadius: 999, overflow: 'hidden'}}>
+            <div style={{
+              height: '100%',
+              width: `${successPct}%`,
+              background: successPct >= 60 ? '#22c55e' : successPct >= 30 ? '#eab308' : '#ef4444',
+              borderRadius: 999, transition: 'width 1s ease'
+            }}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Supervisor summary */}
+      {supervisorMsgs.length > 0 && (
+        <div style={{background: '#1a1a22', border: '1px solid #2e2e3e', borderRadius: 16, padding: 20, marginBottom: 16}}>
+          <div style={{fontSize: 11, fontWeight: 700, color: '#7070a0', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.07em'}}>
+            🎓 Podsumowanie Superwizora
+          </div>
+          {supervisorMsgs.map((m, i) => {
+            const st = ratingStyle(m.rating);
+            return (
+              <div key={i} style={{
+                paddingBottom: i < supervisorMsgs.length - 1 ? 14 : 0,
+                marginBottom: i < supervisorMsgs.length - 1 ? 14 : 0,
+                borderBottom: i < supervisorMsgs.length - 1 ? '1px solid #2e2e3e' : 'none'
+              }}>
+                <div style={{display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6}}>
+                  <span style={{fontSize: 10, color: '#7070a0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em'}}>
+                    Runda {m.round}
+                  </span>
+                  <span style={{fontSize: 11, color: st.text}}>{st.icon} {st.label}</span>
+                </div>
+                <p style={{fontSize: 13, color: '#c0c0d8', lineHeight: 1.6, marginBottom: 6}}>{m.komentarz}</p>
+                <div style={{fontSize: 12, color: '#a0a0c0', fontStyle: 'italic', lineHeight: 1.5}}>
+                  💡 {m.wskazowka}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Buttons */}
+      <div style={{display: 'flex', gap: 10}}>
+        <button
+          onClick={onRestart}
+          className="btn-hover"
+          style={{
+            flex: 1, background: '#1a1a22', border: '1px solid #2e2e3e',
+            color: '#e8e8f0', borderRadius: 10, padding: '12px',
+            fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all .2s'
+          }}
+        >
+          🔄 Ten sam scenariusz
+        </button>
+        <button
+          onClick={onNewScenario}
+          className="btn-hover"
+          style={{
+            flex: 1, background: '#1d4ed8', border: 'none',
+            color: '#fff', borderRadius: 10, padding: '12px',
+            fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all .2s'
+          }}
+        >
+          🎭 Nowy scenariusz
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── ROOT APP ─── */
+function App() {
+  const [phase, setPhase] = useState('setup'); // setup | scenario | playing | summary
+  const [apiKey, setApiKey] = useState(() => {
+    try { return localStorage.getItem('deesc_apikey') || ''; } catch(e) { return ''; }
+  });
+  const [scenario, setScenario] = useState(null);
+  const [summaryData, setSummaryData] = useState(null);
+  const [gameKey, setGameKey] = useState(0); // force remount on restart
+
+  return (
+    <div style={{minHeight: 'calc(100vh - 52px)', background: '#0f0f13'}}>
+      {phase === 'setup' && (
+        <SetupScreen
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          onNext={() => setPhase('scenario')}
+        />
+      )}
+      {phase === 'scenario' && (
+        <ScenarioScreen
+          onSelect={s => { setScenario(s); setPhase('playing'); }}
+          onBack={() => setPhase('setup')}
+        />
+      )}
+      {phase === 'playing' && scenario && (
+        <GameScreen
+          key={gameKey}
+          scenario={scenario}
+          apiKey={apiKey}
+          onEnd={data => { setSummaryData(data); setPhase('summary'); }}
+        />
+      )}
+      {phase === 'summary' && summaryData && (
+        <SummaryScreen
+          data={summaryData}
+          scenario={scenario}
+          onRestart={() => { setGameKey(k => k + 1); setPhase('playing'); }}
+          onNewScenario={() => setPhase('scenario')}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
