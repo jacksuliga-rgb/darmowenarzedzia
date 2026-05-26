@@ -105,68 +105,74 @@ function ratingStyle(r) {
 }
 
 /* ─── API ─── */
-async function callClaude(apiKey, system, messages, maxTokens = 350) {
+// Proxy (Cloudflare Worker) nie obsługuje osobnego pola "system" —
+// kontekst jest wbudowywany bezpośrednio w pierwszą wiadomość user.
+async function callClaude(apiKey, messages, maxTokens = 350) {
+  let rawText = '';
   const res = await fetch(PROXY, {
     method: "POST",
     headers: {"Content-Type": "application/json", "x-api-key": apiKey},
-    body: JSON.stringify({model: "claude-haiku-4-5-20251001", max_tokens: maxTokens, system, messages})
+    body: JSON.stringify({model: "claude-haiku-4-5-20251001", max_tokens: maxTokens, messages})
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}${body ? ': ' + body.slice(0, 100) : ''}`);
-  }
-  const data = await res.json();
-  return data.content[0].text;
+  rawText = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${rawText.slice(0, 200)}`);
+  let data;
+  try { data = JSON.parse(rawText); } catch(e) { throw new Error(`Nie-JSON: ${rawText.slice(0, 200)}`); }
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  const text = (data.content || []).map(b => b.text || '').join('');
+  if (!text) throw new Error(`Pusta odpowiedź. Surowa: ${rawText.slice(0, 200)}`);
+  return text;
 }
 
 function parseJSON(text) {
-  const m = text.match(/\{[\s\S]*\}/);
-  if (m) return JSON.parse(m[0]);
-  throw new Error('Brak poprawnego JSON w odpowiedzi');
+  // Szukamy od pierwszego { do ostatniego } — obsługuje zagnieżdżone obiekty
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error(`Brak JSON w odpowiedzi: ${text.slice(0, 150)}`);
+  return JSON.parse(text.slice(start, end + 1));
 }
 
 async function fetchTeenResponse(apiKey, scenario, history, currentEmotion) {
-  const system = `${scenario.context}
+  const context = `TWOJA ROLA: ${scenario.context}
 
 TWÓJ AKTUALNY POZIOM EMOCJONALNY: ${currentEmotion}/10
-(10 = maksymalnie rozregulowany/przebodźcowany, 1 = spokojny i gotowy na rozmowę)
+(10 = maksymalnie rozregulowany, 1 = spokojny)
 
-ZASADY:
+ZASADY GRY:
 - Odpowiadaj WYŁĄCZNIE jako ${scenario.teenName}. Nigdy nie wychodź z roli.
-- Jeśli dorosły waliduje emocje / słucha / daje przestrzeń bez oceniania → nowyPoziom spada o 1-2
-- Jeśli dorosły minimalizuje, moralizuje, naciska lub daje rady bez pytania → nowyPoziom rośnie o 1-2
-- Odpowiedzi KRÓTKIE i realistyczne (1-4 zdania max) — nastolatkowie nie wygłaszają mów gdy są wzburzeni
-- Możesz używać urwanych zdań, monosylabów, westchnięć, "nie wiem", wzruszenia ramionami
+- Jeśli dorosły waliduje emocje / słucha / daje przestrzeń → nowyPoziom spada o 1-2
+- Jeśli dorosły minimalizuje, moralizuje, naciska lub daje rady → nowyPoziom rośnie o 1-2
+- Odpowiedzi KRÓTKIE (1-4 zdania) — nastolatkowie nie wygłaszają mów gdy są wzburzeni
 - Odpowiadaj po polsku
-- Zwróć TYLKO i wyłącznie JSON (bez żadnego tekstu przed ani po):
-  {"odpowiedz":"...","nowyPoziom":X,"mysl":"wewnętrzna myśl nastolatka o tej wiadomości (1 zdanie)"}
-- nowyPoziom musi być liczbą całkowitą 1-10`;
+- Zwróć TYLKO JSON (i nic innego):
+  {"odpowiedz":"...","nowyPoziom":X,"mysl":"krótka wewnętrzna myśl nastolatka"}
+- nowyPoziom: liczba całkowita 1-10
 
-  const raw = await callClaude(apiKey, system, history, 300);
+WIADOMOŚĆ DO CIEBIE:
+`;
+
+  // Wbudowujemy kontekst w pierwszą wiadomość user (proxy nie obsługuje "system")
+  const withCtx = history.map((m, i) =>
+    i === 0 ? {...m, content: context + m.content} : m
+  );
+
+  const raw = await callClaude(apiKey, withCtx, 300);
   return parseJSON(raw);
 }
 
 async function fetchSupervisorFeedback(apiKey, adultMessages) {
-  const system = `Jesteś ekspertem od komunikacji z nastolatkami i technik deeskalacji (NVC, podejście trauma-informowane, regulacja emocjonalna).
+  const content = `Jesteś ekspertem od komunikacji z nastolatkami i technik deeskalacji (NVC, podejście trauma-informowane).
 
-Oceń OSTATNIE wiadomości dorosłego do przebodźcowanego nastolatka i daj konstruktywną informację zwrotną.
+Oceń poniższe wiadomości dorosłego do przebodźcowanego nastolatka:
+${adultMessages.map((m, i) => `${i + 1}. "${m}"`).join('\n')}
 
-Zwróć TYLKO i wyłącznie JSON (bez żadnego tekstu przed ani po):
-{"ocena":"dobra"|"ok"|"wymaga_pracy","komentarz":"Ocena 2-3 zdania — co konkretnie działa lub co nie działa i dlaczego","wskazowka":"JEDNA konkretna, zdaniowa wskazówka — co powiedzieć lub jak to powiedzieć w kolejnej wiadomości"}
+Kryteria: walidacja emocji, aktywne słuchanie, spokojny ton, pytania otwarte, szanowanie granic i tempa.
 
-Kryteria oceny:
-• Walidacja emocji (\"Słyszę, że jesteś zmęczony\") vs. minimalizowanie (\"Nie przesadzaj\")
-• Aktywne słuchanie i milczenie vs. dawanie rad bez pytania
-• Spokojny, ciepły ton vs. moralizowanie / lecturowanie
-• Pytania otwarte (\"Co się stało?\") vs. zamknięte (\"Czy jesteś smutny?\")
-• Szanowanie granic i tempa nastolatka vs. nacisk na natychmiastową rozmowę
-• Skupienie na relacji i bezpieczeństwie vs. rozwiązywaniu problemu`;
+Zwróć TYLKO JSON (i nic innego):
+{"ocena":"dobra","komentarz":"2-3 zdania oceny","wskazowka":"jedna konkretna wskazówka na następną wiadomość"}
+Pole "ocena" może mieć wartość: "dobra", "ok" lub "wymaga_pracy".`;
 
-  const msgs = [{
-    role: "user",
-    content: `Ostatnie wiadomości dorosłego do nastolatka:\n${adultMessages.map((m, i) => `${i + 1}. "${m}"`).join('\n')}`
-  }];
-  const raw = await callClaude(apiKey, system, msgs, 400);
+  const raw = await callClaude(apiKey, [{role: "user", content}], 400);
   return parseJSON(raw);
 }
 
