@@ -185,9 +185,24 @@
 
   <!-- DRUK -->
   <section class="card">
-    <h2>3. Wydruk</h2>
-    <button class="btn-print" id="btnPrint">Drukuj kartę czynności</button>
-    <p class="hint">Wydruk odwzorowuje oryginalny druk: nagłówki, dane karty i treść notatki. Jeśli pole „Notatka po redakcji” jest puste, wydrukuje się surowy zapis.</p>
+    <h2>3. Zapis i wydruk</h2>
+    <div class="row-actions" style="margin-top:0">
+      <button class="btn-print" id="btnPrint">Drukuj / zapisz jako PDF</button>
+      <button class="btn-secondary" id="btnSave">Zapisz roboczą</button>
+    </div>
+    <div style="margin-top:14px">
+      <label for="draftList">Zapisane robocze</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="draftList" style="flex:1;min-width:200px;border:1px solid var(--line);border-radius:6px;padding:9px 10px;font:inherit;background:#fff;color:var(--ink)">
+          <option value="">— wybierz roboczą —</option>
+        </select>
+        <button class="btn-secondary" id="btnLoad">Wczytaj</button>
+        <button class="btn-secondary" id="btnDelete">Usuń</button>
+      </div>
+    </div>
+    <div class="ai-status" id="saveStatus"></div>
+    <p class="hint"><b>PDF:</b> kliknij „Drukuj / zapisz jako PDF", a w oknie drukowania jako drukarkę wybierz <b>„Zapisz jako PDF"</b> (Microsoft Print to PDF / Zapisz jako PDF). Wydruk odwzorowuje oryginalny druk; jeśli pole „Notatka po redakcji" jest puste, użyty zostanie surowy zapis.</p>
+    <p class="hint"><b>Robocza:</b> zapisuje całą kartę (dane, dyktowanie i redakcję) w tej przeglądarce — możesz mieć kilka roboczych naraz, każda podpisana nazwiskiem ucznia i datą. Dane nie trafiają nigdzie poza Twój komputer.</p>
   </section>
 
 </div>
@@ -319,7 +334,7 @@ Surowy zapis:
 """${src}"""`;
 
     const payload = JSON.stringify({
-    model:"claude-sonnet-4-6",
+      model:"claude-sonnet-4-6",
       max_tokens:1000,
       messages:[{role:"user",content:prompt}]
     });
@@ -373,6 +388,84 @@ Surowy zapis:
     $("pNote").textContent  = (finalTa.value.trim() || raw.value.trim());
     window.print();
   });
+
+  /* ===== ZAPIS ROBOCZYCH (localStorage, wiele) ===== */
+  const DRAFTS_KEY = "kc_drafts";
+  const saveStatus = $("saveStatus");
+  const draftList = $("draftList");
+
+  function setSaveStatus(msg, cls){
+    saveStatus.textContent = msg;
+    saveStatus.className = "ai-status show " + (cls||"");
+  }
+  function loadDrafts(){
+    try{ return JSON.parse(localStorage.getItem(DRAFTS_KEY)) || {}; }catch(_){ return {}; }
+  }
+  function storeDrafts(obj){
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(obj));
+  }
+  function fmtDateShort(iso){
+    if(!iso) return "";
+    const [y,m,d] = iso.split("-");
+    return `${d}.${m}.${y}`;
+  }
+  function refreshList(selectId){
+    const drafts = loadDrafts();
+    const keys = Object.keys(drafts).sort((a,b)=> (drafts[b].ts||0)-(drafts[a].ts||0));
+    draftList.innerHTML = '<option value="">— wybierz roboczą —</option>';
+    keys.forEach(id=>{
+      const o = document.createElement("option");
+      o.value = id;
+      o.textContent = drafts[id].label;
+      draftList.appendChild(o);
+    });
+    if(selectId) draftList.value = selectId;
+  }
+
+  $("btnSave").addEventListener("click", ()=>{
+    const uczen = $("fUczen").value.trim();
+    const data  = $("fData").value;
+    const label = (uczen || "Bez nazwiska") + (data ? " — " + fmtDateShort(data) : "");
+    const id = label.toLowerCase();
+    const drafts = loadDrafts();
+    drafts[id] = {
+      label,
+      ts: Date.now(),
+      uczen: $("fUczen").value, klasa:$("fKlasa").value, wych:$("fWych").value,
+      data, sporz:$("fSporz").value, raw:raw.value, final:finalTa.value
+    };
+    try{
+      storeDrafts(drafts);
+      refreshList(id);
+      setSaveStatus('Zapisano roboczą „'+label+'".', "done");
+    }catch(_){
+      setSaveStatus("Nie udało się zapisać (przeglądarka blokuje pamięć lokalną).", "err");
+    }
+  });
+
+  $("btnLoad").addEventListener("click", ()=>{
+    const id = draftList.value;
+    if(!id){ setSaveStatus("Najpierw wybierz roboczą z listy.", "err"); return; }
+    const d = loadDrafts()[id];
+    if(!d){ setSaveStatus("Nie znaleziono tej roboczej.", "err"); return; }
+    $("fUczen").value = d.uczen||""; $("fKlasa").value = d.klasa||"";
+    $("fWych").value = d.wych||""; $("fData").value = d.data||"";
+    $("fSporz").value = d.sporz||""; raw.value = d.raw||""; finalTa.value = d.final||"";
+    setSaveStatus('Wczytano roboczą „'+d.label+'".', "done");
+  });
+
+  $("btnDelete").addEventListener("click", ()=>{
+    const id = draftList.value;
+    if(!id){ setSaveStatus("Najpierw wybierz roboczą do usunięcia.", "err"); return; }
+    const drafts = loadDrafts();
+    const label = drafts[id] ? drafts[id].label : "";
+    delete drafts[id];
+    storeDrafts(drafts);
+    refreshList();
+    setSaveStatus('Usunięto roboczą „'+label+'".', "done");
+  });
+
+  refreshList();
 })();
 </script>
 </body>
