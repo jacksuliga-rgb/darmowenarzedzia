@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trzy Sceny — gra negocjacyjna trójstronna</title>
+<style>
+:root{
+  --sea:#2C4251; --sea-deep:#16232B; --lime:#EDFF13; --paper:#E8ECEA; --paper-warm:#F2F4F1;
+  --rust:#D64933; --mint:#5FBF96; --line:rgba(44,66,81,.18);
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--sea-deep);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.02;letter-spacing:-.025em;font-weight:800}
+p{margin:0 0 .85em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.62;margin:0 0 10px;font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:960px;margin:0 auto;padding:28px 22px 90px}
+.screen{display:none}
+.screen.on{display:block;animation:rise .34s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+
+.bar{position:sticky;top:0;z-index:40;background:var(--sea-deep);color:var(--paper);display:flex;align-items:center;gap:14px;padding:9px 22px;flex-wrap:wrap}
+.bar .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);font-weight:700}
+.bar nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.bar button{background:none;border:0;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;padding:7px 10px;cursor:pointer;border-radius:3px}
+.bar button:hover{background:rgba(237,255,19,.14)}
+.bar button.active{background:var(--lime);color:var(--sea-deep);font-weight:700}
+.bar button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+.hero{padding:52px 0 34px;border-bottom:3px solid var(--sea-deep)}
+.hero h1{font-size:clamp(46px,9.5vw,104px);text-transform:uppercase;line-height:.86}
+.hero h1 em{font-style:normal;display:block;color:var(--sea);opacity:.34}
+.hero .sub{max-width:58ch;margin-top:22px;font-size:17px}
+.specs{display:flex;flex-wrap:wrap;margin-top:30px;border-top:1px solid var(--line)}
+.specs div{flex:1 1 120px;padding:13px 16px 13px 0;border-right:1px solid var(--line)}
+.specs div:last-child{border-right:0}
+.specs b{display:block;font-family:var(--mono);font-size:22px;font-weight:700}
+.specs span{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;opacity:.6}
+
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:34px 0}
+.pick{border:2px solid var(--sea-deep);padding:19px;cursor:pointer;text-align:left;background:var(--paper-warm);font-family:inherit;color:inherit;transition:transform .16s,box-shadow .16s}
+.pick:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--sea-deep)}
+.pick:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
+.pick strong{display:block;font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:5px}
+.pick small{font-family:var(--mono);font-size:11px;letter-spacing:.05em;opacity:.68;line-height:1.4;display:block}
+.pick.a{background:var(--sea-deep);color:var(--paper);border-color:var(--sea-deep)}
+.pick.a strong{color:var(--lime)}
+.pick.b{background:var(--lime)}
+.pick.c{background:var(--rust);color:var(--paper-warm);border-color:var(--sea-deep)}
+
+.role{border:3px solid var(--sea-deep);margin-bottom:22px}
+.role .head{padding:26px}
+.role .body{padding:26px;background:var(--paper-warm)}
+.roleA .head{background:var(--sea-deep);color:var(--paper)}
+.roleA .head h2{color:var(--lime)}
+.roleB .head{background:var(--lime);color:var(--sea-deep)}
+.roleC .head{background:var(--rust);color:var(--paper-warm)}
+.role h2{font-size:clamp(28px,5vw,44px);text-transform:uppercase;line-height:.92}
+.role .who{font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;margin-top:12px;opacity:.85}
+
+.gate{border:3px dashed var(--sea-deep);padding:40px 26px;text-align:center;background:var(--paper-warm)}
+.gate h3{font-size:26px;text-transform:uppercase;margin-bottom:10px}
+.gate p{max-width:46ch;margin:0 auto 20px;font-size:15px}
+
+.btn{background:var(--sea-deep);color:var(--lime);border:0;padding:13px 24px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:700}
+.btn:hover{background:var(--sea)}
+.btn:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+.btn.ghost{background:none;color:var(--sea-deep);border:2px solid var(--sea-deep)}
+.btn.ghost:hover{background:var(--sea-deep);color:var(--lime)}
+
+.block{margin:0 0 26px}
+.block h3{font-size:13px;font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;padding-bottom:7px;border-bottom:2px solid var(--sea-deep);margin-bottom:14px;font-weight:700}
+.note{border-left:4px solid var(--rust);padding:11px 0 11px 15px;margin:16px 0;font-size:15px;background:rgba(214,73,51,.05)}
+.note.lime{border-color:var(--sea);background:rgba(44,66,81,.06)}
+ul.tight{margin:0 0 14px;padding-left:20px}
+ul.tight li{margin-bottom:7px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:18px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:var(--sea-deep);color:var(--paper);font-weight:700;border-bottom:0}
+td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:#1E7A56;font-weight:700}
+.neg{color:var(--rust);font-weight:700}
+tr.grp td{background:rgba(44,66,81,.09);font-weight:700;font-size:12px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+
+.sealed{border:3px solid var(--rust);background:rgba(214,73,51,.06);padding:22px;margin:24px 0}
+.sealed .lab{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--rust);font-weight:700;margin-bottom:8px}
+.sealed h4{margin:0 0 8px;font-size:20px;text-transform:uppercase;letter-spacing:-.02em}
+
+.timer{background:var(--sea-deep);color:var(--lime);padding:24px;text-align:center;margin-bottom:22px}
+.timer .clock{font-family:var(--mono);font-size:clamp(56px,15vw,110px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.timer .phase{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);opacity:.75}
+.timer.warn .clock{color:var(--rust)}
+.tctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.tctl button{background:rgba(237,255,19,.12);color:var(--paper);border:1px solid rgba(237,255,19,.35);padding:8px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.tctl button:hover{background:var(--lime);color:var(--sea-deep)}
+
+.flow{border-top:2px solid var(--sea-deep)}
+.flow .step{display:flex;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.flow .t{font-family:var(--mono);font-weight:700;font-size:13px;min-width:62px;color:var(--rust)}
+.flow .d strong{display:block;font-size:16px}
+.flow .d span{font-size:14px;opacity:.78}
+
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.col{border:2px solid var(--sea-deep);padding:16px;background:var(--paper-warm)}
+.col.a{border-top:8px solid var(--sea-deep)}
+.col.b{border-top:8px solid var(--lime)}
+.col.c{border-top:8px solid var(--rust)}
+.col h4{margin:0 0 4px;font-size:17px;text-transform:uppercase;letter-spacing:-.02em}
+.col .sch{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.62;margin-bottom:14px}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.f label{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:700}
+.f input,.f select{padding:9px;border:2px solid var(--sea-deep);background:#fff;font-family:var(--mono);font-size:15px;color:var(--sea-deep);border-radius:0;width:100%}
+.f input:focus,.f select:focus{outline:3px solid var(--rust);outline-offset:1px}
+.chk{display:flex;align-items:center;gap:8px;border:2px solid var(--sea-deep);padding:8px 11px;cursor:pointer;font-family:var(--mono);font-size:11px;background:#fff;user-select:none;line-height:1.3}
+.chk input{accent-color:var(--rust);width:15px;height:15px;flex:none}
+.chk:has(input:checked){background:var(--rust);color:var(--paper-warm)}
+.live{font-family:var(--mono);font-size:12px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.live b{font-size:15px}
+.live.bad{color:var(--rust)}
+
+.checkline{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;font-family:var(--mono);font-size:13px}
+.tag{display:inline-block;padding:3px 9px;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;border:2px solid var(--sea-deep)}
+.tag.ok{background:var(--mint)}
+.tag.no{background:var(--rust);color:#fff;border-color:var(--rust)}
+
+.score3{display:grid;grid-template-columns:repeat(3,1fr);border:3px solid var(--sea-deep);margin-bottom:18px}
+@media(max-width:760px){.score3{grid-template-columns:1fr}}
+.score3>div{padding:20px}
+.score3 .sA{background:var(--sea-deep);color:var(--paper)}
+.score3 .sA .big{color:var(--lime)}
+.score3 .sB{background:var(--lime);color:var(--sea-deep)}
+.score3 .sC{background:var(--rust);color:var(--paper-warm)}
+.score3 .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;opacity:.8}
+.score3 .big{font-family:var(--mono);font-size:clamp(38px,8vw,60px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score3 .delta{font-family:var(--mono);font-size:12px;margin-top:6px}
+.joint{border:3px solid var(--sea-deep);border-top:0;padding:22px;background:var(--paper-warm);margin-bottom:20px}
+.jbar{height:26px;background:rgba(44,66,81,.14);margin-top:12px;position:relative;overflow:hidden}
+.jbar i{display:block;height:100%;background:var(--sea-deep);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.jbar b{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:12px;font-weight:700;mix-blend-mode:difference;color:var(--lime)}
+.verdict{padding:18px;border:3px solid var(--rust);background:rgba(214,73,51,.07);margin-bottom:18px;font-size:15px}
+.verdict.ok{border-color:var(--sea-deep);background:rgba(95,191,150,.14)}
+.verdict strong{display:block;font-size:19px;text-transform:uppercase;margin-bottom:6px}
+.brk{font-family:var(--mono);font-size:12.5px;width:100%;border-collapse:collapse}
+.brk td{padding:4px 7px;border-bottom:1px solid var(--line)}
+.brk td:first-child{font-family:var(--sans);font-size:13.5px}
+.hidden{display:none !important}
+
+footer{border-top:2px solid var(--sea-deep);margin-top:44px;padding-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;opacity:.65;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media print{
+  .bar,.tctl,.no-print,.picker,footer{display:none !important}
+  .screen{display:block !important;page-break-after:always}
+  body{background:#fff;font-size:11.5pt}
+  .gate{display:none !important}
+  .role .body,.sealed-body{display:block !important}
+  .roleA .head{background:#16232B !important}
+  .roleB .head{background:#EDFF13 !important}
+  .roleC .head{background:#D64933 !important}
+  th{background:#16232B !important}
+  .roleA .head,.roleB .head,.roleC .head,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<div class="bar no-print">
+  <span class="brand">2piny · Trzy Sceny</span>
+  <nav>
+    <button data-go="start" class="active">Start</button>
+    <button data-go="host">Prowadzący</button>
+    <button data-go="roleA">Czwórka</button>
+    <button data-go="roleB">Kopernik</button>
+    <button data-go="roleC">Zenit</button>
+    <button data-go="deal">Porozumienie</button>
+    <button data-go="debrief">Omówienie</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ================= START ================= -->
+<section class="screen on" id="start">
+  <div class="hero">
+    <p class="eyebrow">Gra negocjacyjna · wiek 14–18 · trzy strony · trzy sprawy naraz</p>
+    <h1>Trzy<br>Sceny<em>Nowy Brzeźnik</em></h1>
+    <p class="sub">Miasto dało trzem szkołom młodzieżowy budżet obywatelski. Do podziału są dni festiwalu, ścieżka rowerowa i jeden skatepark, który stanie tylko w jednym miejscu. Żadnej z tych rzeczy nie da się załatwić w pojedynkę. Dwie szkoły mają na siebie haki. Pieniądze, których nie wydacie, też liczą się na punkty.</p>
+    <div class="specs">
+      <div><b>3</b><span>strony</span></div>
+      <div><b>3</b><span>sprawy</span></div>
+      <div><b>90</b><span>minut</span></div>
+      <div><b>225 000</b><span>zł łącznie</span></div>
+      <div><b>3–9</b><span>osób w grze</span></div>
+    </div>
+  </div>
+
+  <div class="picker">
+    <button class="pick" data-go="host"><strong>Prowadzący</strong><small>Przebieg, zegar, zasady, ranking</small></button>
+    <button class="pick a" data-go="roleA"><strong>Czwórka</strong><small>Marta Bonik<br>ZS nr 4 im. Lema</small></button>
+    <button class="pick b" data-go="roleB"><strong>Kopernik</strong><small>Wiktor Szarań<br>II LO im. Kopernika</small></button>
+    <button class="pick c" data-go="roleC"><strong>Zenit</strong><small>Tymon Rega<br>Technikum nr 1</small></button>
+  </div>
+
+  <div class="note lime"><strong>Czym to się różni od gry dwustronnej:</strong> przy trzech stronach można się dogadać za czyimiś plecami. Dwie szkoły mogą zawrzeć sojusz i postawić trzecią pod ścianą — i to jest legalne w tej grze. Dlatego pierwsza runda odbywa się na korytarzu, w rozmowach we dwoje, zanim ktokolwiek usiądzie do wspólnego stołu.</div>
+</section>
+
+<!-- ================= PROWADZĄCY ================= -->
+<section class="screen" id="host">
+  <p class="eyebrow">Materiał dla prowadzącego</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:20px">Jak to poprowadzić</h2>
+
+  <div class="timer no-print" id="timerBox">
+    <div class="phase" id="tPhase">Zegar zatrzymany</div>
+    <div class="clock" id="tClock">00:00</div>
+    <div class="tctl">
+      <button data-min="12" data-lab="Przygotowanie · koperta 1">12 min · przygotowanie</button>
+      <button data-min="10" data-lab="Runda 1 · rozmowy na korytarzu">10 min · korytarz</button>
+      <button data-min="5" data-lab="Koperta 2 · narada w zespołach">5 min · koperta 2</button>
+      <button data-min="30" data-lab="Runda 2 · negocjacje przy stole">30 min · przy stole</button>
+      <button data-min="2" data-lab="Przerwa na naradę">2 min · narada</button>
+      <button id="tToggle">Pauza / wznów</button>
+      <button id="tStop">Zeruj</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Podział klasy</h3>
+    <p>Jedna partia to <b>9 osób</b>: trzy szkoły po trzech delegatów. W każdej delegacji jest przewodniczący (negocjuje festiwal i prowadzi rozmowę), osoba od ścieżki rowerowej i osoba od skateparku. Klasa 27-osobowa gra więc trzy partie równolegle i na końcu porównujecie wyniki.</p>
+    <p>Wersja minimalna to <b>3 osoby</b> — po jednej na szkołę, każda ogarnia wszystkie trzy sprawy. Działa, ale gubi się wtedy najciekawszy element: narada wewnątrz własnego zespołu, kiedy delegat od skateparku chce czegoś innego niż przewodniczący.</p>
+  </div>
+
+  <div class="block">
+    <h3>Przebieg — 90 minut</h3>
+    <div class="flow">
+      <div class="step"><span class="t">0–10</span><span class="d"><strong>Wprowadzenie i role</strong><span>Rozdaj koperty 1. Powiedz, że każda szkoła dostanie później drugą kopertę — nie mów, co w niej jest.</span></span></div>
+      <div class="step"><span class="t">10–22</span><span class="d"><strong>Przygotowanie</strong><span>Delegacje czytają swoje karty osobno. Zadanie: wypisać, czego chcą najbardziej, i policzyć, na ile ich stać.</span></span></div>
+      <div class="step"><span class="t">22–32</span><span class="d"><strong>Runda 1 — korytarz</strong><span>Wszyscy wstają. Wolno rozmawiać <b>tylko we dwoje</b>, nigdy w trójkę. Tu zawiązują się sojusze i tu pada większość blefów.</span></span></div>
+      <div class="step"><span class="t">32–37</span><span class="d"><strong>Koperta 2</strong><span>Rozdaj drugą kopertę każdej szkole. Zespoły czytają i naradzają się. Część tego, w co wierzyły przez ostatnie 20 minut, właśnie przestała być prawdą.</span></span></div>
+      <div class="step"><span class="t">37–67</span><span class="d"><strong>Runda 2 — wspólny stół</strong><span>Trzy delegacje siadają razem. Obowiązują zasady poniżej.</span></span></div>
+      <div class="step"><span class="t">67–72</span><span class="d"><strong>Spisanie porozumienia</strong><span>Zakładka „Porozumienie". Kalkulator sprawdza na bieżąco, czy umowa jest w ogóle wykonalna.</span></span></div>
+      <div class="step"><span class="t">72–90</span><span class="d"><strong>Liczenie i omówienie</strong><span>Wyniki wszystkich partii, ranking, zakładka „Omówienie".</span></span></div>
+    </div>
+    <p style="font-size:14px;opacity:.78"><b>Wersja na jedną lekcję (45 min):</b> pomiń rundę na korytarzu i kopertę 2, daj 8 min przygotowania i 22 min negocjacji przy stole. Gra traci połowę smaku, ale się mieści.</p>
+  </div>
+
+  <div class="block">
+    <h3>Zasady przy wspólnym stole</h3>
+    <ul class="tight">
+      <li>Każda delegacja może <b>dwa razy</b> zawiesić rozmowę na <b>2 minuty</b>, żeby naradzić się na osobności.</li>
+      <li>Każda para szkół może <b>raz</b> wyjść na rozmowę we dwoje, na 2 minuty. Trzecia strona zostaje przy stole i patrzy.</li>
+      <li>Wewnątrz delegacji przy stole porozumiewamy się na karteczkach, nie szeptem.</li>
+      <li>Wolno blefować i wolno się mylić. Nie wolno pokazywać swojej karty ani tabeli punktów.</li>
+      <li>Pieniądze zostawione w rezerwie liczą się na punkty: <b>1 000 zł = 1 punkt</b>. To jest ta zasada, o której wszyscy zapominają w trzeciej minucie.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>O hakach</h3>
+    <p>Dwie szkoły dostają w kopercie 2 kompromitującą informację o trzeciej. Ujawnienie kosztuje <b>−30 punktów</b> tego, kto ujawnia. Grożenie nie kosztuje nic.</p>
+    <p>To jest w tej grze celowo i ma swoją rolę w omówieniu: prawie zawsze znajdzie się ktoś, kto ujawni, i prawie zawsze na tym straci. Jeśli pracujesz z młodszą albo trudniejszą grupą i wolisz tego nie ruszać — <b>po prostu nie rozdawaj drugiej strony koperty 2</b>. Reszta gry działa bez tego bez żadnej zmiany.</p>
+  </div>
+
+  <div class="block">
+    <h3>Punktacja jawna czy ukryta</h3>
+    <p><b>Ukryta</b> — delegacje dostają tylko opisy i priorytety, tabelę widzą po grze. Polecam przy pierwszym podejściu: rozmowa jest wtedy o tym, co komu potrzebne, a nie o arytmetyce.</p>
+    <p><b>Jawna</b> — szybciej, bardziej technicznie, dobre przy powtórce. Każda karta ma przełącznik chowający tabelę.</p>
+  </div>
+
+  <div class="block">
+    <h3>Ranking partii</h3>
+    <p style="font-size:14px;opacity:.8">Policz każdą partię w zakładce „Porozumienie" i kliknij tam „Dodaj do rankingu".</p>
+    <table><thead><tr><th>Partia</th><th style="text-align:right">Czwórka</th><th style="text-align:right">Kopernik</th><th style="text-align:right">Zenit</th><th style="text-align:right">Razem</th></tr></thead>
+    <tbody id="rankBody"><tr><td colspan="5" style="opacity:.55">Jeszcze pusto.</td></tr></tbody></table>
+    <button class="btn ghost no-print" id="rankClear">Wyczyść ranking</button>
+  </div>
+</section>
+
+<!-- ================= CZWÓRKA ================= -->
+<section class="screen" id="roleA">
+  <div class="gate no-print" id="gateA">
+    <h3>Koperta 1 — Czwórka</h3>
+    <p>Karta samorządu Zespołu Szkół nr 4. Jeśli grasz w innej szkole, zamknij to teraz.</p>
+    <button class="btn" data-open="A">Jestem z Czwórki — otwórz</button>
+  </div>
+
+  <div class="role roleA hidden" id="cardA">
+    <div class="head">
+      <p class="eyebrow" style="opacity:.8">Szkoła A · koperta 1</p>
+      <h2>Marta Bonik</h2>
+      <p class="who">Przewodnicząca samorządu · Zespół Szkół nr 4 im. Stanisława Lema · 900 uczniów</p>
+    </div>
+    <div class="body">
+      <button class="btn ghost no-print" id="toggleA" style="margin-bottom:20px">Ukryj tabelę punktów</button>
+
+      <div class="block">
+        <h3>Kim jesteś</h3>
+        <p>Trzeci rok w samorządzie i pierwszy jako przewodnicząca. Znasz w tym mieście każdego, kto cokolwiek organizuje, bo przez dwa lata nosiłaś krzesła na imprezach, które wymyślał ktoś inny. Teraz wymyślasz ty.</p>
+        <p>Czwórka jest największą szkołą w Nowym Brzeźniku i jednocześnie najgorzej położoną — dwa i pół kilometra za obwodnicą, przy drodze bez pobocza. Rano pod szkołę podjeżdża sznur samochodów rodziców, bo nikt przy zdrowych zmysłach nie puszcza dziecka rowerem tą trasą. To jest twój temat numer jeden i wszyscy w szkole o tym wiedzą.</p>
+        <p>Masz <b>60 000 zł</b> z młodzieżowego budżetu obywatelskiego. Najmniej z trzech szkół — bo miasto liczy dotację od liczby wniosków złożonych w zeszłym roku, a Czwórka złożyła jeden.</p>
+      </div>
+
+      <div class="block">
+        <h3>Czego chcesz, w tej kolejności</h3>
+        <p><b>1. Ścieżka rowerowa.</b> Łączy trzy szkoły i przechodzi obok Czwórki. Dla was to nie jest udogodnienie, tylko jedyny sposób, żeby dało się tu dojechać. Dla pozostałych dwóch szkół to miły dodatek. Bez niej ta gra nie ma dla ciebie sensu.</p>
+        <p><b>2. Dni festiwalu u siebie.</b> Macie halę na 400 osób i nikt inny takiej nie ma. Każdy dzień u was to jest dzień, w którym miasto przyjeżdża do Czwórki, a nie odwrotnie.</p>
+        <p><b>3. Skatepark.</b> Fajnie, że będzie. Mniej istotne, gdzie stanie — chociaż gdyby stanął u was, byłoby to zauważone.</p>
+      </div>
+
+      <div class="block">
+        <h3>Sytuacja</h3>
+        <p>Festiwal „Trzy Sceny" od czterech lat organizuje Kopernik. Trzy tygodnie temu Wiktor Szarań ogłosił na spotkaniu samorządów, że w tym roku Kopernik nie da rady — po zeszłorocznej edycji został im dług, dyrekcja zablokowała im wydatki. Powiedział to takim głosem, jakby oddawał komuś psa.</p>
+        <p>Tobie to pasuje. Jeśli Kopernik wypada, festiwal trzeba rozdzielić — a ty masz halę.</p>
+        <p>Miesiąc temu w Zenicie wybory wygrał <b>Tymon Rega</b>, chłopak, którego nikt wcześniej nie kojarzył. W kampanii obiecał zadaszony skatepark i najwyraźniej naprawdę zamierza go zbudować. Uważaj na niego. Nowi bywają szybsi, niż się wydaje.</p>
+      </div>
+
+      <div class="block">
+        <h3>Zasady, które obowiązują wszystkich</h3>
+        <table><tbody>
+          <tr><td><b>Festiwal „Trzy Sceny"</b></td><td>6 dni, każdy w innym terminie. Jedna szkoła może przyjąć najwyżej 4 dni — miasto wymaga, żeby festiwal odbył się w co najmniej dwóch miejscach.</td></tr>
+          <tr><td>Koszt dnia festiwalu</td><td class="n">20 000 zł, z tego 10 000 zł płaci szkoła-gospodarz, a 10 000 zł dokłada miasto z dotacji celowej</td></tr>
+          <tr><td><b>Ścieżka rowerowa</b></td><td class="n">40 000 zł</td></tr>
+          <tr><td>Jeśli wszystkie trzy szkoły dołożą się choć złotówką</td><td class="n">miasto dokłada 20%, czyli 8 000 zł — szkoły płacą razem 32 000 zł</td></tr>
+          <tr><td><b>Skatepark „Rampa"</b></td><td class="n">75 000 zł</td></tr>
+          <tr><td>Stoi tylko w jednym miejscu, przy jednej ze szkół</td><td>Szkoła-gospodarz musi wnieść co najmniej 40%, czyli 30 000 zł. Resztę dzielicie dowolnie.</td></tr>
+          <tr><td><b>Pieniądze niewydane</b></td><td class="n">1 000 zł = 1 punkt</td></tr>
+        </tbody></table>
+        <p>Szkoły mogą przekazywać sobie pieniądze — jeśli chcecie komuś zrekompensować ustępstwo gotówką, to jest dozwolone i liczy się do wyniku.</p>
+      </div>
+
+      <div class="sealed" id="sealA">
+        <div class="lab">Koperta 2 · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="A">Otwórz kopertę 2</button>
+        <div class="sealed-body hidden">
+          <h4>Dwie rzeczy, o których nie wiedziałaś</h4>
+          <p><b>Kopernik wcale nie jest w takim dołku.</b> Twój brat chodzi do Kopernika i mówi, że po zeszłorocznym festiwalu została dziura w wysokości ośmiu tysięcy, a nie dwudziestu, jak Szarań opowiadał. Dyrekcja odblokowała im wydatki dwa tygodnie temu. Szarań ma pieniądze i może w tej grze wszystko — tylko woli, żeby wszyscy myśleli inaczej.</p>
+          <p><b>Wniosek Zenitu ma dziurę.</b> Przeglądałaś opublikowane wnioski do budżetu obywatelskiego, bo szukałaś wzoru dla siebie. We wniosku Zenitu jako partner merytoryczny figuruje Fundacja Nowe Tory. Sprawdziłaś w KRS: fundacja została wykreślona z rejestru dwa lata temu. Ktoś przekleił zeszłoroczny wniosek i nie sprawdził. Gdyby to trafiło do urzędu, wniosek Zenitu poszedłby do ponownej oceny i Tymon straciłby całe swoje 80 000 zł.</p>
+          <div class="note">Możesz tym straszyć ile chcesz. Ale jeśli <b>naprawdę to ujawnisz</b>, tracisz 30 punktów — urząd zamroziłby wtedy cały młodzieżowy budżet do wyjaśnienia, a wszyscy w mieście wiedzieliby, kto to zrobił.</div>
+        </div>
+      </div>
+
+      <div class="block" id="tableA">
+        <h3>Twoja punktacja</h3>
+        <table>
+          <thead><tr><th>Sprawa</th><th>Wynik</th><th style="text-align:right">Punkty</th></tr></thead>
+          <tbody>
+            <tr><td>Festiwal</td><td>za każdy dzień u siebie</td><td class="n pos">+13</td></tr>
+            <tr><td>Ścieżka rowerowa</td><td>powstaje</td><td class="n pos">+25</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−10</td></tr>
+            <tr><td>Skatepark</td><td>powstaje gdziekolwiek</td><td class="n pos">+12</td></tr>
+            <tr><td></td><td>stoi przy Czwórce — dodatkowo</td><td class="n pos">+18</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−20</td></tr>
+            <tr><td>Rezerwa</td><td>każde niewydane 1 000 zł</td><td class="n pos">+1</td></tr>
+            <tr><td>Ujawnienie haka</td><td>jeśli to zrobisz</td><td class="n neg">−30</td></tr>
+            <tr class="grp"><td colspan="3">Gdyby nic nie wyszło — festiwalu brak, ścieżki brak, skateparku brak</td></tr>
+            <tr><td></td><td>60 pkt rezerwy − 10 − 20</td><td class="n"><b>30</b></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:14px;opacity:.8">Każde porozumienie, po którym masz mniej niż 30 punktów, jest gorsze niż niedogadanie się z nikim.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= KOPERNIK ================= -->
+<section class="screen" id="roleB">
+  <div class="gate no-print" id="gateB">
+    <h3>Koperta 1 — Kopernik</h3>
+    <p>Karta samorządu II LO. Jeśli grasz w innej szkole, zamknij to teraz.</p>
+    <button class="btn" data-open="B">Jestem z Kopernika — otwórz</button>
+  </div>
+
+  <div class="role roleB hidden" id="cardB">
+    <div class="head">
+      <p class="eyebrow" style="opacity:.75">Szkoła B · koperta 1</p>
+      <h2>Wiktor Szarań</h2>
+      <p class="who">Przewodniczący samorządu · II LO im. Mikołaja Kopernika · 400 uczniów</p>
+    </div>
+    <div class="body">
+      <button class="btn ghost no-print" id="toggleB" style="margin-bottom:20px">Ukryj tabelę punktów</button>
+
+      <div class="block">
+        <h3>Kim jesteś</h3>
+        <p>Kopernik to najstarsza szkoła w mieście, z tablicą absolwentów w holu i dyrektorem, który mówi „u nas się pewnych rzeczy nie robi". Jest was czterystu i macie najwięcej pieniędzy — <b>85 000 zł</b> — bo w zeszłym roku złożyliście do budżetu obywatelskiego cztery wnioski, a inni po jednym.</p>
+        <p>Festiwal „Trzy Sceny" wymyślił twój poprzednik i od czterech lat robicie go u siebie. To jest w tej szkole rzecz, o której mówi się „nasz festiwal". Zdjęcia z każdej edycji wiszą w gablocie przy sekretariacie.</p>
+      </div>
+
+      <div class="block">
+        <h3>Co się stało</h3>
+        <p>Zeszłoroczna edycja wyszła poza budżet. Nagłośnienie zamówione w ostatniej chwili, dwa dni deszczu i namiot, za który zapłaciliście podwójnie. Dyrekcja pokryła różnicę i zablokowała samorządowi wydatki na trzy miesiące. Miesiąc temu, na spotkaniu samorządów, musiałeś powiedzieć na głos, że w tym roku Kopernik nie da rady zorganizować festiwalu.</p>
+        <p>Najgorsze, że mówiłeś to przy Marcie Bonik z Czwórki, która słucha jak radar, i przy tym nowym z Zenitu, który zapisywał.</p>
+        <p>Ale festiwal to nie jest własność, którą się traci. Prawa do organizacji można odstąpić — i jeśli już ktoś ma robić „Trzy Sceny" zamiast was, to niech za to zapłaci.</p>
+      </div>
+
+      <div class="block">
+        <h3>Czego chcesz, w tej kolejności</h3>
+        <p><b>1. Nie wyjść z tego jako szkoła, która straciła festiwal za darmo.</b> Cokolwiek ustalicie, ma się dać opowiedzieć w twojej szkole jako decyzja, a nie jako porażka.</p>
+        <p><b>2. Skatepark za waszym budynkiem.</b> Za Kopernikiem stoi zarośnięte boisko asfaltowe, z którego nikt nie korzysta od dekady. Dyrektor od dwóch lat szuka pomysłu, co z nim zrobić, i obiecał samorządowi wolną rękę na resztę terenu, jeśli ktokolwiek to zagospodaruje. Skatepark w tym miejscu załatwia ci sprawę, o której ta szkoła mówi od lat.</p>
+        <p><b>3. Ścieżka rowerowa.</b> Jesteście w centrum, wam to nie jest specjalnie potrzebne. Ale ludzie lubią, jak się coś buduje.</p>
+      </div>
+
+      <div class="block">
+        <h3>Kogo masz naprzeciwko</h3>
+        <p><b>Marta Bonik, Czwórka.</b> Trzeci rok w samorządzie, wszystkich zna, nic jej nie umyka. Będzie parła do ścieżki rowerowej, bo bez niej ich szkoła jest odcięta. Ma najmniej pieniędzy z was trojga i to jest jej słaby punkt.</p>
+        <p><b>Tymon Rega, Zenit.</b> Miesiąc na stanowisku, wygrał wybory obietnicą skateparku. Nie zbuduje go sam, bo to za drogie na jedną szkołę. Będzie musiał kogoś przekonać — i wie o tym.</p>
+      </div>
+
+      <div class="block">
+        <h3>Zasady, które obowiązują wszystkich</h3>
+        <table><tbody>
+          <tr><td><b>Festiwal „Trzy Sceny"</b></td><td>6 dni, każdy w innym terminie. Jedna szkoła może przyjąć najwyżej 4 dni.</td></tr>
+          <tr><td>Koszt dnia festiwalu</td><td class="n">20 000 zł, z tego 10 000 zł płaci szkoła-gospodarz, 10 000 zł dokłada miasto</td></tr>
+          <tr><td><b>Ścieżka rowerowa</b></td><td class="n">40 000 zł</td></tr>
+          <tr><td>Jeśli wszystkie trzy szkoły dołożą się choć złotówką</td><td class="n">miasto dokłada 8 000 zł — szkoły płacą razem 32 000 zł</td></tr>
+          <tr><td><b>Skatepark „Rampa"</b></td><td class="n">75 000 zł</td></tr>
+          <tr><td>Stoi przy jednej ze szkół</td><td>Gospodarz wnosi co najmniej 30 000 zł. Resztę dzielicie dowolnie.</td></tr>
+          <tr><td><b>Pieniądze niewydane</b></td><td class="n">1 000 zł = 1 punkt</td></tr>
+        </tbody></table>
+        <p>Szkoły mogą przekazywać sobie pieniądze. Jeśli chcesz, żeby ktoś zapłacił ci za odstąpienie festiwalu — to jest dokładnie ten mechanizm.</p>
+      </div>
+
+      <div class="sealed" id="sealB">
+        <div class="lab">Koperta 2 · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="B">Otwórz kopertę 2</button>
+        <div class="sealed-body hidden">
+          <h4>Rozliczenie przyszło</h4>
+          <p>Księgowa przysłała dziś ostateczne rozliczenie zeszłorocznej edycji. Dziura wynosi <b>8 000 zł, a nie 20 000</b>, jak szacowaliście w panice. Firma od namiotu uznała reklamację. Dyrekcja odblokowała wam wydatki od poniedziałku.</p>
+          <p>Czyli: <b>możesz w tej grze wszystko.</b> Możesz wziąć festiwal z powrotem, możesz go odstąpić za pieniądze, możesz sfinansować skatepark. Nikt poza tobą o tym nie wie — o ile nikomu się nie wygadałeś na korytarzu.</p>
+          <p>Zanim się ucieszysz, policz. Dzień festiwalu kosztuje twoją szkołę 10 000 zł. Sprawdź w swojej tabeli, ile jest wart. Możliwe, że rzecz, o którą zamierzałeś walczyć najmocniej, jest dla ciebie kosztem, a nie zyskiem — a dla kogoś przy tym stole jest sporo warta. To bywa najlepszy towar, jaki można mieć.</p>
+        </div>
+      </div>
+
+      <div class="block" id="tableB">
+        <h3>Twoja punktacja</h3>
+        <table>
+          <thead><tr><th>Sprawa</th><th>Wynik</th><th style="text-align:right">Punkty</th></tr></thead>
+          <tbody>
+            <tr><td>Festiwal</td><td>za każdy dzień u siebie</td><td class="n pos">+8</td></tr>
+            <tr><td>Ścieżka rowerowa</td><td>powstaje</td><td class="n pos">+12</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−10</td></tr>
+            <tr><td>Skatepark</td><td>powstaje gdziekolwiek</td><td class="n pos">+12</td></tr>
+            <tr><td></td><td>stoi przy Koperniku — dodatkowo</td><td class="n pos">+25</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−20</td></tr>
+            <tr><td>Rezerwa</td><td>każde niewydane 1 000 zł</td><td class="n pos">+1</td></tr>
+            <tr><td>Ujawnienie haka</td><td>jeśli to zrobisz</td><td class="n neg">−30</td></tr>
+            <tr class="grp"><td colspan="3">Gdyby nic nie wyszło</td></tr>
+            <tr><td></td><td>85 pkt rezerwy − 10 − 20</td><td class="n"><b>55</b></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:14px;opacity:.8">Masz najwyższy próg przy stole. Każde porozumienie, po którym masz mniej niż 55 punktów, jest dla ciebie gorsze niż wyjście bez umowy. Pamiętaj o tym, kiedy będą cię prosić, żebyś dołożył się do wszystkiego.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ZENIT ================= -->
+<section class="screen" id="roleC">
+  <div class="gate no-print" id="gateC">
+    <h3>Koperta 1 — Zenit</h3>
+    <p>Karta samorządu Technikum nr 1. Jeśli grasz w innej szkole, zamknij to teraz.</p>
+    <button class="btn" data-open="C">Jestem z Zenitu — otwórz</button>
+  </div>
+
+  <div class="role roleC hidden" id="cardC">
+    <div class="head">
+      <p class="eyebrow" style="opacity:.8">Szkoła C · koperta 1</p>
+      <h2>Tymon Rega</h2>
+      <p class="who">Przewodniczący samorządu · Technikum i Szkoła Branżowa nr 1 „Zenit" · 600 uczniów</p>
+    </div>
+    <div class="body">
+      <button class="btn ghost no-print" id="toggleC" style="margin-bottom:20px">Ukryj tabelę punktów</button>
+
+      <div class="block">
+        <h3>Kim jesteś</h3>
+        <p>Jesteś przewodniczącym od pięciu tygodni. Wygrałeś wybory różnicą czterdziestu głosów, z jedną obietnicą na plakacie: <b>zadaszony skatepark</b>. Nie „będziemy dążyć", nie „podejmiemy starania". Zadaszony skatepark.</p>
+        <p>Zenit ma <b>80 000 zł</b> i najgorszą reputację w mieście. Jesteście „tą szkołą przy torach", do której idzie się, jak się nie dostało gdzie indziej. Twoi uczniowie potrafią zespawać ramę i naprawić instalację, ale w gazecie pojawiają się tylko wtedy, gdy coś się stanie na przystanku.</p>
+        <p>Skatepark to nie jest dla ciebie inwestycja w rozrywkę. To jedyny znany ci sposób, żeby ktokolwiek przyjechał do Zenitu z własnej woli.</p>
+      </div>
+
+      <div class="block">
+        <h3>Arytmetyka, która cię boli</h3>
+        <p>Skatepark kosztuje 75 000 zł. Masz 80 000 zł. Teoretycznie stać cię — praktycznie nie, bo zostałbyś z pięcioma tysiącami na cały rok i pierwszą rzeczą, jaką usłyszysz w kwietniu, będzie „a co z resztą obietnic".</p>
+        <p>Potrzebujesz, żeby dwie pozostałe szkoły dołożyły się do obiektu, który stanie u ciebie. Muszą mieć z tego coś, co da się pokazać u nich w szkole. Twoim zadaniem jest wymyślić, co to jest.</p>
+      </div>
+
+      <div class="block">
+        <h3>Czego chcesz, w tej kolejności</h3>
+        <p><b>1. Skatepark przy Zenicie, sfinansowany nie tylko przez was.</b></p>
+        <p><b>2. Dni festiwalu u siebie.</b> Macie coś, o czym nikt jeszcze nie wie — patrz niżej. Im więcej dni, tym lepiej, ale co najmniej jeden musi być u was.</p>
+        <p><b>3. Ścieżka rowerowa.</b> Przydałaby się, choć nie jest waszym priorytetem. Wiesz, że dla Czwórki to sprawa życia i śmierci, bo stoją za obwodnicą.</p>
+      </div>
+
+      <div class="block">
+        <h3>Wasza karta</h3>
+        <p>Dwa tygodnie temu odezwała się do szkoły <b>Nadia Wrona</b>. Absolwentka Zenitu z 2009 roku, dziś producentka muzyczna, ma na koncie trzy płyty, które ludzie znają, i nie udziela się w mediach. Napisała, że chętnie zrobi u was koncert i dzień otwartych warsztatów z produkcji — <b>ale tylko w Zenicie i tylko jeden dzień</b>. Nie zgodzi się na Kopernika, nie zgodzi się na halę Czwórki. Ma z tą szkołą swoją historię.</p>
+        <p>To jest najmocniejsza rzecz, jaką ktokolwiek wniesie do tego festiwalu. Zastanów się, kiedy o tym powiedzieć i komu.</p>
+      </div>
+
+      <div class="block">
+        <h3>Kogo masz naprzeciwko</h3>
+        <p><b>Wiktor Szarań, Kopernik.</b> Twierdzi, że nie ma pieniędzy na festiwal. Ma za to najwyższy budżet z was trojga, co jakoś się nie klei. Uważaj — nowego zawsze próbuje się przetestować w pierwszej rundzie.</p>
+        <p><b>Marta Bonik, Czwórka.</b> Trzeci rok w samorządzie. Bez ścieżki rowerowej nie wyjdzie z tej sali zadowolona, a ma najmniej pieniędzy. To znaczy, że będzie potrzebowała sojusznika.</p>
+      </div>
+
+      <div class="block">
+        <h3>Zasady, które obowiązują wszystkich</h3>
+        <table><tbody>
+          <tr><td><b>Festiwal „Trzy Sceny"</b></td><td>6 dni, każdy w innym terminie. Jedna szkoła może przyjąć najwyżej 4 dni.</td></tr>
+          <tr><td>Koszt dnia festiwalu</td><td class="n">20 000 zł, z tego 10 000 zł płaci szkoła-gospodarz, 10 000 zł dokłada miasto</td></tr>
+          <tr><td><b>Ścieżka rowerowa</b></td><td class="n">40 000 zł</td></tr>
+          <tr><td>Jeśli wszystkie trzy szkoły dołożą się choć złotówką</td><td class="n">miasto dokłada 8 000 zł — szkoły płacą razem 32 000 zł</td></tr>
+          <tr><td><b>Skatepark „Rampa"</b></td><td class="n">75 000 zł</td></tr>
+          <tr><td>Stoi przy jednej ze szkół</td><td>Gospodarz wnosi co najmniej 30 000 zł. Resztę dzielicie dowolnie.</td></tr>
+          <tr><td><b>Pieniądze niewydane</b></td><td class="n">1 000 zł = 1 punkt</td></tr>
+        </tbody></table>
+        <p>Szkoły mogą przekazywać sobie pieniądze — to dozwolone i liczy się do wyniku.</p>
+      </div>
+
+      <div class="sealed" id="sealC">
+        <div class="lab">Koperta 2 · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="C">Otwórz kopertę 2</button>
+        <div class="sealed-body hidden">
+          <h4>Co znalazło się w szufladzie</h4>
+          <p>Porządkując po poprzednim samorządzie, opiekunka znalazła teczkę ze sprawozdaniami z zeszłorocznego festiwalu — Zenit wysyłał wtedy wolontariuszy do Kopernika i dostaliście kopię rozliczenia.</p>
+          <p>W sprawozdaniu, które Kopernik złożył do urzędu miasta, widnieje liczba <b>200 wolontariuszy</b>. Od tej liczby zależała wysokość dotacji na kolejny rok. W teczce są też listy obecności z tamtych dni. Podpisów jest <b>41</b>.</p>
+          <p>To jest powód, dla którego Kopernik ma dziś 85 000 zł, a ty 80 000, a Czwórka 60 000.</p>
+          <div class="note">Grozić możesz do woli. Ale jeśli <b>naprawdę to ujawnisz</b>, tracisz 30 punktów — urząd wstrzyma cały młodzieżowy budżet do wyjaśnienia, twój skatepark utknie na rok, a w mieście zostaniesz tym, który zaczął.</div>
+        </div>
+      </div>
+
+      <div class="block" id="tableC">
+        <h3>Twoja punktacja</h3>
+        <table>
+          <thead><tr><th>Sprawa</th><th>Wynik</th><th style="text-align:right">Punkty</th></tr></thead>
+          <tbody>
+            <tr><td>Festiwal</td><td>za każdy dzień u siebie</td><td class="n pos">+16</td></tr>
+            <tr><td>Ścieżka rowerowa</td><td>powstaje</td><td class="n pos">+12</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−10</td></tr>
+            <tr><td>Skatepark</td><td>powstaje gdziekolwiek</td><td class="n pos">+30</td></tr>
+            <tr><td></td><td>stoi przy Zenicie — dodatkowo</td><td class="n pos">+18</td></tr>
+            <tr><td></td><td>nie powstaje</td><td class="n neg">−20</td></tr>
+            <tr><td>Rezerwa</td><td>każde niewydane 1 000 zł</td><td class="n pos">+1</td></tr>
+            <tr><td>Ujawnienie haka</td><td>jeśli to zrobisz</td><td class="n neg">−30</td></tr>
+            <tr class="grp"><td colspan="3">Gdyby nic nie wyszło</td></tr>
+            <tr><td></td><td>80 pkt rezerwy − 10 − 20</td><td class="n"><b>50</b></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:14px;opacity:.8">Każde porozumienie, po którym masz mniej niż 50 punktów, jest gorsze niż brak porozumienia. Ale wtedy nie ma też skateparku — a z tym wrócisz do szkoły, która wybrała cię tylko po to.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= POROZUMIENIE ================= -->
+<section class="screen" id="deal">
+  <p class="eyebrow">Formularz końcowy · wypełniają trzy strony razem</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:8px">Porozumienie</h2>
+  <p style="max-width:60ch;margin-bottom:22px">Wpiszcie ustalenia. Kalkulator na bieżąco sprawdza, czy wasza umowa jest wykonalna — czy nikt nie obiecał pieniędzy, których nie ma, i czy inwestycje mają pełne finansowanie.</p>
+
+  <div class="grid3 no-print">
+    <div class="col a">
+      <h4>Czwórka</h4><div class="sch">Budżet 60 000 zł</div>
+      <div class="f"><label>Dni festiwalu (0–4)</label><input type="number" id="dA" min="0" max="4" value="3"></div>
+      <div class="f"><label>Wkład w ścieżkę (zł)</label><input type="number" id="sA" min="0" step="1000" value="14000"></div>
+      <div class="f"><label>Wkład w skatepark (zł)</label><input type="number" id="kA" min="0" step="1000" value="10000"></div>
+      <div class="f"><label>Przelew od innych szkół (zł, minus = oddaje)</label><input type="number" id="pA" step="1000" value="0"></div>
+      <label class="chk"><input type="checkbox" id="uA"> Ujawniła hak</label>
+      <div class="live" id="liveA"></div>
+    </div>
+    <div class="col b">
+      <h4>Kopernik</h4><div class="sch">Budżet 85 000 zł</div>
+      <div class="f"><label>Dni festiwalu (0–4)</label><input type="number" id="dB" min="0" max="4" value="0"></div>
+      <div class="f"><label>Wkład w ścieżkę (zł)</label><input type="number" id="sB" min="0" step="1000" value="8000"></div>
+      <div class="f"><label>Wkład w skatepark (zł)</label><input type="number" id="kB" min="0" step="1000" value="35000"></div>
+      <div class="f"><label>Przelew od innych szkół (zł, minus = oddaje)</label><input type="number" id="pB" step="1000" value="0"></div>
+      <label class="chk"><input type="checkbox" id="uB"> Ujawnił hak</label>
+      <div class="live" id="liveB"></div>
+    </div>
+    <div class="col c">
+      <h4>Zenit</h4><div class="sch">Budżet 80 000 zł</div>
+      <div class="f"><label>Dni festiwalu (0–4)</label><input type="number" id="dC" min="0" max="4" value="3"></div>
+      <div class="f"><label>Wkład w ścieżkę (zł)</label><input type="number" id="sC" min="0" step="1000" value="10000"></div>
+      <div class="f"><label>Wkład w skatepark (zł)</label><input type="number" id="kC" min="0" step="1000" value="30000"></div>
+      <div class="f"><label>Przelew od innych szkół (zł, minus = oddaje)</label><input type="number" id="pC" step="1000" value="0"></div>
+      <label class="chk"><input type="checkbox" id="uC"> Ujawnił hak</label>
+      <div class="live" id="liveC"></div>
+    </div>
+  </div>
+
+  <div class="block" style="margin-top:22px">
+    <h3>Skatepark stanie przy</h3>
+    <div class="f" style="max-width:280px"><select id="host">
+      <option value="A">Czwórce</option><option value="B" selected>Koperniku</option><option value="C">Zenicie</option>
+    </select></div>
+  </div>
+
+  <div class="block no-print">
+    <h3>Kontrola wykonalności</h3>
+    <div id="checks"></div>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:22px 0" class="no-print">
+    <button class="btn" id="calc">Policz wynik</button>
+    <button class="btn ghost" id="addRank">Dodaj do rankingu</button>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="verdict" id="verdict"></div>
+    <div class="score3">
+      <div class="sA"><div class="lbl">Czwórka</div><div class="big" id="scA">0</div><div class="delta" id="deA"></div></div>
+      <div class="sB"><div class="lbl">Kopernik</div><div class="big" id="scB">0</div><div class="delta" id="deB"></div></div>
+      <div class="sC"><div class="lbl">Zenit</div><div class="big" id="scC">0</div><div class="delta" id="deC"></div></div>
+    </div>
+    <div class="joint">
+      <div class="lbl mono" style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;opacity:.7">Wartość wspólna — ile punktów wyciągnęły ze stołu trzy szkoły razem</div>
+      <div class="jbar"><i id="jFill" style="width:0%"></i><b id="jTxt">0 / 276</b></div>
+      <p style="font-size:14px;margin-top:12px;opacity:.85" id="jComment"></p>
+    </div>
+    <div class="grid3">
+      <div><h3 style="font-size:11px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:8px">Czwórka</h3><table class="brk"><tbody id="brkA"></tbody></table></div>
+      <div><h3 style="font-size:11px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:8px">Kopernik</h3><table class="brk"><tbody id="brkB"></tbody></table></div>
+      <div><h3 style="font-size:11px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:8px">Zenit</h3><table class="brk"><tbody id="brkC"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OMÓWIENIE ================= -->
+<section class="screen" id="debrief">
+  <p class="eyebrow">Po grze · 18 minut · najważniejsza część</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:20px">Omówienie</h2>
+
+  <div class="note lime">Zacznij od zestawienia partii. Rozpiętość wartości wspólnej wyniesie zwykle od około 150 do ponad 260 punktów. Wszyscy grali tymi samymi kartami. Potem zapytaj, w ilu partiach ktoś ujawnił hak i co mu to dało.</div>
+
+  <div class="block">
+    <h3>Pułapka, w którą wchodzi większość</h3>
+    <p>Kopernik walczy o festiwal, bo od czterech lat „to jest ich festiwal". Tymczasem dzień festiwalu kosztuje szkołę-gospodarza 10 000 zł, a Kopernikowi daje 8 punktów. <b>Każdy dzień festiwalu u Kopernika to dla Kopernika strata dwóch punktów.</b> Ten sam dzień u Zenitu jest wart 16 punktów przy tym samym koszcie — czyli plus sześć.</p>
+    <p>Kopernik siedzi więc na czymś, co dla niego jest ciężarem, a dla sąsiada aktywem. Najlepsze, co może zrobić, to sprzedać to drogo. Najgorsze — bronić tego do końca, bo tak było zawsze.</p>
+    <table>
+      <thead><tr><th>Wariant</th><th style="text-align:right">Czwórka</th><th style="text-align:right">Kopernik</th><th style="text-align:right">Zenit</th><th style="text-align:right">Razem</th></tr></thead>
+      <tbody>
+        <tr><td>Kopernik oddaje festiwal, dostaje skatepark za szkołą</td><td class="n">82</td><td class="n">91</td><td class="n">100</td><td class="n"><b>273</b></td></tr>
+        <tr><td>Wszystko po równo: 2/2/2 dni, koszty na trzy</td><td class="n">70</td><td class="n">72</td><td class="n">111</td><td class="n"><b>253</b></td></tr>
+        <tr><td>Kopernik broni festiwalu: 1/4/1 dnia</td><td class="n">68</td><td class="n">66</td><td class="n">106</td><td class="n"><b>240</b></td></tr>
+        <tr><td>Każdy sobie: bez ścieżki i bez skateparku</td><td class="n">36</td><td class="n">51</td><td class="n">62</td><td class="n"><b>149</b></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:14px;opacity:.85">Zwróć uwagę na drugi wiersz od dołu. Kopernik, broniąc festiwalu, wychodzi <b>gorzej</b> niż Kopernik, który go oddaje. Walczył o coś, co mu odejmowało punkty.</p>
+  </div>
+
+  <div class="block">
+    <h3>Porozumienie referencyjne</h3>
+    <table><tbody>
+      <tr><td>Festiwal</td><td class="n">Czwórka 3 dni · Kopernik 0 · Zenit 3 dni</td></tr>
+      <tr><td>Ścieżka rowerowa (32 000 zł)</td><td class="n">Czwórka 14 000 · Kopernik 8 000 · Zenit 10 000</td></tr>
+      <tr><td>Skatepark (75 000 zł) przy Koperniku</td><td class="n">Kopernik 35 000 · Zenit 30 000 · Czwórka 10 000</td></tr>
+      <tr><td>Rezerwy</td><td class="n">6 000 · 42 000 · 10 000 zł</td></tr>
+      <tr><td><b>Wynik</b></td><td class="n"><b>82 · 91 · 100 — razem 273</b></td></tr>
+    </tbody></table>
+    <p>Ciekawe jest to, że skatepark stoi przy Koperniku, choć najbardziej chciał go Zenit. Zenit nadal dostaje 30 punktów za to, że obiekt w ogóle powstał, i płaci mniej, niż płaciłby jako gospodarz — a to, co zaoszczędził, wraca do niego w dniach festiwalu. Nie ma jednego prawidłowego rozwiązania. Układy ze skateparkiem u Zenitu i u Czwórki też potrafią dać wszystkim więcej niż plan awaryjny.</p>
+  </div>
+
+  <div class="block">
+    <h3>Haki</h3>
+    <p>Jeśli w którejś partii ktoś ujawnił informację poufną, zacznijcie od tego. Zapytaj tę osobę, czy przed ujawnieniem policzyła, ile to kosztuje. Prawie nikt nie liczy.</p>
+    <p>Trzydzieści punktów to mniej więcej tyle, ile warta jest cała ścieżka rowerowa dla Czwórki. Za jedno zdanie wypowiedziane w złości.</p>
+    <p>Warto też zapytać drugą stronę: <b>czy groźba w ogóle zadziałała?</b> W praktyce ten, komu grożono, zwykle usztywnia się jeszcze bardziej, bo nie chce być tym, który ustąpił pod naciskiem. Nacisk oparty na czyimś wstydzie prawie zawsze wychodzi drożej, niż się wydaje w chwili, gdy się po niego sięga — i to jest prawdziwa lekcja z tej części gry, a nie to, że blefowanie jest sprytne.</p>
+  </div>
+
+  <div class="block">
+    <h3>Pytania do klasy</h3>
+    <ul class="tight">
+      <li>Co ustaliliście na korytarzu, zanim ktokolwiek usiadł do stołu? Czy te ustalenia przetrwały?</li>
+      <li>Czy powstał sojusz dwóch szkół przeciwko trzeciej? Co się z nim stało po otwarciu koperty 2?</li>
+      <li>Kto pierwszy powiedział, ile ma pieniędzy? Pomogło mu to czy zaszkodziło?</li>
+      <li>Kiedy Zenit ujawnił kartę z Nadią Wroną i czy zdołał ją sprzedać, czy tylko ogłosił?</li>
+      <li>Ile razy padło zdanie zaczynające się od „a co, gdybyśmy…", a ile od „nie zgadzam się"?</li>
+      <li>Czy ktokolwiek policzył punkty za niewydane pieniądze przed końcem gry?</li>
+      <li>Czy któraś szkoła powinna była wstać od stołu? Kopernik miał najwyższy próg — czy ktoś to zauważył?</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Pięć rzeczy, które ta gra pokazała</h3>
+    <p><b>Trzy strony to nie są dwie strony plus jedna.</b> Przy trzech pojawia się coś, czego przy dwóch nie ma: możliwość, że dwoje dogada się bez ciebie. Dlatego przy stole na trzy osoby najwięcej dzieje się poza stołem.</p>
+    <p><b>Nie wszystko, co twoje, jest dla ciebie warte.</b> Kopernik trzymał festiwal, bo był jego. Punkty mówiły co innego. Warto raz na jakiś czas sprawdzić, czy rzecz, której bronisz, nadal ci się opłaca, czy tylko przywykłeś.</p>
+    <p><b>Pieniądze niewydane to też wynik.</b> W tej grze 1 000 zł było warte tyle, co punkt. Większość drużyn wydaje wszystko, bo wydawanie wygląda jak działanie. Nie zawsze nim jest.</p>
+    <p><b>Twoja siła to twój próg.</b> Kopernik miał najwyższy plan awaryjny i przez to najmocniejszą pozycję — mógł powiedzieć „nie" i nadal wyjść z 55 punktami. Czwórka miała 30 i musiała się dogadać. Kto to policzył przed grą, ten wiedział, kiedy naciskać.</p>
+    <p><b>Groźba jest tania, użycie jest drogie.</b> Hak działa dopóki wisi. Użyty, zmienia się w koszt.</p>
+  </div>
+
+  <div class="block">
+    <h3>Jeśli grasz drugi raz</h3>
+    <ul class="tight">
+      <li>Zamień role. Kto grał Kopernikiem, gra Zenitem.</li>
+      <li>Wprowadź zakaz rozmów dwustronnych — wszystko przy wspólnym stole. Porównajcie, o ile spadła wartość wspólna.</li>
+      <li>Odwrotnie: daj 20 minut samych rozmów we dwoje i tylko 10 minut przy stole.</li>
+      <li>Nie rozdawaj drugiej strony koperty 2, za to daj jednej szkole cichą instrukcję, żeby przez pierwsze 10 minut mówiła wyłącznie prawdę o swoich liczbach. Sprawdźcie, jak jej poszło.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>Stowarzyszenie 2piny · Trzy Sceny · gra negocjacyjna trójstronna 14–18 lat</span>
+  <span>Działa offline. Żadne dane nie wychodzą z tego pliku.</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+var navBtns=document.querySelectorAll('.bar button[data-go]');
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
+  navBtns.forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
+
+document.querySelectorAll('[data-open]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var s=b.dataset.open;
+    document.getElementById('gate'+s).classList.add('hidden');
+    document.getElementById('card'+s).classList.remove('hidden');
+  });
+});
+document.querySelectorAll('[data-seal]').forEach(function(b){
+  b.addEventListener('click',function(){
+    b.parentNode.querySelector('.sealed-body').classList.remove('hidden');
+    b.classList.add('hidden');
+  });
+});
+['A','B','C'].forEach(function(s){
+  var btn=document.getElementById('toggle'+s),tab=document.getElementById('table'+s);
+  btn.addEventListener('click',function(){
+    var h=tab.classList.toggle('hidden');
+    btn.textContent=h?'Pokaż tabelę punktów':'Ukryj tabelę punktów';
+  });
+});
+
+/* zegar */
+var tSec=0,tRun=false,tInt=null;
+var clock=document.getElementById('tClock'),phase=document.getElementById('tPhase'),box=document.getElementById('timerBox');
+function draw(){
+  var m=Math.floor(Math.abs(tSec)/60),s=Math.abs(tSec)%60;
+  clock.textContent=(tSec<0?'-':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  box.classList.toggle('warn',tSec<=60);
+}
+document.querySelectorAll('.tctl button[data-min]').forEach(function(b){
+  b.addEventListener('click',function(){
+    tSec=parseInt(b.dataset.min,10)*60;tRun=true;phase.textContent=b.dataset.lab;draw();
+    if(!tInt)tInt=setInterval(function(){if(tRun){tSec--;draw();}},1000);
+  });
+});
+document.getElementById('tToggle').addEventListener('click',function(){tRun=!tRun;});
+document.getElementById('tStop').addEventListener('click',function(){tRun=false;tSec=0;phase.textContent='Zegar zatrzymany';draw();});
+draw();
+
+/* ---------- model punktacji ---------- */
+var CFG={
+  nazwa:{A:'Czwórka',B:'Kopernik',C:'Zenit'},
+  budzet:{A:60000,B:85000,C:80000},
+  festPkt:{A:13,B:8,C:16}, kosztDnia:10000, maxDni:4, sumaDni:6,
+  sciezkaPelna:40000, sciezkaTrojka:32000,
+  sciezkaPkt:{A:25,B:12,C:12}, sciezkaKara:-10,
+  skate:75000, skateMin:30000,
+  skatePkt:{A:12,B:12,C:30}, skateHost:{A:18,B:25,C:18}, skateKara:-20,
+  hak:-30,
+  planB:{A:30,B:55,C:50},
+  maxSuma:276
+};
+var K=['A','B','C'];
+function num(id){var v=parseInt(document.getElementById(id).value,10);return isNaN(v)?0:v;}
+function zl(v){return v.toLocaleString('pl-PL')+' zł';}
+function sgn(v){return (v>0?'+':'')+v;}
+
+function czytaj(){
+  var d={};
+  K.forEach(function(k){
+    d[k]={dni:Math.max(0,num('d'+k)),sciezka:Math.max(0,num('s'+k)),
+          skate:Math.max(0,num('k'+k)),przelew:num('p'+k),
+          hak:document.getElementById('u'+k).checked};
+  });
+  d.host=document.getElementById('host').value;
+  return d;
+}
+
+function analiza(d){
+  var sumDni=K.reduce(function(t,k){return t+d[k].dni;},0);
+  var sumSc=K.reduce(function(t,k){return t+d[k].sciezka;},0);
+  var sumSk=K.reduce(function(t,k){return t+d[k].skate;},0);
+  var sumPrz=K.reduce(function(t,k){return t+d[k].przelew;},0);
+  var trojka=K.every(function(k){return d[k].sciezka>0;});
+  var progSc=trojka?CFG.sciezkaTrojka:CFG.sciezkaPelna;
+  var scOk=sumSc>=progSc;
+  var skOk=sumSk>=CFG.skate && d[d.host].skate>=CFG.skateMin;
+  var rez={},nadmiar=[];
+  K.forEach(function(k){
+    var wyd=d[k].dni*CFG.kosztDnia+d[k].sciezka+d[k].skate-d[k].przelew;
+    rez[k]=CFG.budzet[k]-wyd;
+    if(rez[k]<0)nadmiar.push(k);
+  });
+  var bledy=[];
+  if(sumDni>CFG.sumaDni)bledy.push('Rozdzielono '+sumDni+' dni festiwalu, a jest ich tylko '+CFG.sumaDni+'.');
+  K.forEach(function(k){if(d[k].dni>CFG.maxDni)bledy.push(CFG.nazwa[k]+' bierze '+d[k].dni+' dni — maksimum to '+CFG.maxDni+'.');});
+  if(sumPrz!==0)bledy.push('Przelewy nie bilansują się do zera (różnica '+zl(sumPrz)+').');
+  nadmiar.forEach(function(k){bledy.push(CFG.nazwa[k]+' wydaje więcej, niż ma — brakuje '+zl(-rez[k])+'.');});
+  return {sumDni:sumDni,sumSc:sumSc,sumSk:sumSk,trojka:trojka,progSc:progSc,
+          scOk:scOk,skOk:skOk,rez:rez,bledy:bledy};
+}
+
+function punkty(d,a){
+  var out={};
+  K.forEach(function(k){
+    var r=[];
+    if(d[k].dni>0)r.push([d[k].dni+' dni festiwalu × '+CFG.festPkt[k],d[k].dni*CFG.festPkt[k]]);
+    else r.push(['Brak dni festiwalu',0]);
+    r.push([a.scOk?'Ścieżka rowerowa powstaje':'Ścieżka nie powstaje',a.scOk?CFG.sciezkaPkt[k]:CFG.sciezkaKara]);
+    if(a.skOk){
+      r.push(['Skatepark powstaje',CFG.skatePkt[k]]);
+      if(d.host===k)r.push(['Skatepark stoi u nas',CFG.skateHost[k]]);
+    } else r.push(['Skatepark nie powstaje',CFG.skateKara]);
+    r.push(['Rezerwa '+zl(a.rez[k]),Math.round(a.rez[k]/1000)]);
+    if(d[k].hak)r.push(['Ujawnienie informacji poufnej',CFG.hak]);
+    out[k]={pozycje:r,suma:r.reduce(function(t,x){return t+x[1];},0)};
+  });
+  return out;
+}
+
+function rysujChecks(d,a){
+  var el=document.getElementById('checks');
+  var h='';
+  function tag(ok,txt){return '<span class="tag '+(ok?'ok':'no')+'">'+(ok?'ok':'nie')+'</span> '+txt;}
+  h+='<div class="checkline">'+tag(a.sumDni<=CFG.sumaDni,'Dni festiwalu: '+a.sumDni+' z '+CFG.sumaDni)+'</div>';
+  h+='<div class="checkline">'+tag(a.scOk,'Ścieżka: zebrano '+zl(a.sumSc)+' z wymaganych '+zl(a.progSc)+(a.trojka?' (wszystkie trzy szkoły w projekcie, miasto dokłada 8 000 zł)':' (nie wszystkie szkoły dokładają — brak dopłaty miasta)'))+'</div>';
+  h+='<div class="checkline">'+tag(a.skOk,'Skatepark: zebrano '+zl(a.sumSk)+' z '+zl(CFG.skate)+', gospodarz ('+CFG.nazwa[d.host]+') wnosi '+zl(d[d.host].skate)+' z wymaganych '+zl(CFG.skateMin))+'</div>';
+  if(a.bledy.length)h+='<div class="note"><b>Do poprawy:</b><br>'+a.bledy.join('<br>')+'</div>';
+  el.innerHTML=h;
+}
+
+function odswiez(){
+  var d=czytaj(),a=analiza(d);
+  K.forEach(function(k){
+    var el=document.getElementById('live'+k);
+    var wyd=CFG.budzet[k]-a.rez[k];
+    el.className='live'+(a.rez[k]<0?' bad':'');
+    el.innerHTML='Wydaje '+zl(wyd)+'<br>Zostaje <b>'+zl(a.rez[k])+'</b>';
+  });
+  rysujChecks(d,a);
+  return {d:d,a:a};
+}
+['dA','sA','kA','pA','dB','sB','kB','pB','dC','sC','kC','pC','host'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',odswiez);
+});
+K.forEach(function(k){document.getElementById('u'+k).addEventListener('change',odswiez);});
+
+var ostatni=null;
+document.getElementById('calc').addEventListener('click',function(){
+  var st=odswiez(),d=st.d,a=st.a;
+  var p=punkty(d,a);
+  document.getElementById('out').classList.remove('hidden');
+
+  K.forEach(function(k){
+    document.getElementById('sc'+k).textContent=p[k].suma;
+    document.getElementById('de'+k).textContent='plan B = '+CFG.planB[k]+' · '+sgn(p[k].suma-CFG.planB[k]);
+    document.getElementById('brk'+k).innerHTML=p[k].pozycje.map(function(r){
+      var c=r[1]>0?'pos':(r[1]<0?'neg':'');
+      return '<tr><td>'+r[0]+'</td><td class="n '+c+'">'+sgn(r[1])+'</td></tr>';
+    }).join('')+'<tr><td><b>Razem</b></td><td class="n"><b>'+p[k].suma+'</b></td></tr>';
+  });
+
+  var suma=K.reduce(function(t,k){return t+p[k].suma;},0);
+  var pct=Math.max(0,Math.min(100,Math.round(suma/CFG.maxSuma*100)));
+  document.getElementById('jFill').style.width=pct+'%';
+  document.getElementById('jTxt').textContent=suma+' / '+CFG.maxSuma;
+  var jc=document.getElementById('jComment');
+  if(suma>=255)jc.textContent='Bardzo dobrze. Znaleźliście wymiany, w których ustępstwo jednej szkoły było dla niej tanie, a dla drugiej dużo warte.';
+  else if(suma>=225)jc.textContent='Solidnie, ale coś zostało na stole. Sprawdźcie w omówieniu, która sprawa trafiła nie do tej szkoły, co trzeba.';
+  else if(suma>=180)jc.textContent='Typowy wynik dzielenia wszystkiego po równo. Równo nie znaczy dobrze — każda ze spraw jest dla kogoś przy tym stole wyraźnie więcej warta.';
+  else jc.textContent='Niewiele. Prawdopodobnie któraś inwestycja w ogóle nie powstała albo ktoś sięgnął po hak.';
+
+  var v=document.getElementById('verdict'),msgs=[];
+  if(a.bledy.length)msgs.push('<b>Ta umowa jest niewykonalna.</b> '+a.bledy.join(' '));
+  var ponizej=K.filter(function(k){return p[k].suma<CFG.planB[k];});
+  ponizej.forEach(function(k){
+    msgs.push(CFG.nazwa[k]+' wychodzi <b>poniżej swojego planu awaryjnego</b> ('+p[k].suma+' zamiast '+CFG.planB[k]+') — ta szkoła nie powinna była tego podpisać.');
+  });
+  var ujawnili=K.filter(function(k){return d[k].hak;});
+  if(ujawnili.length)msgs.push('Hak ujawniła: '+ujawnili.map(function(k){return CFG.nazwa[k];}).join(', ')+'. Kosztowało to po 30 punktów.');
+  if(msgs.length){v.className='verdict';v.innerHTML='<strong>Uwagi do porozumienia</strong>'+msgs.join(' ');}
+  else{
+    var zyski=K.map(function(k){return [CFG.nazwa[k],p[k].suma-CFG.planB[k]];}).sort(function(x,y){return y[1]-x[1];});
+    v.className='verdict ok';
+    v.innerHTML='<strong>Porozumienie zawarte</strong>Wszystkie trzy szkoły wyszły ponad swój plan awaryjny, więc ta umowa miała sens dla każdej z nich. Najwięcej ponad plan ugrała: '+zyski[0][0]+' ('+sgn(zyski[0][1])+'), najmniej: '+zyski[2][0]+' ('+sgn(zyski[2][1])+').';
+  }
+  ostatni={A:p.A.suma,B:p.B.suma,C:p.C.suma,suma:suma};
+  document.getElementById('out').scrollIntoView({behavior:'smooth',block:'nearest'});
+});
+
+var ranking=[];
+function rysujRank(){
+  var tb=document.getElementById('rankBody');
+  if(!ranking.length){tb.innerHTML='<tr><td colspan="5" style="opacity:.55">Jeszcze pusto.</td></tr>';return;}
+  tb.innerHTML=ranking.slice().sort(function(x,y){return y.suma-x.suma;}).map(function(r,i){
+    return '<tr><td>'+(i+1)+'. '+r.name+'</td><td class="n">'+r.A+'</td><td class="n">'+r.B+'</td><td class="n">'+r.C+'</td><td class="n"><b>'+r.suma+'</b></td></tr>';
+  }).join('');
+}
+document.getElementById('addRank').addEventListener('click',function(){
+  if(!ostatni){alert('Najpierw policz wynik.');return;}
+  var n=prompt('Nazwa partii:','Partia '+(ranking.length+1));
+  if(!n)return;
+  ranking.push({name:n,A:ostatni.A,B:ostatni.B,C:ostatni.C,suma:ostatni.suma});
+  rysujRank();go('host');
+});
+document.getElementById('rankClear').addEventListener('click',function(){
+  if(confirm('Wyczyścić ranking?')){ranking=[];rysujRank();}
+});
+rysujRank();
+odswiez();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORBITA — gra wymiany dla trzech drużyn</title>
+<style>
+:root{
+  --sea:#2C4251; --sea-deep:#16232B; --lime:#EDFF13; --paper:#E8ECEA; --paper-warm:#F2F4F1;
+  --rust:#D64933; --mint:#5FBF96; --amber:#E9A227; --line:rgba(44,66,81,.18);
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--sea-deep);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.02;letter-spacing:-.025em;font-weight:800}
+p{margin:0 0 .85em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.62;margin:0 0 10px;font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1020px;margin:0 auto;padding:26px 20px 90px}
+.screen{display:none}
+.screen.on{display:block;animation:rise .3s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+
+.bar{position:sticky;top:0;z-index:40;background:var(--sea-deep);color:var(--paper);display:flex;align-items:center;gap:12px;padding:9px 20px;flex-wrap:wrap}
+.bar .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);font-weight:700}
+.bar nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.bar button{background:none;border:0;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:7px 10px;cursor:pointer;border-radius:3px}
+.bar button:hover{background:rgba(237,255,19,.14)}
+.bar button.active{background:var(--lime);color:var(--sea-deep);font-weight:700}
+.bar button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+.hero{padding:48px 0 32px;border-bottom:3px solid var(--sea-deep)}
+.hero h1{font-size:clamp(44px,9vw,100px);text-transform:uppercase;line-height:.86}
+.hero h1 em{font-style:normal;display:block;color:var(--sea);opacity:.34}
+.hero .sub{max-width:60ch;margin-top:20px;font-size:17px}
+.specs{display:flex;flex-wrap:wrap;margin-top:28px;border-top:1px solid var(--line)}
+.specs div{flex:1 1 110px;padding:12px 14px 12px 0;border-right:1px solid var(--line)}
+.specs div:last-child{border-right:0}
+.specs b{display:block;font-family:var(--mono);font-size:21px;font-weight:700}
+.specs span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
+
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;margin:32px 0}
+.pick{border:2px solid var(--sea-deep);padding:18px;cursor:pointer;text-align:left;background:var(--paper-warm);font-family:inherit;color:inherit;transition:transform .16s,box-shadow .16s}
+.pick:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--sea-deep)}
+.pick:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
+.pick strong{display:block;font-size:19px;font-weight:800;margin-bottom:4px}
+.pick small{font-family:var(--mono);font-size:11px;opacity:.68;line-height:1.4;display:block}
+.pick.a{background:var(--sea-deep);color:var(--paper)}.pick.a strong{color:var(--lime)}
+.pick.b{background:var(--lime)}
+.pick.c{background:var(--rust);color:var(--paper-warm)}
+
+.role{border:3px solid var(--sea-deep);margin-bottom:22px}
+.role .head{padding:24px}
+.role .body{padding:24px;background:var(--paper-warm)}
+.roleA .head{background:var(--sea-deep);color:var(--paper)}.roleA .head h2{color:var(--lime)}
+.roleB .head{background:var(--lime);color:var(--sea-deep)}
+.roleC .head{background:var(--rust);color:var(--paper-warm)}
+.role h2{font-size:clamp(28px,5vw,44px);text-transform:uppercase;line-height:.92}
+.role .who{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-top:10px;opacity:.85}
+
+.gate{border:3px dashed var(--sea-deep);padding:38px 24px;text-align:center;background:var(--paper-warm)}
+.gate h3{font-size:25px;text-transform:uppercase;margin-bottom:10px}
+.gate p{max-width:46ch;margin:0 auto 18px;font-size:15px}
+
+.btn{background:var(--sea-deep);color:var(--lime);border:0;padding:12px 22px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.btn:hover{background:var(--sea)}
+.btn:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+.btn.ghost{background:none;color:var(--sea-deep);border:2px solid var(--sea-deep)}
+.btn.ghost:hover{background:var(--sea-deep);color:var(--lime)}
+.btn.sm{padding:8px 13px;font-size:11px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+
+.block{margin:0 0 24px}
+.block h3{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;padding-bottom:7px;border-bottom:2px solid var(--sea-deep);margin-bottom:13px;font-weight:700}
+.note{border-left:4px solid var(--rust);padding:11px 0 11px 15px;margin:15px 0;font-size:15px;background:rgba(214,73,51,.05)}
+.note.lime{border-color:var(--sea);background:rgba(44,66,81,.06)}
+ul.tight{margin:0 0 13px;padding-left:20px}
+ul.tight li{margin-bottom:6px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--sea-deep);color:var(--paper);font-weight:700;border-bottom:0}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:#1E7A56;font-weight:700}.neg{color:var(--rust);font-weight:700}
+.lack{background:rgba(214,73,51,.13);font-weight:700}
+.pkttab{font-size:12px}
+.pkttab td,.pkttab th{padding:3px 6px}
+.pkttab td.q{font-family:var(--mono);text-align:center}
+.pkttab .m{background:rgba(233,162,39,.25);font-weight:700}
+.pkttab .o{background:rgba(95,191,150,.3);font-weight:700}
+.pkttab .b{background:rgba(214,73,51,.14)}
+
+.timer{background:var(--sea-deep);color:var(--lime);padding:20px;text-align:center;margin-bottom:16px}
+.timer .clock{font-family:var(--mono);font-size:clamp(50px,13vw,92px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.timer .phase{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.75}
+.timer.warn .clock{color:var(--rust)}
+.tctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.tctl button{background:rgba(237,255,19,.12);color:var(--paper);border:1px solid rgba(237,255,19,.35);padding:8px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.tctl button:hover{background:var(--lime);color:var(--sea-deep)}
+
+.flow{border-top:2px solid var(--sea-deep)}
+.flow .step{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.flow .t{font-family:var(--mono);font-weight:700;font-size:13px;min-width:58px;color:var(--rust)}
+.flow .d strong{display:block;font-size:16px}
+.flow .d span{font-size:14px;opacity:.78}
+
+.panel{border:2px solid var(--sea-deep);background:var(--paper-warm);padding:16px;margin-bottom:16px}
+.panel h4{margin:0 0 12px;font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.inv{width:100%;font-size:13px;border-collapse:collapse}
+.inv th{font-size:9.5px}
+.inv td{padding:4px 7px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.inv td:first-child{font-family:var(--sans)}
+.inv .cA{border-left:5px solid var(--sea-deep)}
+.inv .cB{border-left:5px solid var(--lime)}
+.inv .cC{border-left:5px solid var(--rust)}
+.q-lo{color:var(--rust);font-weight:700}
+.q-mid{color:#9a6b0a;font-weight:700}
+.q-ok{color:#1E7A56}
+
+.tform{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.tform{grid-template-columns:1fr}}
+.tcol{border:2px solid var(--sea-deep);padding:12px;background:#fff}
+.tcol .lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:8px}
+.trow{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:13px}
+.trow span{flex:1}
+.trow input{width:62px;padding:5px;border:1px solid var(--sea-deep);font-family:var(--mono);font-size:14px;text-align:right;background:#fff}
+.trow input:focus{outline:2px solid var(--rust)}
+select{padding:8px;border:2px solid var(--sea-deep);background:#fff;font-family:var(--mono);font-size:14px;border-radius:0}
+
+.log{font-family:var(--mono);font-size:12px;max-height:210px;overflow-y:auto;border:1px solid var(--line);padding:10px;background:#fff}
+.log div{padding:2px 0;border-bottom:1px dotted var(--line)}
+.log .err{color:var(--rust);font-weight:700}
+.log .tick{color:#9a6b0a}
+
+.badge{display:inline-block;padding:2px 8px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;border:2px solid var(--sea-deep);margin-left:6px}
+.badge.out{background:var(--sea-deep);color:var(--lime)}
+
+.score3{display:grid;grid-template-columns:repeat(3,1fr);border:3px solid var(--sea-deep);margin-bottom:16px}
+@media(max-width:760px){.score3{grid-template-columns:1fr}}
+.score3>div{padding:18px}
+.score3 .sA{background:var(--sea-deep);color:var(--paper)}.score3 .sA .big{color:var(--lime)}
+.score3 .sB{background:var(--lime);color:var(--sea-deep)}
+.score3 .sC{background:var(--rust);color:var(--paper-warm)}
+.score3 .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.82}
+.score3 .big{font-family:var(--mono);font-size:clamp(36px,7vw,58px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score3 .delta{font-family:var(--mono);font-size:12px;margin-top:5px}
+.joint{border:3px solid var(--sea-deep);border-top:0;padding:20px;background:var(--paper-warm);margin-bottom:18px}
+.jbar{height:24px;background:rgba(44,66,81,.14);margin-top:10px;position:relative;overflow:hidden}
+.jbar i{display:block;height:100%;background:var(--sea-deep);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.jbar b{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:12px;font-weight:700;mix-blend-mode:difference;color:var(--lime)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.hidden{display:none !important}
+footer{border-top:2px solid var(--sea-deep);margin-top:42px;padding-top:15px;font-family:var(--mono);font-size:11px;opacity:.65;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media print{
+  .bar,.tctl,.no-print,.picker,footer,.gate{display:none !important}
+  .screen{display:block !important;page-break-after:always}
+  body{background:#fff;font-size:11pt}
+  .role .body{display:block !important}
+  .roleA .head{background:#16232B !important}
+  .roleB .head{background:#EDFF13 !important}
+  .roleC .head{background:#D64933 !important}
+  th{background:#16232B !important}
+  .roleA .head,.roleB .head,.roleC .head,th,.pkttab .m,.pkttab .o,.pkttab .b,.lack{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<div class="bar no-print">
+  <span class="brand">2piny · ORBITA</span>
+  <nav>
+    <button data-go="start" class="active">Start</button>
+    <button data-go="host">Prowadzący</button>
+    <button data-go="roleA">Nakrętka</button>
+    <button data-go="roleB">Zwarcie</button>
+    <button data-go="roleC">Prototyp</button>
+    <button data-go="pulpit">Pulpit</button>
+    <button data-go="wyniki">Wyniki</button>
+    <button data-go="debrief">Omówienie</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ============ START ============ -->
+<section class="screen on" id="start">
+  <div class="hero">
+    <p class="eyebrow">Gra wymiany · wiek 14–18 · trzy drużyny · zegar tyka</p>
+    <h1>Orbita<em>hala turniejowa</em></h1>
+    <p class="sub">Trzy szkolne drużyny robotyczne przyjechały na turniej. Każdej brakuje czegoś innego i każda ma za dużo czegoś, czego sąsiad rozpaczliwie potrzebuje. Na hali jest jedno stoisko serwisowe z cenami z kosmosu. Do oceny sędziowskiej zostały dwadzieścia cztery minuty, a czas na stanowisku montażowym kosztuje. Kto zgłosi robota pierwszy, dostaje premię.</p>
+    <div class="specs">
+      <div><b>3</b><span>drużyny</span></div>
+      <div><b>8</b><span>rodzajów części</span></div>
+      <div><b>24</b><span>minuty rynku</span></div>
+      <div><b>120</b><span>kredytów na start</span></div>
+      <div><b>6–9</b><span>osób</span></div>
+    </div>
+  </div>
+
+  <div class="picker">
+    <button class="pick" data-go="host"><strong>Prowadzący</strong><small>Przebieg, zasady, jak obsłużyć rynek</small></button>
+    <button class="pick a" data-go="roleA"><strong>Nakrętka</strong><small>mechanicy<br>zero elektroniki</small></button>
+    <button class="pick b" data-go="roleB"><strong>Zwarcie</strong><small>elektronicy<br>nie ma na czym montować</small></button>
+    <button class="pick c" data-go="roleC"><strong>Prototyp</strong><small>zgnieciona skrzynia<br>z konstrukcją</small></button>
+  </div>
+
+  <div class="note lime"><strong>Czym to się różni od zwykłych negocjacji:</strong> tu nie ma jednej umowy do podpisania. Jest rynek, na którym każda wymiana zmienia twoją pozycję w następnej. I jest zegar, który zabiera zasoby niezależnie od tego, czy właśnie się dogadujesz, czy stoisz i myślisz. <strong>Pulpit</strong> prowadzi cały rynek za ciebie — odlicza czas, obsługuje sklep, zapisuje wymiany i liczy wyniki.</div>
+</section>
+
+<!-- ============ PROWADZĄCY ============ -->
+<section class="screen" id="host">
+  <p class="eyebrow">Materiał dla prowadzącego</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:18px">Jak to poprowadzić</h2>
+
+  <div class="block">
+    <h3>Ustawienie</h3>
+    <p>Trzy drużyny po <b>2–3 osoby</b>. Trzy osoby to optimum, bo przy tej liczbie danych opłaca się podzielić role: ktoś pilnuje tabeli braków, ktoś liczy pieniądze, ktoś chodzi negocjować. Pojedynczy gracze się gubią, czteroosobowe zespoły zaczynają się nawzajem przekrzykiwać.</p>
+    <p>Trzy stoliki oddalone od siebie, żeby dało się rozmawiać bez podsłuchu. Ty siedzisz z pulpitem — jesteś jednocześnie zegarem, sklepem i notariuszem. W papierowej wersji tego scenariusza potrzeba było do tego dwóch prowadzących; pulpit robi to sam.</p>
+  </div>
+
+  <div class="block">
+    <h3>Przebieg — 65 minut</h3>
+    <div class="flow">
+      <div class="step"><span class="t">0–10</span><span class="d"><strong>Wprowadzenie</strong><span>Rozdaj karty drużyn. Powiedz tylko tyle: przyjechaliście na turniej, przewoźnik narobił szkód, macie dwadzieścia cztery minuty.</span></span></div>
+      <div class="step"><span class="t">10–25</span><span class="d"><strong>Przygotowanie</strong><span>Drużyny czytają karty i planują. Piętnaście minut to celowo za mało — strategia ma się dokształcać w trakcie, a nie być gotowa przed startem.</span></span></div>
+      <div class="step"><span class="t">25–49</span><span class="d"><strong>Rynek</strong><span>Uruchamiasz zegar na pulpicie. Od tego momentu co dwie minuty każda drużyna traci jeden żeton czasu.</span></span></div>
+      <div class="step"><span class="t">49–65</span><span class="d"><strong>Wyniki i omówienie</strong><span>Pulpit liczy sam. Przechodzisz do zakładki „Wyniki", potem „Omówienie".</span></span></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Zasady rynku</h3>
+    <ul class="tight">
+      <li><b>Żetony czasu.</b> Co dwie pełne minuty każda drużyna, która jeszcze nie zgłosiła robota, traci jeden żeton. Kto zejdzie do zera, płaci <b>30 kredytów</b> za każde kolejne dwie minuty. Żetony można dokupić na stoisku po 30 kredytów.</li>
+      <li><b>Stoisko serwisowe.</b> Ceny są sztywne i nie podlegają negocjacjom. Stoisko skupuje taniej, niż sprzedaje — to nie jest błąd, to jest powód, dla którego opłaca się handlować z sąsiadem. Stoisko nie skupuje żetonów czasu.</li>
+      <li><b>Wymiana między drużynami</b> jest ważna dopiero wtedy, gdy zapiszesz ją na pulpicie. Ustna obietnica nie liczy się do wyniku.</li>
+      <li><b>Zgłoszenie robota</b> kończy grę dla tej drużyny. Nie da się tego cofnąć, nie wolno już rozmawiać ani handlować. Pierwsza drużyna dostaje <b>+50</b>, druga <b>+30</b>, trzecia nic.</li>
+      <li><b>Braki bolą bardziej, niż pomagają nadwyżki.</b> Każda sztuka ponad optimum to tylko 1 punkt. Każda sztuka poniżej niezbędnego minimum to kara, i to niemała. Nikt tego drużynom nie mówi — jest to w ich tabelach, jeśli zechcą przeczytać.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Czego się spodziewać</h3>
+    <p>Policzyliśmy skrajne warianty. Gdyby żadna drużyna z nikim nie handlowała, trzy zespoły uzbierałyby razem <b>247 punktów</b>. Gdyby każda ratowała się wyłącznie stoiskiem serwisowym — <b>616</b>. Sprawny rynek trójstronny to <b>782</b>, a jeśli w dodatku zamkną go szybko, <b>825</b>.</p>
+    <p>Ta rozpiętość jest całą treścią gry. Warto ją pokazać klasie dopiero po wszystkim.</p>
+  </div>
+
+  <div class="block">
+    <h3>Wersja papierowa</h3>
+    <p>Jeśli wolisz bez komputera: wydrukuj karty drużyn (Ctrl+P drukuje wszystkie ekrany, każdy na osobnej kartce), prowadź zegar na telefonie i zapisuj wymiany na kartkach. Wtedy jednak potrzebujesz drugiej osoby do sklepu, a zliczanie na koniec zajmuje kwadrans. Pulpit istnieje właśnie po to.</p>
+  </div>
+</section>
+
+<!-- ============ KARTY DRUŻYN ============ -->
+<section class="screen" id="roleA">
+  <div class="gate no-print" id="gateA"><h3>Karta drużyny Nakrętka</h3>
+    <p>Jeśli grasz w innej drużynie, zamknij to teraz. Znajomość cudzej tabeli braków psuje cały rynek.</p>
+    <button class="btn" data-open="A">Jesteśmy Nakrętką — otwórz</button></div>
+  <div class="role roleA hidden" id="cardA">
+    <div class="head"><p class="eyebrow" style="opacity:.8">Drużyna A · karta poufna</p><h2>Nakrętka</h2>
+      <p class="who">Warsztat mechaniczny · Turniej Robotyczny ORBITA</p></div>
+    <div class="body">
+      <div class="block"><h3>Co się stało</h3>
+      <p>Wasz robot jest zbudowany jak czołg. Rama z belek, cztery koła napędowe, przekładnia, którą składaliście trzy tygodnie. Wzięliście ze sobą pełną skrzynię konstrukcji, bo „zawsze się przyda", i drugą z kołami, bo „koła zawsze się przydają jeszcze bardziej".</p>
+      <p>Pudełko z elektroniką zostało na stole w pracowni. Zauważyliście to na parkingu przed halą.</p>
+      <p>Nie macie ani jednego czujnika. Nie macie kontrolera. Macie jeden akumulator i dwa przewody. Macie za to dwadzieścia dwie belki i dwanaście kół, których nikt normalny nie potrzebuje w takiej liczbie.</p></div>
+      <div class="block"><h3>Wasze zasoby i potrzeby</h3><div id="tabA1"></div></div>
+      <div class="block"><h3>Ile punktów daje która liczba sztuk</h3>
+      <p style="font-size:14px;opacity:.8">Pole pomarańczowe to niezbędne minimum, zielone to ilość optymalna. Czerwone tło oznacza, że jesteście poniżej minimum i tracicie punkty.</p>
+      <div id="tabA2"></div></div>
+      <div class="block"><h3>Stoisko serwisowe i zasady</h3><div id="tabA3"></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="roleB">
+  <div class="gate no-print" id="gateB"><h3>Karta drużyny Zwarcie</h3>
+    <p>Jeśli grasz w innej drużynie, zamknij to teraz.</p>
+    <button class="btn" data-open="B">Jesteśmy Zwarciem — otwórz</button></div>
+  <div class="role roleB hidden" id="cardB">
+    <div class="head"><p class="eyebrow" style="opacity:.75">Drużyna B · karta poufna</p><h2>Zwarcie</h2>
+      <p class="who">Koło informatyczne · Turniej Robotyczny ORBITA</p></div>
+    <div class="body">
+      <div class="block"><h3>Co się stało</h3>
+      <p>Wasz kod jest gotowy od miesiąca. Rozpoznawanie linii, omijanie przeszkód, autonomiczny przejazd całej trasy — przetestowane w symulatorze setki razy. Macie czternaście czujników, pięć kontrolerów i dwadzieścia przewodów. Wszystko poukładane w antystatycznych woreczkach, podpisane.</p>
+      <p>Skrzynia z mechaniką pojechała pociągiem do Bydgoszczy. Wraca jutro, czyli dzień po turnieju.</p>
+      <p>Macie jeden silnik, dwa koła, cztery belki i nic, na czym można by to wszystko zamontować. Najlepszy kod w hali nie pojedzie, jeśli nie ma czym jechać.</p></div>
+      <div class="block"><h3>Wasze zasoby i potrzeby</h3><div id="tabB1"></div></div>
+      <div class="block"><h3>Ile punktów daje która liczba sztuk</h3>
+      <p style="font-size:14px;opacity:.8">Pole pomarańczowe to niezbędne minimum, zielone to ilość optymalna. Czerwone tło oznacza, że jesteście poniżej minimum i tracicie punkty.</p>
+      <div id="tabB2"></div></div>
+      <div class="block"><h3>Stoisko serwisowe i zasady</h3><div id="tabB3"></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="roleC">
+  <div class="gate no-print" id="gateC"><h3>Karta drużyny Prototyp</h3>
+    <p>Jeśli grasz w innej drużynie, zamknij to teraz.</p>
+    <button class="btn" data-open="C">Jesteśmy Prototypem — otwórz</button></div>
+  <div class="role roleC hidden" id="cardC">
+    <div class="head"><p class="eyebrow" style="opacity:.8">Drużyna C · karta poufna</p><h2>Prototyp</h2>
+      <p class="who">Pracownia techniczna · Turniej Robotyczny ORBITA</p></div>
+    <div class="body">
+      <div class="block"><h3>Co się stało</h3>
+      <p>Jako jedyni przyjechaliście kompletni. Konstrukcja, napęd, elektronika, dwa chwytaki własnej roboty, których zazdrości wam cała hala. Wszystko w trzech skrzyniach.</p>
+      <p>Trzecia skrzynia wypadła z windy towarowej z wysokości pierwszego piętra. To była ta z konstrukcją. Zostały wam dwie belki i jedno koło.</p>
+      <p>Robot, który ma najlepszy chwytak w hali i nie ma podwozia, nie jest robotem. Jest chwytakiem na podłodze.</p></div>
+      <div class="block"><h3>Wasze zasoby i potrzeby</h3><div id="tabC1"></div></div>
+      <div class="block"><h3>Ile punktów daje która liczba sztuk</h3>
+      <p style="font-size:14px;opacity:.8">Pole pomarańczowe to niezbędne minimum, zielone to ilość optymalna. Czerwone tło oznacza, że jesteście poniżej minimum i tracicie punkty.</p>
+      <div id="tabC2"></div></div>
+      <div class="block"><h3>Stoisko serwisowe i zasady</h3><div id="tabC3"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PULPIT ============ -->
+<section class="screen" id="pulpit">
+  <p class="eyebrow">Pulpit prowadzącego · zegar, sklep, rejestr wymian</p>
+  <h2 style="font-size:clamp(26px,5vw,44px);text-transform:uppercase;margin-bottom:16px">Pulpit</h2>
+
+  <div class="timer no-print" id="timerBox">
+    <div class="phase" id="tPhase">Rynek nieuruchomiony</div>
+    <div class="clock" id="tClock">24:00</div>
+    <div class="tctl">
+      <button id="tStart">Start rynku</button>
+      <button id="tPause">Pauza / wznów</button>
+      <button id="tTick">Odejmij żeton ręcznie</button>
+      <button id="tReset">Restart całej gry</button>
+    </div>
+  </div>
+
+  <div class="panel"><h4>Stan drużyn</h4><div style="overflow-x:auto"><table class="inv" id="invTab"></table></div>
+    <p style="font-size:12.5px;opacity:.75;margin:10px 0 0">Kolor liczby: czerwony — poniżej niezbędnego minimum, pomarańczowy — między minimum a optimum, zielony — optimum osiągnięte.</p>
+  </div>
+
+  <div class="panel"><h4>Wymiana między drużynami</h4>
+    <div class="tform">
+      <div class="tcol"><div class="lab">Przekazuje <select id="trFrom"></select></div><div id="trFromRows"></div></div>
+      <div class="tcol"><div class="lab">Przekazuje <select id="trTo"></select></div><div id="trToRows"></div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" id="trDo">Zapisz wymianę</button>
+      <button class="btn sm ghost" id="trClear">Wyczyść pola</button>
+    </div>
+  </div>
+
+  <div class="panel"><h4>Stoisko serwisowe</h4>
+    <div class="lab" style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:8px">Obsługiwana drużyna <select id="shTeam"></select></div>
+    <div style="overflow-x:auto"><table style="font-size:13px" id="shTab"></table></div>
+    <div id="shSum" class="mono" style="font-size:14px;margin:8px 0"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm" id="shDo">Zrealizuj transakcję</button>
+      <button class="btn sm ghost" id="shClear">Wyczyść pola</button>
+    </div>
+  </div>
+
+  <div class="panel"><h4>Zgłoszenie robota do oceny</h4>
+    <div id="outBtns" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <p style="font-size:13px;opacity:.78;margin:10px 0 0">Zgłoszenie jest nieodwracalne. Drużyna przestaje tracić żetony i nie może już handlować.</p>
+  </div>
+
+  <div class="panel"><h4>Dziennik</h4><div class="log" id="logBox"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn sm ghost" id="expBtn">Pokaż stan jako tekst</button>
+    </div>
+    <textarea id="expBox" class="hidden mono" style="width:100%;height:140px;margin-top:10px;font-size:12px;padding:8px;border:2px solid var(--sea-deep)"></textarea>
+  </div>
+</section>
+
+<!-- ============ WYNIKI ============ -->
+<section class="screen" id="wyniki">
+  <p class="eyebrow">Wyniki · liczone ze stanu na pulpicie</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:16px">Wyniki</h2>
+  <button class="btn no-print" id="calcBtn" style="margin-bottom:20px">Przelicz wyniki</button>
+  <div id="wynOut" class="hidden">
+    <div class="score3">
+      <div class="sA"><div class="lbl">Nakrętka</div><div class="big" id="scA">0</div><div class="delta" id="deA"></div></div>
+      <div class="sB"><div class="lbl">Zwarcie</div><div class="big" id="scB">0</div><div class="delta" id="deB"></div></div>
+      <div class="sC"><div class="lbl">Prototyp</div><div class="big" id="scC">0</div><div class="delta" id="deC"></div></div>
+    </div>
+    <div class="joint">
+      <div class="lbl mono" style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.7">Wynik wspólny — ile punktów trzy drużyny wyciągnęły z tego rynku razem</div>
+      <div class="jbar"><i id="jFill" style="width:0%"></i><b id="jTxt">0 / 825</b></div>
+      <p style="font-size:14px;margin-top:11px;opacity:.85" id="jComment"></p>
+    </div>
+    <div class="grid3" id="brkWrap"></div>
+  </div>
+</section>
+
+<!-- ============ OMÓWIENIE ============ -->
+<section class="screen" id="debrief">
+  <p class="eyebrow">Po grze · 16 minut</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:18px">Omówienie</h2>
+
+  <div class="note lime">Zacznij od jednej liczby: <b>wyniku wspólnego</b>. Potem pokaż, ile dało się wyciągnąć maksymalnie. Dopiero wtedy rozmawiajcie o tym, kto wygrał.</div>
+
+  <div class="block"><h3>Cztery światy tej samej gry</h3>
+    <table><thead><tr><th>Sposób gry</th><th class="n">Razem</th><th>Co to znaczy</th></tr></thead><tbody>
+      <tr><td>Nikt z nikim nie handluje</td><td class="n"><b>247</b></td><td>Każdy siedzi na swojej górze niepotrzebnych części i tonie w brakach.</td></tr>
+      <tr><td>Wszyscy ratują się tylko stoiskiem</td><td class="n"><b>616</b></td><td>Da się przeżyć, ale płacicie za to widełkami sklepu — kupujecie drogo, sprzedajecie tanio.</td></tr>
+      <tr><td>Sprawny rynek, późne zamknięcie</td><td class="n"><b>782</b></td><td>Części trafiły tam, gdzie są potrzebne, ale zegar zjadł żetony.</td></tr>
+      <tr><td>Sprawny rynek, szybkie zamknięcie</td><td class="n"><b>825</b></td><td>To samo, tylko że drużyny wiedziały, kiedy przestać.</td></tr>
+    </tbody></table>
+    <p>Różnica między pierwszym a ostatnim wierszem to <b>578 punktów</b>, których nikt nie musiał nikomu zabierać. Nie leżały u żadnej drużyny. Powstawały dopiero w momencie wymiany.</p>
+  </div>
+
+  <div class="block"><h3>Dlaczego stoisko jest złe, a jednocześnie niezbędne</h3>
+    <p>Stoisko kupuje kontroler za 40 kredytów, a sprzedaje za 110. Ta luka to nie chciwość sklepikarza, tylko przestrzeń, w której wam się opłaca handlować ze sobą. Każda cena między 40 a 110 jest lepsza dla obu stron niż stoisko.</p>
+    <p>Zapytaj drużyny, ile razy poszły do sklepu po rzecz, którą sąsiad miał w nadmiarze i oddałby taniej. To najczęstszy błąd w tej grze: sklep jest widoczny i przewidywalny, a sąsiad wymaga rozmowy.</p>
+  </div>
+
+  <div class="block"><h3>Nadwyżka jest prawie nic nie warta</h3>
+    <p>Sztuka ponad optimum daje 1 punkt. Sztuka poniżej niezbędnego minimum kosztuje od 3 do 30 punktów, zależnie od części. Ta asymetria jest w tabelach od początku i prawie nikt jej nie zauważa przed końcem gry.</p>
+    <p>Nakrętka zaczyna z dwudziestoma dwiema belkami przy optimum dziesięć. Dwanaście zbędnych belek to dwanaście punktów. Te same dwanaście belek u Prototypu, który ma dwie przy optimum szesnaście, jest warte ponad sto. <b>Ten sam przedmiot, dziesięciokrotna różnica wartości.</b> Na tym polega handel i na tym polega większość porozumień w życiu.</p>
+  </div>
+
+  <div class="block"><h3>Zegar</h3>
+    <p>Kto zgłosił robota pierwszy i czy mu się to opłaciło? Premia za pierwsze miejsce to 50 punktów, za drugie 30. Jedna dobra wymiana potrafi być warta więcej. Jedna zmarnowana minuta kosztuje żetony.</p>
+    <p>Zapytaj, czy któraś drużyna świadomie zdecydowała, kiedy przestać, czy po prostu grała do końca, bo zegar sam się skończył. To jest różnica między negocjowaniem a przeczekiwaniem.</p>
+  </div>
+
+  <div class="block"><h3>Pytania do klasy</h3>
+    <ul class="tight">
+      <li>Kto pierwszy powiedział na głos, czego mu brakuje? Zaszkodziło mu to czy pomogło?</li>
+      <li>Czy ktoś próbował udawać, że nie potrzebuje rzeczy, której rozpaczliwie potrzebował? Jak długo to trzymało?</li>
+      <li>Czy zdarzyła się wymiana w trójkę — A daje B, B daje C, C daje A? To najtrudniejsza i najbardziej opłacalna rzecz na tym rynku.</li>
+      <li>Czy któraś drużyna kupiła coś w sklepie, a potem zobaczyła to samo u sąsiada w nadmiarze?</li>
+      <li>Ile razy padło pytanie „czego wam brakuje", a ile razy „ile chcecie za to"?</li>
+      <li>Gdybyście grali jeszcze raz, co zrobilibyście w pierwszych trzech minutach?</li>
+    </ul>
+  </div>
+
+  <div class="block"><h3>Jeśli grasz drugi raz</h3>
+    <ul class="tight">
+      <li>Zamień drużyny miejscami i porównajcie wynik wspólny z pierwszym podejściem. Prawie zawsze rośnie o ponad sto punktów.</li>
+      <li>Zamknij stoisko na pierwsze osiem minut. Zmusza to do rozmowy zamiast do zakupów.</li>
+      <li>Skróć rynek do dwunastu minut. Zobaczycie, jak bardzo pośpiech psuje wymianę.</li>
+      <li>Wprowadź zasadę: każda wymiana musi obejmować co najmniej dwa różne rodzaje części. Utrudnia to proste „ja tobie koło, ty mnie czujnik" i wymusza pakiety.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>Stowarzyszenie 2piny · ORBITA · gra wymiany 14–18 lat</span>
+  <span>Działa offline. Żadne dane nie wychodzą z tego pliku.</span>
+</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- konfiguracja gry ---------- */
+var CZ=[
+ {id:'silniki',n:'Silniki'},{id:'chwytaki',n:'Chwytaki'},{id:'czujniki',n:'Czujniki'},
+ {id:'kola',n:'Koła'},{id:'akumulatory',n:'Akumulatory'},{id:'kontrolery',n:'Kontrolery'},
+ {id:'belki',n:'Belki konstrukcyjne'},{id:'przewody',n:'Przewody'}];
+var T=['A','B','C'], NAZWA={A:'Nakrętka',B:'Zwarcie',C:'Prototyp'};
+var MA={
+ A:{silniki:8,chwytaki:3,czujniki:0,kola:12,akumulatory:1,kontrolery:0,belki:22,przewody:2},
+ B:{silniki:1,chwytaki:0,czujniki:14,kola:2,akumulatory:9,kontrolery:5,belki:4,przewody:20},
+ C:{silniki:4,chwytaki:5,czujniki:6,kola:1,akumulatory:8,kontrolery:3,belki:2,przewody:3}};
+var OPT={
+ A:{silniki:4,chwytaki:1,czujniki:5,kola:6,akumulatory:4,kontrolery:2,belki:10,przewody:12},
+ B:{silniki:5,chwytaki:2,czujniki:6,kola:8,akumulatory:4,kontrolery:2,belki:12,przewody:8},
+ C:{silniki:3,chwytaki:2,czujniki:4,kola:8,akumulatory:3,kontrolery:2,belki:16,przewody:12}};
+var MIN={
+ A:{silniki:3,chwytaki:1,czujniki:3,kola:4,akumulatory:3,kontrolery:1,belki:8,przewody:8},
+ B:{silniki:4,chwytaki:1,czujniki:4,kola:6,akumulatory:3,kontrolery:2,belki:8,przewody:6},
+ C:{silniki:2,chwytaki:1,czujniki:3,kola:6,akumulatory:2,kontrolery:1,belki:12,przewody:8}};
+var POPT={
+ A:{silniki:20,chwytaki:10,czujniki:35,kola:20,akumulatory:30,kontrolery:40,belki:25,przewody:25},
+ B:{silniki:40,chwytaki:30,czujniki:20,kola:30,akumulatory:15,kontrolery:20,belki:30,przewody:15},
+ C:{silniki:20,chwytaki:12,czujniki:20,kola:35,akumulatory:15,kontrolery:20,belki:50,przewody:30}};
+var PMIN={
+ A:{silniki:12,chwytaki:6,czujniki:20,kola:12,akumulatory:18,kontrolery:25,belki:15,przewody:15},
+ B:{silniki:25,chwytaki:18,czujniki:12,kola:18,akumulatory:9,kontrolery:12,belki:18,przewody:9},
+ C:{silniki:12,chwytaki:7,czujniki:12,kola:21,akumulatory:9,kontrolery:12,belki:32,przewody:18}};
+var KARA={
+ A:{silniki:8,chwytaki:5,czujniki:14,kola:5,akumulatory:14,kontrolery:30,belki:4,przewody:5},
+ B:{silniki:22,chwytaki:14,czujniki:4,kola:10,akumulatory:5,kontrolery:15,belki:6,przewody:3},
+ C:{silniki:10,chwytaki:6,czujniki:5,kola:11,akumulatory:5,kontrolery:15,belki:9,przewody:6}};
+var BONUS=1;
+var SKUP={silniki:25,chwytaki:30,czujniki:15,kola:8,akumulatory:20,kontrolery:40,belki:4,przewody:2};
+var SPRZ={silniki:70,chwytaki:90,czujniki:45,kola:25,akumulatory:55,kontrolery:110,belki:14,przewody:9};
+var KASA0=120, ZET0={A:16,B:20,C:18};
+var ZET={opt:8,min:4,popt:25,pmin:12,kara:4,bonus:2,cena:30};
+var PREMIA=[50,30,0], MAX_WSPOLNY=825, CZAS_RYNKU=24*60, TICK=120;
+
+function pkt(t,c,q){
+  var o=OPT[t][c],m=MIN[t][c];
+  if(q>=o)return POPT[t][c]+BONUS*(q-o);
+  if(q>=m)return Math.round(PMIN[t][c]+(POPT[t][c]-PMIN[t][c])*(q-m)/(o-m));
+  return PMIN[t][c]-KARA[t][c]*(m-q);
+}
+function pktZet(q){
+  if(q>=ZET.opt)return ZET.popt+ZET.bonus*(q-ZET.opt);
+  if(q>=ZET.min)return Math.round(ZET.pmin+(ZET.popt-ZET.pmin)*(q-ZET.min)/(ZET.opt-ZET.min));
+  return ZET.pmin-ZET.kara*(ZET.min-q);
+}
+
+/* ---------- stan gry ---------- */
+var S;
+function reset(){
+  S={dr:{},kolejka:[],sek:CZAS_RYNKU,bieg:false,log:[]};
+  T.forEach(function(t){
+    S.dr[t]={inv:{},kasa:KASA0,zet:ZET0[t],wyszedl:0};
+    CZ.forEach(function(c){S.dr[t].inv[c.id]=MA[t][c.id];});
+  });
+  loguj('Gra przygotowana. Rynek jeszcze nie ruszył.');
+}
+function loguj(txt,cls){
+  var d=new Date(),g=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  S.log.unshift({t:g,x:txt,c:cls||''});
+  rysujLog();
+}
+function rysujLog(){
+  var el=document.getElementById('logBox');
+  el.innerHTML=S.log.map(function(l){return '<div class="'+l.c+'">'+l.t+' · '+l.x+'</div>';}).join('');
+}
+
+/* ---------- nawigacja ---------- */
+var navBtns=document.querySelectorAll('.bar button[data-go]');
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
+  navBtns.forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
+document.querySelectorAll('[data-open]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.getElementById('gate'+b.dataset.open).classList.add('hidden');
+    document.getElementById('card'+b.dataset.open).classList.remove('hidden');
+  });
+});
+
+/* ---------- tabele na kartach drużyn ---------- */
+function tabZasoby(t){
+  var h='<table><thead><tr><th>Część</th><th class="n">Macie</th><th class="n">Optimum</th><th class="n">Minimum</th><th class="n">Bilans</th></tr></thead><tbody>';
+  CZ.forEach(function(c){
+    var b=MA[t][c.id]-OPT[t][c.id], brak=MA[t][c.id]<MIN[t][c.id];
+    h+='<tr'+(brak?' class="lack"':'')+'><td>'+c.n+'</td><td class="n">'+MA[t][c.id]+'</td><td class="n">'+OPT[t][c.id]+'</td><td class="n">'+MIN[t][c.id]+'</td><td class="n '+(b>=0?'pos':'neg')+'">'+(b>0?'+':'')+b+'</td></tr>';
+  });
+  h+='<tr><td>Żetony czasu</td><td class="n">'+ZET0[t]+'</td><td class="n">'+ZET.opt+'</td><td class="n">'+ZET.min+'</td><td class="n pos">+'+(ZET0[t]-ZET.opt)+'</td></tr>';
+  h+='<tr><td>Kredyty</td><td class="n">'+KASA0+'</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>';
+  return h+'</tbody></table>';
+}
+function tabPunkty(t){
+  var maxq=20;
+  var h='<div style="overflow-x:auto"><table class="pkttab"><thead><tr><th>szt.</th>';
+  CZ.forEach(function(c){h+='<th class="n">'+c.n.split(' ')[0]+'</th>';});
+  h+='<th class="n">Żetony</th></tr></thead><tbody>';
+  for(var q=0;q<=maxq;q++){
+    h+='<tr><td class="q"><b>'+q+'</b></td>';
+    CZ.forEach(function(c){
+      var cls=q===MIN[t][c.id]?'m':(q===OPT[t][c.id]?'o':(q<MIN[t][c.id]?'b':''));
+      h+='<td class="n '+cls+'">'+pkt(t,c.id,q)+'</td>';
+    });
+    var zc=q===ZET.min?'m':(q===ZET.opt?'o':(q<ZET.min?'b':''));
+    h+='<td class="n '+zc+'">'+pktZet(q)+'</td></tr>';
+  }
+  return h+'</tbody></table></div>';
+}
+function tabSklep(){
+  var h='<table><thead><tr><th>Część</th><th class="n">Stoisko skupuje po</th><th class="n">Stoisko sprzedaje po</th></tr></thead><tbody>';
+  CZ.forEach(function(c){h+='<tr><td>'+c.n+'</td><td class="n">'+SKUP[c.id]+' kr</td><td class="n">'+SPRZ[c.id]+' kr</td></tr>';});
+  h+='<tr><td>Żeton czasu</td><td class="n">nie skupuje</td><td class="n">'+ZET.cena+' kr</td></tr></tbody></table>';
+  h+='<table><tbody>'
+   +'<tr><td>Każda sztuka ponad optimum</td><td class="n pos">+1 pkt</td></tr>'
+   +'<tr><td>Każde 10 kredytów na koniec</td><td class="n pos">+1 pkt</td></tr>'
+   +'<tr><td>Zgłoszenie robota jako pierwsi</td><td class="n pos">+50 pkt</td></tr>'
+   +'<tr><td>Zgłoszenie robota jako drudzy</td><td class="n pos">+30 pkt</td></tr>'
+   +'<tr><td>Co 2 minuty ubywa</td><td class="n neg">1 żeton czasu</td></tr>'
+   +'<tr><td>Przy zerze żetonów, za każde 2 minuty</td><td class="n neg">−30 kredytów</td></tr>'
+   +'</tbody></table>';
+  return h;
+}
+T.forEach(function(t){
+  document.getElementById('tab'+t+'1').innerHTML=tabZasoby(t);
+  document.getElementById('tab'+t+'2').innerHTML=tabPunkty(t);
+  document.getElementById('tab'+t+'3').innerHTML=tabSklep();
+});
+
+/* ---------- pulpit: stan drużyn ---------- */
+function rysujInv(){
+  var h='<thead><tr><th>Część</th>';
+  T.forEach(function(t){h+='<th class="n c'+t+'">'+NAZWA[t]+(S.dr[t].wyszedl?' ✓':'')+'</th>';});
+  h+='</tr></thead><tbody>';
+  CZ.forEach(function(c){
+    h+='<tr><td>'+c.n+'</td>';
+    T.forEach(function(t){
+      var q=S.dr[t].inv[c.id];
+      var cls=q<MIN[t][c.id]?'q-lo':(q<OPT[t][c.id]?'q-mid':'q-ok');
+      h+='<td class="n '+cls+'">'+q+' <span style="opacity:.45;font-size:11px">/'+OPT[t][c.id]+'</span></td>';
+    });
+    h+='</tr>';
+  });
+  h+='<tr><td><b>Żetony czasu</b></td>';
+  T.forEach(function(t){
+    var q=S.dr[t].zet, cls=q<ZET.min?'q-lo':(q<ZET.opt?'q-mid':'q-ok');
+    h+='<td class="n '+cls+'"><b>'+q+'</b></td>';
+  });
+  h+='</tr><tr><td><b>Kredyty</b></td>';
+  T.forEach(function(t){h+='<td class="n"><b>'+S.dr[t].kasa+'</b></td>';});
+  h+='</tr><tr><td><b>Robot zgłoszony</b></td>';
+  T.forEach(function(t){h+='<td class="n">'+(S.dr[t].wyszedl?'miejsce '+S.dr[t].wyszedl:'—')+'</td>';});
+  return document.getElementById('invTab').innerHTML=h+'</tr></tbody>';
+}
+
+/* ---------- zegar ---------- */
+var interval=null;
+function rysujZegar(){
+  var s=Math.max(0,S.sek);
+  document.getElementById('tClock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  document.getElementById('timerBox').classList.toggle('warn',s<=120);
+}
+function tykniecie(){
+  var kom=[];
+  T.forEach(function(t){
+    if(S.dr[t].wyszedl)return;
+    if(S.dr[t].zet>0){S.dr[t].zet--;kom.push(NAZWA[t]+' −1 żeton');}
+    else{S.dr[t].kasa-=ZET.cena;kom.push(NAZWA[t]+' bez żetonów, −'+ZET.cena+' kr');}
+  });
+  if(kom.length)loguj('Minęły 2 minuty: '+kom.join(', ')+'.','tick');
+  rysujInv();
+}
+document.getElementById('tStart').addEventListener('click',function(){
+  if(interval)return;
+  S.bieg=true;document.getElementById('tPhase').textContent='Rynek otwarty';
+  loguj('Rynek otwarty.');
+  interval=setInterval(function(){
+    if(!S.bieg)return;
+    S.sek--;
+    if(S.sek>=0 && (CZAS_RYNKU-S.sek)>0 && (CZAS_RYNKU-S.sek)%TICK===0)tykniecie();
+    if(S.sek<=0){S.sek=0;S.bieg=false;clearInterval(interval);interval=null;
+      document.getElementById('tPhase').textContent='Rynek zamknięty';
+      loguj('Czas minął. Rynek zamknięty.','err');}
+    rysujZegar();
+  },1000);
+});
+document.getElementById('tPause').addEventListener('click',function(){
+  if(!interval)return;S.bieg=!S.bieg;
+  document.getElementById('tPhase').textContent=S.bieg?'Rynek otwarty':'Pauza';
+});
+document.getElementById('tTick').addEventListener('click',tykniecie);
+document.getElementById('tReset').addEventListener('click',function(){
+  if(!confirm('Zrestartować całą grę? Cały stan przepadnie.'))return;
+  if(interval){clearInterval(interval);interval=null;}
+  reset();document.getElementById('tPhase').textContent='Rynek nieuruchomiony';
+  rysujZegar();rysujInv();rysujWyjscia();
+});
+
+/* ---------- wymiana ---------- */
+function opcje(sel,pomin){
+  sel.innerHTML=T.map(function(t){return '<option value="'+t+'">'+NAZWA[t]+'</option>';}).join('');
+}
+function wierszeWymiany(host,pref){
+  var h='';
+  CZ.forEach(function(c){h+='<div class="trow"><span>'+c.n+'</span><input type="number" min="0" value="0" id="'+pref+c.id+'"></div>';});
+  h+='<div class="trow"><span><b>Kredyty</b></span><input type="number" min="0" value="0" id="'+pref+'kasa"></div>';
+  document.getElementById(host).innerHTML=h;
+}
+opcje(document.getElementById('trFrom'));opcje(document.getElementById('trTo'));
+document.getElementById('trTo').value='B';
+wierszeWymiany('trFromRows','f_');wierszeWymiany('trToRows','t_');
+function czytajStrone(pref){
+  var o={kasa:Math.max(0,parseInt(document.getElementById(pref+'kasa').value,10)||0)};
+  CZ.forEach(function(c){o[c.id]=Math.max(0,parseInt(document.getElementById(pref+c.id).value,10)||0);});
+  return o;
+}
+function zerujWymiane(){
+  ['f_','t_'].forEach(function(p){
+    document.getElementById(p+'kasa').value=0;
+    CZ.forEach(function(c){document.getElementById(p+c.id).value=0;});
+  });
+}
+document.getElementById('trClear').addEventListener('click',zerujWymiane);
+document.getElementById('trDo').addEventListener('click',function(){
+  var a=document.getElementById('trFrom').value,b=document.getElementById('trTo').value;
+  if(a===b){loguj('Wymiana odrzucona: obie strony to ta sama drużyna.','err');return;}
+  if(S.dr[a].wyszedl||S.dr[b].wyszedl){loguj('Wymiana odrzucona: drużyna, która zgłosiła robota, nie handluje.','err');return;}
+  var da=czytajStrone('f_'),db=czytajStrone('t_');
+  var bledy=[];
+  if(S.dr[a].kasa<da.kasa)bledy.push(NAZWA[a]+' nie ma tylu kredytów');
+  if(S.dr[b].kasa<db.kasa)bledy.push(NAZWA[b]+' nie ma tylu kredytów');
+  CZ.forEach(function(c){
+    if(S.dr[a].inv[c.id]<da[c.id])bledy.push(NAZWA[a]+' nie ma tylu: '+c.n);
+    if(S.dr[b].inv[c.id]<db[c.id])bledy.push(NAZWA[b]+' nie ma tylu: '+c.n);
+  });
+  var puste=da.kasa+db.kasa===0 && CZ.every(function(c){return da[c.id]+db[c.id]===0;});
+  if(puste)bledy.push('nie wpisano żadnych ilości');
+  if(bledy.length){loguj('Wymiana odrzucona: '+bledy.join('; ')+'.','err');return;}
+  CZ.forEach(function(c){
+    S.dr[a].inv[c.id]-=da[c.id];S.dr[b].inv[c.id]+=da[c.id];
+    S.dr[b].inv[c.id]-=db[c.id];S.dr[a].inv[c.id]+=db[c.id];
+  });
+  S.dr[a].kasa-=da.kasa;S.dr[b].kasa+=da.kasa;
+  S.dr[b].kasa-=db.kasa;S.dr[a].kasa+=db.kasa;
+  function opis(d){
+    var p=CZ.filter(function(c){return d[c.id]>0;}).map(function(c){return d[c.id]+'× '+c.n.toLowerCase();});
+    if(d.kasa>0)p.push(d.kasa+' kr');
+    return p.length?p.join(', '):'nic';
+  }
+  loguj('Wymiana: '+NAZWA[a]+' daje ('+opis(da)+') → '+NAZWA[b]+' daje ('+opis(db)+').');
+  zerujWymiane();rysujInv();
+});
+
+/* ---------- sklep ---------- */
+opcje(document.getElementById('shTeam'));
+(function(){
+  var h='<thead><tr><th>Część</th><th class="n">Skup</th><th class="n">Sprzedaż</th><th class="n">Drużyna kupuje</th><th class="n">Drużyna sprzedaje</th></tr></thead><tbody>';
+  CZ.forEach(function(c){
+    h+='<tr><td>'+c.n+'</td><td class="n">'+SKUP[c.id]+'</td><td class="n">'+SPRZ[c.id]+'</td>'
+      +'<td class="n"><input type="number" min="0" value="0" id="bk_'+c.id+'" style="width:62px;padding:4px;border:1px solid var(--sea-deep);font-family:var(--mono);text-align:right"></td>'
+      +'<td class="n"><input type="number" min="0" value="0" id="sp_'+c.id+'" style="width:62px;padding:4px;border:1px solid var(--sea-deep);font-family:var(--mono);text-align:right"></td></tr>';
+  });
+  h+='<tr><td>Żeton czasu</td><td class="n">—</td><td class="n">'+ZET.cena+'</td>'
+    +'<td class="n"><input type="number" min="0" value="0" id="bk_zet" style="width:62px;padding:4px;border:1px solid var(--sea-deep);font-family:var(--mono);text-align:right"></td>'
+    +'<td class="n">nie skupuje</td></tr></tbody>';
+  document.getElementById('shTab').innerHTML=h;
+})();
+function sklepSuma(){
+  var koszt=0,wplyw=0;
+  CZ.forEach(function(c){
+    koszt+=(parseInt(document.getElementById('bk_'+c.id).value,10)||0)*SPRZ[c.id];
+    wplyw+=(parseInt(document.getElementById('sp_'+c.id).value,10)||0)*SKUP[c.id];
+  });
+  koszt+=(parseInt(document.getElementById('bk_zet').value,10)||0)*ZET.cena;
+  var t=document.getElementById('shTeam').value;
+  var saldo=wplyw-koszt;
+  document.getElementById('shSum').innerHTML='Do zapłaty '+koszt+' kr · ze sprzedaży '+wplyw+' kr · <b>saldo '+(saldo>=0?'+':'')+saldo+' kr</b> · '
+    +NAZWA[t]+' ma '+S.dr[t].kasa+' kr'+(S.dr[t].kasa+saldo<0?' <span class="neg">— za mało</span>':'');
+}
+document.getElementById('shTab').addEventListener('input',sklepSuma);
+document.getElementById('shTeam').addEventListener('change',sklepSuma);
+function zerujSklep(){
+  CZ.forEach(function(c){document.getElementById('bk_'+c.id).value=0;document.getElementById('sp_'+c.id).value=0;});
+  document.getElementById('bk_zet').value=0;sklepSuma();
+}
+document.getElementById('shClear').addEventListener('click',zerujSklep);
+document.getElementById('shDo').addEventListener('click',function(){
+  var t=document.getElementById('shTeam').value,d=S.dr[t];
+  if(d.wyszedl){loguj('Zakup odrzucony: '+NAZWA[t]+' zgłosiła już robota.','err');return;}
+  var koszt=0,wplyw=0,bledy=[],kup={},sprz={};
+  CZ.forEach(function(c){
+    kup[c.id]=Math.max(0,parseInt(document.getElementById('bk_'+c.id).value,10)||0);
+    sprz[c.id]=Math.max(0,parseInt(document.getElementById('sp_'+c.id).value,10)||0);
+    koszt+=kup[c.id]*SPRZ[c.id];wplyw+=sprz[c.id]*SKUP[c.id];
+    if(d.inv[c.id]<sprz[c.id])bledy.push('nie ma tylu do sprzedania: '+c.n);
+  });
+  var kz=Math.max(0,parseInt(document.getElementById('bk_zet').value,10)||0);
+  koszt+=kz*ZET.cena;
+  if(d.kasa+wplyw-koszt<0)bledy.push('za mało kredytów');
+  if(koszt+wplyw===0)bledy.push('nie wpisano żadnych ilości');
+  if(bledy.length){loguj('Transakcja odrzucona ('+NAZWA[t]+'): '+bledy.join('; ')+'.','err');return;}
+  CZ.forEach(function(c){d.inv[c.id]+=kup[c.id]-sprz[c.id];});
+  d.zet+=kz;d.kasa+=wplyw-koszt;
+  var opisK=CZ.filter(function(c){return kup[c.id]>0;}).map(function(c){return kup[c.id]+'× '+c.n.toLowerCase();});
+  if(kz>0)opisK.push(kz+'× żeton czasu');
+  var opisS=CZ.filter(function(c){return sprz[c.id]>0;}).map(function(c){return sprz[c.id]+'× '+c.n.toLowerCase();});
+  loguj('Stoisko — '+NAZWA[t]+': kupuje ('+(opisK.join(', ')||'nic')+'), sprzedaje ('+(opisS.join(', ')||'nic')+'), saldo '+(wplyw-koszt)+' kr.');
+  zerujSklep();rysujInv();
+});
+
+/* ---------- zgłoszenia robotów ---------- */
+function rysujWyjscia(){
+  document.getElementById('outBtns').innerHTML=T.map(function(t){
+    return '<button class="btn sm'+(S.dr[t].wyszedl?' ghost':'')+'" data-out="'+t+'"'+(S.dr[t].wyszedl?' disabled':'')+'>'
+      +NAZWA[t]+(S.dr[t].wyszedl?' — miejsce '+S.dr[t].wyszedl:' zgłasza robota')+'</button>';
+  }).join('');
+  document.querySelectorAll('[data-out]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var t=b.dataset.out;
+      if(S.dr[t].wyszedl)return;
+      if(!confirm(NAZWA[t]+' zgłasza robota do oceny. Tego nie da się cofnąć. Potwierdzasz?'))return;
+      S.kolejka.push(t);S.dr[t].wyszedl=S.kolejka.length;
+      loguj(NAZWA[t]+' zgłasza robota jako '+S.kolejka.length+'. Premia: '+PREMIA[S.kolejka.length-1]+' pkt.');
+      rysujWyjscia();rysujInv();
+    });
+  });
+}
+
+/* ---------- eksport ---------- */
+document.getElementById('expBtn').addEventListener('click',function(){
+  var b=document.getElementById('expBox');
+  var txt='STAN GRY ORBITA\n';
+  T.forEach(function(t){
+    txt+='\n'+NAZWA[t]+' — kredyty '+S.dr[t].kasa+', żetony '+S.dr[t].zet
+       +', zgłoszenie: '+(S.dr[t].wyszedl||'brak')+'\n';
+    CZ.forEach(function(c){txt+='  '+c.n+': '+S.dr[t].inv[c.id]+'\n';});
+  });
+  b.value=txt;b.classList.remove('hidden');b.select();
+});
+
+/* ---------- wyniki ---------- */
+document.getElementById('calcBtn').addEventListener('click',function(){
+  document.getElementById('wynOut').classList.remove('hidden');
+  var suma=0,h='';
+  T.forEach(function(t){
+    var d=S.dr[t],poz=[];
+    CZ.forEach(function(c){poz.push([c.n+' — '+d.inv[c.id]+' szt.',pkt(t,c.id,d.inv[c.id])]);});
+    poz.push(['Żetony czasu — '+d.zet,pktZet(d.zet)]);
+    poz.push(['Kredyty — '+d.kasa+' kr',Math.floor(d.kasa/10)]);
+    var pr=d.wyszedl?PREMIA[d.wyszedl-1]:0;
+    poz.push([d.wyszedl?'Zgłoszenie jako '+d.wyszedl:'Robot niezgłoszony',pr]);
+    var s=poz.reduce(function(a,x){return a+x[1];},0);
+    suma+=s;
+    document.getElementById('sc'+t).textContent=s;
+    var braki=CZ.filter(function(c){return d.inv[c.id]<MIN[t][c.id];});
+    document.getElementById('de'+t).textContent=braki.length
+      ? 'poniżej minimum: '+braki.length+' cz.' : 'wszystkie minima osiągnięte';
+    h+='<div><h3 style="font-size:11px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:8px">'+NAZWA[t]+'</h3><table style="font-size:12.5px"><tbody>'
+      +poz.map(function(r){
+        var c=r[1]>0?'pos':(r[1]<0?'neg':'');
+        return '<tr><td style="padding:3px 6px">'+r[0]+'</td><td class="n '+c+'" style="padding:3px 6px">'+(r[1]>0?'+':'')+r[1]+'</td></tr>';
+      }).join('')+'<tr><td style="padding:3px 6px"><b>Razem</b></td><td class="n" style="padding:3px 6px"><b>'+s+'</b></td></tr></tbody></table></div>';
+  });
+  document.getElementById('brkWrap').innerHTML=h;
+  var pct=Math.max(0,Math.min(100,Math.round(suma/MAX_WSPOLNY*100)));
+  document.getElementById('jFill').style.width=pct+'%';
+  document.getElementById('jTxt').textContent=suma+' / '+MAX_WSPOLNY;
+  var jc=document.getElementById('jComment');
+  if(suma>=740)jc.textContent='Świetnie. Części trafiły tam, gdzie były potrzebne, i to szybko. Tak wygląda działający rynek.';
+  else if(suma>=616)jc.textContent='Dobrze, ale sporo zostało na stole. Sprawdźcie, kto zapłacił stoisku za coś, co sąsiad miał w nadmiarze.';
+  else if(suma>=400)jc.textContent='Handlowaliście za mało albo za późno. Wynik zbliżony do sytuacji, w której każdy ratuje się sam.';
+  else jc.textContent='Prawie nic nie wymieniliście. Każda drużyna siedzi na górze części, których nie potrzebuje, i tonie w brakach.';
+});
+
+reset();rysujZegar();rysujInv();rysujWyjscia();sklepSuma();
+})();
+</script>
+</body>
+</html>
