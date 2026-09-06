@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symulator Influencera — narzędzie edukacyjne</title>
+<style>
+:root{
+  --papier:#EDEDE7;
+  --karta:#FFFFFF;
+  --atrament:#2C4251;
+  --atrament-jasny:#5A7186;
+  --limonka:#EDFF13;
+  --alarm:#C4453B;
+  --dobry:#3E7D5A;
+  --linia:#C9CCC4;
+  --linia-mocna:#2C4251;
+  --display:-apple-system,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+  --dane:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --proza:Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--papier);
+  color:var(--atrament);
+  font-family:var(--display);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.owijka{max-width:1180px;margin:0 auto;padding:20px 16px 80px}
+
+/* ---------- nagłówek ---------- */
+.szczyt{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+  border-bottom:3px solid var(--linia-mocna);
+  padding-bottom:10px;margin-bottom:4px;
+}
+.tytul{
+  font-size:clamp(26px,5.2vw,52px);
+  font-weight:800;letter-spacing:-.035em;line-height:.9;
+  text-transform:uppercase;margin:0;
+}
+.tytul em{font-style:normal;background:var(--limonka);padding:0 .12em;}
+.podtytul{
+  font-family:var(--dane);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--atrament-jasny);
+}
+.pasek-limonka{height:7px;background:var(--limonka);margin-bottom:22px}
+
+/* ---------- siatka ---------- */
+.siatka{display:grid;grid-template-columns:330px 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.siatka{grid-template-columns:1fr}}
+
+/* ---------- karta ---------- */
+.karta{
+  background:var(--karta);
+  border:1px solid var(--linia);
+  padding:18px;
+}
+.karta+.karta{margin-top:18px}
+.karta.mocna{border:2px solid var(--linia-mocna)}
+
+.etykieta{
+  font-family:var(--dane);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--atrament-jasny);
+  display:block;margin-bottom:3px;
+}
+h2.sekcja{
+  font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:700;margin:0 0 12px;padding-bottom:7px;
+  border-bottom:2px solid var(--linia-mocna);
+}
+
+/* ---------- media kit ---------- */
+.mk-gora{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.mk-znaczek{
+  width:52px;height:52px;flex:0 0 52px;border-radius:50%;
+  background:var(--atrament);color:var(--limonka);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--dane);font-size:19px;font-weight:700;
+}
+.mk-nick{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1.05;word-break:break-word}
+.mk-opis{font-family:var(--dane);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--atrament-jasny);margin-top:3px}
+
+.wielka-liczba{font-family:var(--dane);font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.delta{font-family:var(--dane);font-size:12px;font-weight:700}
+.delta.plus{color:var(--dobry)}
+.delta.minus{color:var(--alarm)}
+
+.dwie{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+.rzad{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:10px;padding:6px 0;border-bottom:1px solid var(--linia);
+}
+.rzad:last-child{border-bottom:0}
+.rzad .k{font-family:var(--dane);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--atrament-jasny)}
+.rzad .w{font-family:var(--dane);font-size:14px;font-weight:700}
+
+/* ---------- paski ---------- */
+.miernik{margin:11px 0}
+.miernik-gora{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.miernik-gora .n{font-family:var(--dane);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--atrament-jasny)}
+.miernik-gora .v{font-family:var(--dane);font-size:12px;font-weight:700}
+.tor{height:9px;background:#DEDFD8;position:relative;overflow:hidden}
+.wypelnienie{height:100%;background:var(--atrament);transition:width .45s ease}
+.wypelnienie.limonka{background:var(--limonka)}
+.wypelnienie.alarm{background:var(--alarm)}
+.wypelnienie.dobry{background:var(--dobry)}
+
+/* ---------- wykres ---------- */
+.wykres{display:flex;align-items:flex-end;gap:3px;height:74px;margin-top:6px;border-bottom:2px solid var(--linia-mocna);padding-bottom:0}
+.slupek{flex:1;min-width:3px;background:var(--atrament);transition:height .4s ease}
+.slupek.ostatni{background:var(--limonka);outline:1px solid var(--atrament)}
+
+/* ---------- proza ---------- */
+.narracja{
+  font-family:var(--proza);font-size:16px;line-height:1.6;
+  border-left:4px solid var(--limonka);
+  padding:2px 0 2px 15px;margin:16px 0;
+}
+.mechanizm{
+  background:var(--atrament);color:#EFF2F0;
+  padding:15px 17px;margin-top:16px;
+}
+.mechanizm h3{
+  font-family:var(--dane);font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--limonka);
+  margin:0 0 9px;font-weight:700;
+}
+.mechanizm p{margin:0 0 8px;font-size:14px;line-height:1.55}
+.mechanizm p:last-child{margin-bottom:0}
+.mechanizm .wzor{
+  font-family:var(--dane);font-size:12px;
+  background:rgba(237,255,19,.12);padding:7px 9px;display:block;
+  border-left:2px solid var(--limonka);margin:9px 0;
+}
+
+/* ---------- akcje ---------- */
+.akcje{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+@media(max-width:620px){.akcje{grid-template-columns:1fr}}
+.akcja{
+  text-align:left;background:var(--karta);
+  border:1px solid var(--linia);border-left:4px solid var(--atrament);
+  padding:11px 13px;cursor:pointer;font-family:inherit;color:inherit;
+  transition:background .12s,border-color .12s,transform .08s;
+}
+.akcja:hover:not(:disabled){background:var(--limonka);border-left-color:var(--atrament)}
+.akcja:active:not(:disabled){transform:translateY(1px)}
+.akcja:focus-visible{outline:3px solid var(--atrament);outline-offset:2px}
+.akcja:disabled{opacity:.4;cursor:not-allowed}
+.akcja .an{font-size:14px;font-weight:700;display:block;margin-bottom:3px}
+.akcja .ao{font-family:var(--proza);font-size:13px;color:var(--atrament-jasny);font-style:italic;display:block}
+.akcja .ac{font-family:var(--dane);font-size:10px;letter-spacing:.06em;margin-top:6px;display:block;color:var(--atrament-jasny)}
+
+button.glowny{
+  background:var(--atrament);color:var(--limonka);border:0;
+  font-family:var(--display);font-size:13px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  padding:13px 26px;cursor:pointer;
+}
+button.glowny:hover{background:#1D2E3A}
+button.glowny:focus-visible{outline:3px solid var(--limonka);outline-offset:2px}
+button.drugi{
+  background:transparent;color:var(--atrament);border:2px solid var(--atrament);
+  font-family:var(--display);font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 15px;cursor:pointer;
+}
+button.drugi:hover{background:var(--atrament);color:var(--limonka)}
+button.drugi:focus-visible{outline:3px solid var(--atrament);outline-offset:2px}
+
+/* ---------- start ---------- */
+.pole{
+  width:100%;font-family:var(--dane);font-size:17px;
+  padding:11px 13px;border:2px solid var(--atrament);
+  background:var(--karta);color:var(--atrament);
+}
+.pole:focus{outline:3px solid var(--limonka);outline-offset:0}
+.nisze{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:9px;margin-top:8px}
+.nisza{
+  background:var(--karta);border:1px solid var(--linia);
+  padding:10px 12px;cursor:pointer;text-align:left;
+  font-family:inherit;color:inherit;transition:.12s;
+}
+.nisza:hover{border-color:var(--atrament)}
+.nisza[aria-pressed="true"]{background:var(--limonka);border:2px solid var(--atrament)}
+.nisza:focus-visible{outline:3px solid var(--atrament);outline-offset:2px}
+.nisza .nn{font-weight:700;font-size:14px;display:block}
+.nisza .no{font-family:var(--dane);font-size:10px;color:var(--atrament-jasny);letter-spacing:.05em;display:block;margin-top:3px}
+.cechy{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:10px}
+.cecha{border:1px solid var(--linia);padding:9px 11px;background:var(--karta)}
+.cecha .cn{font-family:var(--dane);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--atrament-jasny);display:block}
+.cecha .cv{font-family:var(--dane);font-size:21px;font-weight:700}
+
+/* ---------- tabela ---------- */
+table{width:100%;border-collapse:collapse;font-family:var(--dane);font-size:12px}
+th{
+  text-align:left;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--atrament-jasny);font-weight:700;
+  border-bottom:2px solid var(--linia-mocna);padding:5px 7px;
+}
+td{padding:6px 7px;border-bottom:1px solid var(--linia)}
+td.pr,th.pr{text-align:right}
+tr.ja{background:var(--limonka);font-weight:700}
+tr.czolo td:first-child{box-shadow:inset 4px 0 0 var(--dobry)}
+tr.spadek td:first-child{box-shadow:inset 4px 0 0 var(--alarm)}
+
+/* ---------- kronika ---------- */
+.kronika{list-style:none;margin:0;padding:0}
+.kronika li{
+  font-family:var(--proza);font-size:14px;line-height:1.5;
+  padding:8px 0 8px 12px;border-bottom:1px solid var(--linia);
+  border-left:3px solid var(--linia);
+}
+.kronika li:last-child{border-bottom:0}
+.kronika li b{font-family:var(--dane);font-size:10px;letter-spacing:.1em;display:block;color:var(--atrament-jasny);font-weight:700;margin-bottom:2px}
+
+/* ---------- dla nauczyciela ---------- */
+details.nauczyciel{border:2px dashed var(--atrament);padding:0;margin-top:20px;background:var(--karta)}
+details.nauczyciel summary{
+  cursor:pointer;padding:12px 15px;font-weight:700;font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+details.nauczyciel summary:focus-visible{outline:3px solid var(--atrament);outline-offset:-3px}
+details.nauczyciel .tresc{padding:0 15px 15px;font-family:var(--proza);font-size:15px;line-height:1.6}
+details.nauczyciel ol{padding-left:20px;margin:8px 0}
+details.nauczyciel li{margin-bottom:6px}
+
+/* ---------- wsparcie ---------- */
+.wsparcie{
+  background:var(--limonka);
+  border:2px solid var(--atrament);
+  padding:13px 15px;margin-top:18px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.wsparcie .tekst{flex:1;min-width:190px;font-family:var(--proza);font-size:15px;line-height:1.5}
+.wsparcie a.link{
+  font-family:var(--dane);font-size:13px;font-weight:700;
+  background:var(--atrament);color:var(--limonka);
+  padding:9px 15px;text-decoration:none;white-space:nowrap;
+}
+.wsparcie a.link:hover{background:#1D2E3A}
+.wsparcie a.link:focus-visible{outline:3px solid var(--atrament);outline-offset:2px}
+.wsparcie button.zamknij{
+  background:transparent;border:0;cursor:pointer;
+  font-family:var(--dane);font-size:17px;line-height:1;
+  color:var(--atrament);padding:4px 7px;
+}
+.wsparcie button.zamknij:focus-visible{outline:2px solid var(--atrament)}
+.stopka a{color:var(--atrament);text-decoration:underline}
+
+.ukryty{display:none !important}
+.stopka{
+  margin-top:34px;padding-top:14px;border-top:1px solid var(--linia);
+  font-family:var(--dane);font-size:10px;letter-spacing:.07em;
+  color:var(--atrament-jasny);text-transform:uppercase;
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+}
+@media(prefers-reduced-motion:reduce){*{transition:none !important}}
+@media print{
+  body{background:#fff}
+  #ekran-start,#ekran-gra,details.nauczyciel,#przyciski-gora,.wsparcie,#kopiuj,#drukuj,#od-nowa{display:none !important}
+  .karta,.mechanizm{border:1px solid #000;page-break-inside:avoid}
+  .mechanizm{background:#fff;color:#000}
+  .mechanizm h3{color:#000}
+}
+</style>
+</head>
+<body>
+<div class="owijka">
+
+  <header class="szczyt">
+    <div>
+      <h1 class="tytul">Symulator <em>Influencera</em></h1>
+      <div class="podtytul">Narzędzie edukacyjne · Stowarzyszenie 2piny · działa offline</div>
+    </div>
+    <div id="przyciski-gora"></div>
+  </header>
+  <div class="pasek-limonka"></div>
+
+  <!-- ================= EKRAN STARTU ================= -->
+  <section id="ekran-start">
+    <div class="karta mocna">
+      <h2 class="sekcja">Zanim zaczniesz</h2>
+      <p class="narracja" style="margin-top:0">
+        Prowadzisz kanał przez cztery lata. Co miesiąc podejmujesz jedną decyzję.
+        Po każdej z nich gra pokazuje ci, co dokładnie policzyła i dlaczego — bo celem
+        nie jest zdobycie miliona obserwujących, tylko zrozumienie, skąd ten milion się bierze.
+      </p>
+
+      <div style="margin-top:20px">
+        <label class="etykieta" for="nick">Nazwa kanału</label>
+        <input class="pole" id="nick" maxlength="26" placeholder="np. Kanał o niczym" autocomplete="off">
+      </div>
+
+      <div style="margin-top:20px">
+        <span class="etykieta">Tematyka kanału</span>
+        <div class="nisze" id="lista-nisz"></div>
+      </div>
+
+      <div style="margin-top:22px">
+        <span class="etykieta">Twoje mocne strony — wylosowane</span>
+        <div class="cechy" id="lista-cech"></div>
+        <div style="margin-top:10px">
+          <button class="drugi" id="losuj">Losuj jeszcze raz <span id="ile-losowan"></span></button>
+        </div>
+      </div>
+
+      <div style="margin-top:24px">
+        <button class="glowny" id="start">Zaczynam</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GRA ================= -->
+  <section id="ekran-gra" class="ukryty">
+    <div class="siatka">
+
+      <!-- lewa kolumna: media kit -->
+      <aside>
+        <div class="karta mocna">
+          <span class="etykieta">Wizytówka kanału</span>
+          <div class="mk-gora">
+            <div class="mk-znaczek" id="mk-poziom">1</div>
+            <div>
+              <div class="mk-nick" id="mk-nick">—</div>
+              <div class="mk-opis" id="mk-opis">—</div>
+            </div>
+          </div>
+
+          <span class="etykieta">Obserwujący</span>
+          <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap">
+            <span class="wielka-liczba" id="mk-obs">0</span>
+            <span class="delta" id="mk-delta"></span>
+          </div>
+
+          <div class="wykres" id="wykres" aria-hidden="true"></div>
+          <span class="etykieta" style="margin-top:6px">Zasięg miesięczny — ostatnie 24 miesiące</span>
+
+          <div class="dwie">
+            <div>
+              <span class="etykieta">Zaangażowanie</span>
+              <div class="wielka-liczba" style="font-size:23px" id="mk-zaang">0%</div>
+            </div>
+            <div>
+              <span class="etykieta">Zarobione</span>
+              <div class="wielka-liczba" style="font-size:23px" id="mk-hajs">0 zł</div>
+            </div>
+          </div>
+
+          <div class="miernik">
+            <div class="miernik-gora"><span class="n">Energia</span><span class="v" id="v-energia">100</span></div>
+            <div class="tor"><div class="wypelnienie" id="p-energia" style="width:100%"></div></div>
+          </div>
+          <div class="miernik">
+            <div class="miernik-gora"><span class="n">Wiarygodność</span><span class="v" id="v-wiary">70</span></div>
+            <div class="tor"><div class="wypelnienie" id="p-wiary" style="width:70%"></div></div>
+          </div>
+          <div class="miernik">
+            <div class="miernik-gora"><span class="n">Przychylność algorytmu</span><span class="v" id="v-algo">50</span></div>
+            <div class="tor"><div class="wypelnienie" id="p-algo" style="width:50%"></div></div>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="rzad"><span class="k">Stały przychód</span><span class="w" id="r-przychod">0 zł / mies.</span></div>
+            <div class="rzad"><span class="k">Stawka za lokowanie</span><span class="w" id="r-stawka">0 zł</span></div>
+            <div class="rzad"><span class="k">Etat</span><span class="w" id="r-etat">tak</span></div>
+            <div class="rzad"><span class="k">Koszty życia</span><span class="w" id="r-koszty">—</span></div>
+            <div class="rzad"><span class="k">Sprzęt i zespół</span><span class="w" id="r-zespol">brak</span></div>
+            <div class="rzad"><span class="k">Płatna subskrypcja</span><span class="w" id="r-sub">nieuruchomiona</span></div>
+            <div class="rzad"><span class="k">Walki</span><span class="w" id="r-walki">brak</span></div>
+            <div class="rzad"><span class="k" id="k-relacja">Relacja</span><span class="w" id="r-relacja">—</span></div>
+            <div class="rzad" id="wiersz-slawa" style="display:none"><span class="k">Rozgłos konfliktu</span><span class="w" id="r-slawa">0 / 100</span></div>
+          </div>
+        </div>
+
+        <div class="karta">
+          <h2 class="sekcja">Mocne strony</h2>
+          <div id="mk-cechy"></div>
+        </div>
+      </aside>
+
+      <!-- prawa kolumna -->
+      <main>
+        <div class="karta mocna">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <div>
+              <span class="etykieta">Miesiąc</span>
+              <div style="font-size:27px;font-weight:800;letter-spacing:-.02em" id="naglowek-miesiaca">—</div>
+            </div>
+            <div style="text-align:right">
+              <span class="etykieta">Ocena miesiąca</span>
+              <div style="font-size:20px;font-weight:800;text-transform:uppercase" id="ocena-miesiaca">—</div>
+            </div>
+          </div>
+
+          <div class="narracja" id="narracja">Wybierz pierwszą decyzję poniżej.</div>
+
+          <div class="mechanizm ukryty" id="mechanizm">
+            <h3>Co się właśnie policzyło</h3>
+            <div id="mechanizm-tresc"></div>
+          </div>
+        </div>
+
+        <div id="pasek-wsparcia" class="ukryty"></div>
+
+        <div class="karta mocna ukryty" id="karta-przewidywania">
+          <h2 class="sekcja">Zanim zobaczysz wynik</h2>
+          <p class="narracja" style="margin-top:0" id="tekst-przewidywania">—</p>
+          <div class="akcje" id="opcje-przewidywania"></div>
+        </div>
+
+        <div class="karta" id="karta-akcji">
+          <h2 class="sekcja" id="naglowek-akcji">Decyzja na ten miesiąc</h2>
+          <div class="akcje" id="akcje"></div>
+        </div>
+
+        <div class="karta">
+          <h2 class="sekcja">Ranking twórców w tej tematyce</h2>
+          <table>
+            <thead><tr>
+              <th style="width:34px">#</th><th>Kanał</th>
+              <th class="pr">Obserwujący</th><th class="pr">Zmiana</th>
+            </tr></thead>
+            <tbody id="ranking"></tbody>
+          </table>
+          <div class="stopka" style="margin-top:12px;border:0;padding:0">
+            <span>■ zielony — czołówka</span><span>■ czerwony — traci zasięg</span>
+          </div>
+        </div>
+
+        <div class="karta">
+          <h2 class="sekcja">Kronika kanału</h2>
+          <ul class="kronika" id="kronika"><li>Jeszcze nic się nie wydarzyło.</li></ul>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ================= PODSUMOWANIE ================= -->
+  <section id="ekran-koniec" class="ukryty">
+    <div class="karta mocna">
+      <span class="etykieta">Koniec kariery</span>
+      <h2 style="font-size:clamp(24px,4vw,38px);font-weight:800;letter-spacing:-.03em;margin:2px 0 12px;text-transform:uppercase" id="koniec-tytul">—</h2>
+      <div class="narracja" id="koniec-tresc"></div>
+      <div id="koniec-liczby"></div>
+      <div class="mechanizm" id="koniec-losowosc"></div>
+      <div class="mechanizm" id="koniec-nauka"></div>
+      <div id="wsparcie-koniec"></div>
+      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="glowny" id="od-nowa">Zagraj jeszcze raz</button>
+        <button class="drugi" id="kopiuj">Skopiuj raport</button>
+        <button class="drugi" id="drukuj">Drukuj</button>
+        <span id="status-kopii" class="etykieta" style="margin:0"></span>
+      </div>
+      <textarea id="raport-tekst" class="pole ukryty" rows="14" readonly
+        style="margin-top:12px;font-size:12px;line-height:1.5"></textarea>
+    </div>
+  </section>
+
+  <details class="nauczyciel">
+    <summary>Dla nauczyciela — jak to wykorzystać na lekcji</summary>
+    <div class="tresc">
+      <p>Gra trwa 48 tur i jedna rozgrywka zajmuje 10–15 minut. Sprawdza się w parach: jedna osoba klika, druga zapisuje decyzje i wynik. Po rozgrywce porównajcie ścieżki — przy tych samych cechach startowych wyniki potrafią się różnić kilkukrotnie.</p>
+      <p><b>Pytania do rozmowy po grze:</b></p>
+      <ol>
+        <li>Która decyzja dawała najszybszy wzrost, a która najtrwalszy? Czy to była ta sama decyzja?</li>
+        <li>Co się działo z wiarygodnością, gdy zarabiałeś najwięcej? Dlaczego te dwie rzeczy ciągną w przeciwne strony?</li>
+        <li>Przerwa obniża przychylność algorytmu. Kogo to faktycznie premiuje w prawdziwych mediach społecznościowych?</li>
+        <li>Spór z innym twórcą daje duży zasięg. Kto na nim zarabia — ty czy platforma?</li>
+        <li>Jeśli podpisałeś kontrakt na walkę: policz, ile obserwujących zostało po trzech miesiącach z tych, którzy przyszli na wydarzenie. Za co dokładnie zapłaciła ci federacja?</li>
+        <li>Na konferencji im gorzej się zachowasz, tym wyższa wypłata. Kto ustawił tę zasadę i komu ona służy?</li>
+        <li>Impreza branżowa podnosi kontakty, a kontakty zwiększają zysk z imprez. Kto nigdy nie wejdzie do takiej pętli?</li>
+        <li>W grze widzisz wzór, który liczy twój zasięg. Czy w prawdziwej aplikacji też go widzisz? Co z tego wynika?</li>
+        <li>Twoje wylosowane cechy startowe były darmowe. Co w prawdziwym życiu odpowiada takiemu losowaniu?</li>
+      </ol>
+      <p><b>Uwaga metodyczna.</b> Liczby w grze są uproszczone i nie odwzorowują żadnej konkretnej platformy. Chodzi o kierunki zależności, nie o dokładne wartości. Gra nie zbiera żadnych danych i działa bez połączenia z internetem.</p>
+      <p><b>Pasek wsparcia.</b> Co dwanaście tur pojawia się prośba o wsparcie autora. Jeśli puszczasz grę uczniom i nie chcesz, żeby widzieli prośbę o pieniądze, otwórz plik w notatniku, znajdź linijkę <code>wlaczone: true</code> na początku skryptu i zmień ją na <code>wlaczone: false</code>. Link zniknie także ze stopki.</p>
+    </div>
+  </details>
+
+  <div class="stopka">
+    <span>Symulator Influencera · wersja 1.0</span>
+    <span>Bez logowania · bez cookies · bez zbierania danych</span>
+    <span id="stopka-wsparcie">Wesprzyj autora: <a href="https://suppi.pl/jaceksuliga" target="_blank" rel="noopener noreferrer">suppi.pl/jaceksuliga</a></span>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============ narzędzia ============ */
+var los = function(a,b){ return a + Math.random()*(b-a); };
+var losCal = function(a,b){ return Math.floor(los(a,b+1)); };
+var ogranicz = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+var wybierz = function(t){ return t[Math.floor(Math.random()*t.length)]; };
+var el = function(id){ return document.getElementById(id); };
+
+function liczba(n){
+  n = Math.round(n);
+  if(n >= 1000000){ return (n/1000000).toFixed(2).replace('.',',') + ' mln'; }
+  if(n >= 10000){ return (n/1000).toFixed(1).replace('.',',') + ' tys.'; }
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+}
+function zloty(n){
+  n = Math.round(n);
+  if(n >= 1000000){ return (n/1000000).toFixed(2).replace('.',',') + ' mln zł'; }
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ') + ' zł';
+}
+function procent(n){ return n.toFixed(1).replace('.',',') + '%'; }
+
+/* ============ tryb nauki ============
+   Wyłączenie pytań o przewidywanie: wlaczone: false  */
+var PRZEWIDYWANIA = {
+  wlaczone:true,
+  miesiace:[1,2,3,5,10,15,20,25,30,35,40,45],
+  opcje:[
+    {id:'mocno', n:'Urośnie mocno', o:'Ponad 15% w górę.'},
+    {id:'troche', n:'Urośnie trochę', o:'Do 15% w górę.'},
+    {id:'spadek', n:'Spadnie', o:'Będzie mniej niż teraz.'}
+  ]
+};
+function pytacOPrzewidywanie(){
+  return PRZEWIDYWANIA.wlaczone && PRZEWIDYWANIA.miesiace.indexOf(s.mies) >= 0;
+}
+
+/* ============ dane ============ */
+var NISZE = [
+  {id:'gry',    n:'Gry',                 zasieg:1.20, kasa:0.85, tlum:1.25, o:'duża publiczność, ciasno i szybkie wystrzały'},
+  {id:'kuchnia',n:'Gotowanie',           zasieg:1.05, kasa:1.15, tlum:0.95, o:'stabilna, dobrze się sprzedaje'},
+  {id:'nauka',  n:'Nauka i ciekawostki', zasieg:0.80, kasa:0.90, tlum:0.70, o:'wolny wzrost, wierna publiczność'},
+  {id:'sport',  n:'Sport i ruch',        zasieg:1.00, kasa:1.20, tlum:1.00, o:'równa, mocno reklamowa'},
+  {id:'uroda',  n:'Moda i uroda',        zasieg:1.25, kasa:1.35, tlum:1.35, o:'ogromna publiczność, najdłuższa kolejka do niej'},
+  {id:'diy',    n:'Majsterkowanie',      zasieg:0.85, kasa:1.00, tlum:0.65, o:'mało widzów, ale i mało rywali'},
+  {id:'muzyka', n:'Muzyka',              zasieg:1.10, kasa:0.80, tlum:1.15, o:'zasięgi tak, pieniądze słabiej'},
+  {id:'podroze',n:'Podróże',             zasieg:0.95, kasa:1.10, tlum:0.90, o:'drogie w produkcji, ładne'}
+];
+
+var CECHY = [
+  {id:'kreatywnosc', n:'Kreatywność', o:'częstsze i mocniejsze wystrzały'},
+  {id:'charyzma',    n:'Charyzma',    o:'mniejszy odpływ, wyższe zaangażowanie'},
+  {id:'warsztat',    n:'Warsztat',    o:'lepsze materiały, mniejszy koszt energii'},
+  {id:'kontakty',    n:'Kontakty',    o:'współprace, oferty, wcześniejsze walki'},
+  {id:'odpornosc',   n:'Odporność',   o:'tańsza krytyka, szybsza regeneracja'}
+];
+
+var AKCJE = [
+  {id:'ilosc', n:'Publikuj codziennie',
+   o:'Trzydzieści materiałów zamiast jednego.',
+   zasieg:1.55, viral:0.7, energia:-19, algo:9, wiary:-1, zaang:-0.45,
+   m:'Algorytmy premiują regularność, bo częste publikowanie daje platformie więcej materiału do testowania. Zasięg rośnie, ale każdy pojedynczy materiał jest słabszy — i to widać po zaangażowaniu.'},
+
+  {id:'jakosc', n:'Jeden dopracowany materiał',
+   o:'Trzy tygodnie pracy, sześć minut oglądania.',
+   zasieg:0.85, viral:2.5, energia:-11, algo:2, wiary:3, zaang:0.7,
+   m:'Jeden dobry materiał ma znacznie wyższą szansę na wystrzał niż trzydzieści przeciętnych — ale tylko szansę. To zakład o wysokiej wypłacie i niskim prawdopodobieństwie. Rośnie za to zaangażowanie i wiarygodność, a te działają długo po tym, jak zasięg opadnie.'},
+
+  {id:'wspolpraca', n:'Zrób coś z innym twórcą',
+   o:'Cudza publiczność. Pożyczona, nie kupiona.',
+   zasieg:1.15, viral:1.2, energia:-13, algo:5, wiary:1, zaang:0.2, wspolpraca:true,
+   m:'Współpraca przenosi część widowni partnera do ciebie. Im większy partner, tym większy zastrzyk — ale ci ludzie przyszli dla niego. Bez własnego powodu, żeby zostać, część odpłynie w kolejnych miesiącach.'},
+
+  {id:'reklama', n:'Przyjmij zlecenie reklamowe',
+   o:'Ktoś płaci ci za zdanie, które i tak byś powiedział. Podobno.',
+   zasieg:0.9, viral:0.4, energia:-9, algo:0, wiary:-8, zaang:-0.9, kasaMult:2.8,
+   m:'Tu jest główny konflikt całej branży. Pieniądze biorą się z zaufania widzów, ale każde zlecenie to zaufanie trochę zużywa. Wiarygodność odbudowuje się powoli i sama, więc rzecz w tempie — nie w tym, czy brać.'},
+
+  {id:'przerwa', n:'Zrób sobie przerwę',
+   o:'Odpoczynek. Algorytm nie zna tego słowa.',
+   zasieg:0.25, viral:0.1, energia:38, algo:-16, wiary:2, zaang:-0.2,
+   m:'Bez energii wszystko inne przestaje działać — dlatego przerwa czasem się opłaca. Ale platforma nie rozróżnia odpoczynku od porzucenia kanału. Widzi tylko brak nowych materiałów i obniża przychylność. To ukryty koszt, którego nie widać w żadnej statystyce.'},
+
+  {id:'nauka', n:'Naucz się nowego formatu',
+   o:'Miesiąc w plecy. Może się zwróci.',
+   zasieg:0.62, viral:0.6, energia:-9, algo:-5, wiary:1, warsztat:1,
+   m:'Warsztat rośnie o punkt na stałe i podnosi każdy kolejny miesiąc. Koszt jest natychmiastowy, zysk rozłożony — dlatego prawie nikt tego nie robi, choć prawie każdemu by się opłaciło.'},
+
+  {id:'spor', n:'Wejdź w spór z innym twórcą',
+   o:'Zasięg gwarantowany. Kierunek już nie.',
+   zasieg:1.5, viral:1.7, energia:-17, algo:7, wiary:-4, zaang:0.6, spor:true,
+   m:'Konflikt to najtańsze paliwo w mediach. Ludzie oglądają kłótnie dłużej i komentują częściej, więc algorytm podbija je automatycznie. Zasięg dostajesz od razu, rachunek przychodzi później — i płacisz go wiarygodnością, nie pieniędzmi.'},
+
+  {id:'sprzedaj', n:'Sprzedaj kanał', o:'Ktoś chce kupić to, co zbudowałeś. Razem z nazwą.',
+   zasieg:1, viral:0, energia:-5, algo:0, wiary:0, sprzedaz:true,
+   m:'Publiczność jest aktywem i da się ją wycenić — mniej więcej dwadzieścia cztery miesiące twoich zarobków. Kupujący nie płaci za ciebie, tylko za uwagę, którą kontrolujesz, i po transakcji ta uwaga należy do niego.'},
+
+  {id:'odejdz', n:'Zakończ kanał na własnych warunkach', o:'Materiał pożegnalny i normalna praca.',
+   zasieg:1, viral:0, energia:0, algo:0, wiary:0, odejscie:true,
+   m:'Odejście w dobrym momencie jest w tej branży decyzją, której prawie nikt nie podejmuje — bo zawsze wygląda na przedwczesne, a algorytm nie daje żadnego sygnału, że to już czas.'},
+
+  {id:'kontakt', n:'Odezwij się do znajomego twórcy',
+   o:'Bez konkretnego powodu. Właśnie o to chodzi.',
+   zasieg:0.75, viral:0.6, energia:-4, algo:-1, wiary:1, kontaktRywal:true,
+   m:'Relacje w tej branży utrzymuje się wtedy, gdy nic od nikogo nie potrzebujesz. Kiedy potrzebujesz, jest już za późno, żeby je budować — i wtedy pisze się do ludzi, którzy dokładnie to słyszą.'},
+
+  {id:'etat', n:'Rzuć etat i zajmij się kanałem na pełny czas',
+   o:'Bez wypowiedzenia się nie da. Bez pensji też.',
+   zasieg:0.9, viral:0.8, energia:-6, algo:0, wiary:1, rzucEtat:true,
+   m:'To jedyna decyzja w tej grze, której nie da się cofnąć bez upokorzenia. Etat kosztuje cię czas i zasięg, ale trzyma cię na powierzchni w każdym słabym miesiącu. Po jego rzuceniu kanał musi zarobić na twoje życie — i robi to albo nie, niezależnie od tego, jak bardzo się starasz.'},
+
+  {id:'impreza', n:'Idź na imprezę branżową',
+   o:'Wszyscy się tam znają. Ty jeszcze nie.',
+   zasieg:0.55, viral:0.5, energia:-15, algo:1, wiary:0, zaang:-0.1, impreza:true,
+   m:'Branża jest siecią znajomości, nie rankingiem jakości. Jeden wieczór daje ci oznaczenia, wzmianki i zaproszenia, czyli zasięg, którego nie da się wypracować przy biurku. Nie powstaje przy tym żaden materiał, a energia znika tak samo jak przy pracy. To jest praca, tylko nie wygląda jak praca — i dlatego tak trudno się od niej odciąć.'},
+
+  {id:'subskrypcja', n:'Uruchom płatną subskrypcję',
+   o:'Część materiałów tylko dla płacących. Na stałe.',
+   zasieg:0.7, viral:0.5, energia:-12, algo:-3, wiary:1, subskrypcja:true,
+   m:'To zmiana modelu, nie kolejna decyzja miesiąca. Przestajesz sprzedawać uwagę reklamodawcom, zaczynasz sprzedawać dostęp widzom. Płaci zwykle od jednego do trzech procent publiczności, więc przestaje się liczyć wielkość, a zaczyna siła relacji. Cena jest stała: część twojej pracy znika za opłatą, publiczna widoczność spada na zawsze, a płacący co miesiąc czegoś oczekują.'},
+
+  {id:'freak', n:'Podpisz kontrakt na walkę',
+   o:'Trzy miesiące: trening, konferencja, walka.',
+   zasieg:0.35, viral:0.3, energia:-14, algo:3, wiary:-3, freak:true,
+   m:'Federacje walk celebryckich nie kupują twoich umiejętności, tylko twoją publiczność — dlatego stawki zależą od zasięgu, nie od formy. Przez trzy miesiące kanał praktycznie stoi, bo trening i promocja zjadają cały czas. To jest realna zamiana: oddajesz uwagę, którą budowałeś latami, za jednorazową wypłatę.'},
+
+  {id:'inwestycja', n:'Zainwestuj w sprzęt i pomoc',
+   o:'Wydajesz swoje, żeby oszczędzić swój czas.',
+   zasieg:0.7, viral:0.7, energia:-5, algo:-2, wiary:0, inwestycja:true,
+   m:'To moment, w którym kanał przestaje być hobby, a zaczyna być firmą. Sprzęt i pomocnicy podnoszą trwale każdy kolejny wynik i zmniejszają zmęczenie. Wymaga jednak gotówki, której na początku nie ma.'}
+];
+
+var KONFERENCJA = [
+  {id:'spokoj', n:'Zachowaj się normalnie', o:'Podajesz rękę, mówisz o treningu.',
+   hype:8, zasieg:0.5, viral:0.4, energia:-8, algo:1, wiary:2, zaang:-0.1, konf:true,
+   m:'Spokojna konferencja nie sprzedaje biletów, więc federacja jej nie promuje. Zachowujesz zaufanie widzów, ale wypłata za walkę będzie znacznie niższa. To jest cena przyzwoitości i ona jest tu policzalna.'},
+
+  {id:'podkrec', n:'Podkręć atmosferę', o:'Kilka mocnych zdań. Nic osobistego.',
+   hype:26, zasieg:0.95, viral:0.9, energia:-10, algo:5, wiary:-5, zaang:0.4, konf:true, zuzycie:2,
+   m:'Umowna, odgrywana wrogość jest w tym biznesie standardem i wszyscy o tym wiedzą — łącznie z widzami. Działa mimo to, bo liczy się nie wiara w konflikt, tylko chęć zobaczenia, jak się skończy.'},
+
+  {id:'granica', n:'Przekrocz granicę', o:'Atakujesz rywala osobiście. Sala szaleje.',
+   hype:55, zasieg:1.6, viral:1.6, energia:-13, algo:11, wiary:-15, zaang:1.0, konf:true, zuzycie:8,
+   m:'To jest moment, w którym twórca zamienia resztkę wiarygodności na wypłatę. Klip obiegnie wszystko, wypłata wzrośnie kilkukrotnie, a federacja zaproponuje kolejną walkę — bo właśnie udowodniłeś, że jesteś tego wart. Zaufania, które przy tym oddajesz, nie da się odkupić: sufit twojej wiarygodności spada na stałe.'}
+];
+
+var WALKA = {id:'walka', n:'Wyjdź do walki', o:'Wszystko, co zbudowałeś, na jeden wieczór.',
+  zasieg:1.0, viral:0.6, energia:-24, algo:6, wiary:0, zaang:0.2, finalWalki:true,
+  m:'Wieczór walki daje największy jednorazowy skok zasięgu w całej grze. Problem w tym, kto przychodzi: ci ludzie zainteresowali się wydarzeniem, nie tobą, więc większość odpłynie w kolejnych miesiącach. Zostaje wypłata, zmęczenie i kanał, który przez kwartał nie wydał nic.'};
+
+var NICKI = ['Karolina Bez Filtra','Pan Tu Nie Stał','Zwykły Kanał','Kuba Robi','Trzecia Zmiana','Sonia Mówi','Dobra Zmiana Tematu','Fabryka Treści','Kanał Trzeci','Olek i Kamera','Wieczorna Zmiana','Bez Ściemy','Mała Redakcja','Tomek na Głośno','Studio Piwnica','Weronika Wprost','Poranny Kanał','Ekipa z Bloku','Nie Ta Nisza','Dwa Mikrofony','Klub Późnej Nocy','Regularnie Nieregularnie'];
+
+/* ============ wydarzenia ============ */
+var WYDARZENIA = [
+  {id:'zmiana-algorytmu', w:function(s){return s.mies>4;}, waga:9,
+   t:'Platforma zmieniła zasady wyświetlania. Nikt nie wie dokładnie jakie.',
+   e:function(s){ var d = losCal(-22,22); s.algo = ogranicz(s.algo+d, 5, 95);
+     return {op:'Przychylność algorytmu '+(d>=0?'+':'')+d+'.',
+       m:'Platformy zmieniają zasady bez uprzedzenia i bez wyjaśnienia. Twórca nie ma na to żadnego wpływu — może tylko czekać i sprawdzać, po której stronie zmiany się znalazł. To jest realna cena budowania czegoś na cudzym gruncie.'}; }},
+
+  {id:'kradziez', w:function(s){return s.obs>4000;}, waga:6,
+   t:'Ktoś przepisał twój materiał słowo w słowo i zebrał na nim więcej niż ty.',
+   e:function(s){ s.algo = ogranicz(s.algo-4,5,95);
+     return {op:'Przychylność algorytmu −4.',
+       m:'Pomysłów nie da się chronić, a kopiowanie jest szybsze niż tworzenie. Platformy nie rozróżniają oryginału od kopii — liczy się, która wersja zebrała więcej reakcji.'}; }},
+
+  {id:'komentarze', w:function(s){return s.obs>1200;}, waga:9,
+   t:'Pod ostatnim materiałem zrobiło się nieprzyjemnie w komentarzach.',
+   e:function(s){ var koszt = Math.round(12 - s.cechy.odpornosc*0.5); s.energia = ogranicz(s.energia-koszt,0,100);
+     return {op:'Energia −'+koszt+'.',
+       m:'Odporność psychiczna jest w tej pracy zasobem, tak samo jak czas i pieniądze. Im większy zasięg, tym więcej krytyki — i tym więcej energii idzie na coś, co nie tworzy żadnego materiału.'}; }},
+
+  {id:'oferta', w:function(s){return s.obs>7000 && s.wiary>45;}, waga:8,
+   t:'Marka odezwała się sama. Stawka wyższa niż zwykle.',
+   e:function(s){ var kasa = s.stawka()*los(1.4,2.6); s.hajs += kasa; s.wiary = ogranicz(s.wiary-4,0,100);
+     return {op:'Przychód '+zloty(kasa)+', wiarygodność −4.',
+       m:'Gdy przekraczasz pewien próg, oferty zaczynają przychodzić same. Nie dlatego, że nagle jesteś lepszy — dlatego, że twoja publiczność stała się na tyle duża, że da się ją wycenić.'}; }},
+
+  {id:'stara-rzecz', w:function(s){return s.mies>10;}, waga:7,
+   t:'Materiał sprzed roku nagle zaczął chodzić.',
+   e:function(s){ var zysk = Math.round(s.obs*los(0.03,0.11)+los(120,900)); s.obs += zysk;
+     return {op:'Obserwujący +'+liczba(zysk)+'.',
+       m:'Materiały nie mają terminu ważności. Algorytm co jakiś czas testuje stare rzeczy na nowych widzach — i czasem trafia. To argument za tworzeniem materiałów, które nie zestarzeją się w tydzień.'}; }},
+
+  {id:'czystka', w:function(s){return s.obs>15000;}, waga:5,
+   t:'Platforma usunęła konta-boty. Twój licznik zauważalnie schudł.',
+   e:function(s){ var strata = Math.round(s.obs*los(0.02,0.06)); s.obs -= strata; s.zaang += 0.4;
+     return {op:'Obserwujący −'+liczba(strata)+', zaangażowanie +0,4 pkt.',
+       m:'Część każdego dużego licznika to konta, które nic nie oglądają. Po ich usunięciu liczba spada, a zaangażowanie rośnie — bo dzieli się przez mniejszą, ale prawdziwą liczbę. Wniosek: sam licznik obserwujących mówi mało.'}; }},
+
+  {id:'wywiad', w:function(s){return s.obs>40000;}, waga:5,
+   t:'Zaprosili cię do zwykłego, nieinternetowego medium.',
+   e:function(s){ var zysk = Math.round(s.obs*los(0.04,0.1)); s.obs += zysk; s.wiary = ogranicz(s.wiary+7,0,100);
+     return {op:'Obserwujący +'+liczba(zysk)+', wiarygodność +7.',
+       m:'Uwaga poza platformą jest cenniejsza niż ta na platformie, bo nie znika przy zmianie algorytmu. Dlatego duzi twórcy tak chętnie wychodzą do radia, telewizji i książek.'}; }},
+
+  {id:'awaria', w:function(s){return true;}, waga:5,
+   t:'Sprzęt padł w najgorszym możliwym momencie.',
+   e:function(s){ var koszt = Math.min(s.hajs, los(600,3500)); s.hajs -= koszt; s.energia = ogranicz(s.energia-6,0,100);
+     return {op:'Wydatek '+zloty(koszt)+', energia −6.',
+       m:'Tworzenie materiałów ma koszty stałe, o których nie mówi się w materiałach o tworzeniu materiałów. Przy małym kanale jeden zepsuty mikrofon to miesiąc przerwy.'}; }},
+
+  {id:'trend', w:function(s){return true;}, waga:8,
+   t:'W twojej tematyce zrobił się nagły trend.',
+   e:function(s){ var zysk = Math.round(s.obs*los(0.05,0.16)+los(200,1400)); s.obs += zysk; s.algo = ogranicz(s.algo+6,5,95);
+     return {op:'Obserwujący +'+liczba(zysk)+', przychylność +6.',
+       m:'Trend to podniesiona fala — unosi wszystkich w danej tematyce niezależnie od jakości. Dlatego wybór tematyki bywa ważniejszy od talentu, i dlatego tak wielu twórców goni tematy, na których się nie zna.'}; }},
+
+  {id:'wyczerpanie', w:function(s){return s.energia<35;}, waga:11,
+   t:'Siadasz do nagrania i nie masz nic do powiedzenia.',
+   e:function(s){ s.zaang = Math.max(1.2, s.zaang-0.8); s.energia = ogranicz(s.energia-5,0,100);
+     return {op:'Zaangażowanie −0,8 pkt, energia −5.',
+       m:'Zmęczenie widać w materiale, nawet jeśli twórca uważa, że nie widać. Widzowie reagują słabiej, algorytm to wychwytuje i obniża zasięg — więc twórca pracuje jeszcze więcej. Tak wygląda spirala wypalenia.'}; }},
+
+  {id:'sprostowanie', w:function(s){return s.wiary<48;}, waga:8,
+   t:'Ktoś zebrał twoje dawne zlecenia reklamowe i policzył, ile z nich się nie sprawdziło.',
+   e:function(s){ var strata = Math.round(s.obs*los(0.02,0.07)); s.obs -= strata; s.wiary = ogranicz(s.wiary-6,0,100);
+     return {op:'Obserwujący −'+liczba(strata)+', wiarygodność −6.',
+       m:'Internet ma pamięć i archiwum. Reklamy, które dziś wyglądają nieszkodliwie, za rok bywają dowodem w cudzym materiale. To ryzyko rośnie z każdą przyjętą współpracą.'}; }},
+
+  {id:'listy', w:function(s){return s.wiary>72;}, waga:7,
+   t:'Dostajesz wiadomość od kogoś, komu twój kanał realnie pomógł.',
+   e:function(s){ s.energia = ogranicz(s.energia+9,0,100); s.zaang += 0.3;
+     return {op:'Energia +9, zaangażowanie +0,3 pkt.',
+       m:'Kanały z wysoką wiarygodnością budują relację, nie tylko zasięg. To wolniejsza droga, ale odporniejsza — publiczność, która ci ufa, zostaje przy zmianie formatu, przerwie i słabszym miesiącu.'}; }},
+
+  {id:'relacja-dobra', w:function(s){return s.relacja>=72 && s.mies>6;}, waga:8,
+   t:'{K} wspomniał o tobie w swoim materiale. Bez umowy i bez powodu.',
+   e:function(s){ var z=Math.round(s.obs*los(0.04,0.12)+los(250,1500)); s.obs+=z; s.zaang+=0.3;
+     return {op:'Obserwujący +'+liczba(z)+', zaangażowanie +0,3 pkt.',
+       m:'Polecenie od kogoś, kto nic na tym nie zarabia, działa kilka razy mocniej niż reklama — bo widzowie to odróżniają. Nie da się tego kupić i nie da się o to poprosić.'}; }},
+
+  {id:'relacja-zla', w:function(s){return s.relacja<26 && s.mies>6;}, waga:8,
+   t:'{K} zrobił materiał, w którym nie wymienia twojej nazwy, ale wszyscy wiedzą, o kogo chodzi.',
+   e:function(s){ s.wiary=ogranicz(s.wiary-6,0,100); s.obs-=Math.round(s.obs*los(0.01,0.035));
+     return {op:'Wiarygodność −6 i trochę odpływu.',
+       m:'Twórca, z którym zerwałeś, ma dostęp do dokładnie tej samej publiczności co ty. To jest realny koszt każdego spalonego kontaktu i pojawia się miesiące po samym sporze.'}; }},
+
+  {id:'zasieg-bez-kasy', w:function(s){return s.obs>25000 && s.hajs<4000;}, waga:6,
+   t:'Masz duży zasięg i pusty portfel. Ktoś proponuje ci współpracę „za widoczność".',
+   e:function(s){ s.energia = ogranicz(s.energia-4,0,100);
+     return {op:'Energia −4. Odmówiłeś.',
+       m:'Zasięg to nie to samo co pieniądze — zamiana jednego w drugie wymaga osobnej decyzji i zwykle kosztuje wiarygodność. Twórcy z ogromnymi licznikami i zerowym przychodem to normalne zjawisko, nie wyjątek.'}; }}
+];
+
+/* ============ wsparcie autora ============
+   Żeby wyłączyć pasek na czas lekcji: wlaczone: false
+   Żeby zmienić częstotliwość: coIleTur (np. 24 = dwa razy na rozgrywkę)  */
+var WSPARCIE = {
+  wlaczone: true,
+  link: 'https://suppi.pl/jaceksuliga',
+  etykieta: 'suppi.pl/jaceksuliga',
+  coIleTur: 12,
+  naKoncu: true,
+  teksty: [
+    'Ta gra jest darmowa i taka zostanie. Jeśli ci się przydała, możesz postawić kawę.',
+    'Bez reklam, bez logowania, bez zbierania danych. Utrzymuje się z dobrej woli.',
+    'Narzędzie powstało po godzinach. Jeśli używasz go na lekcji, możesz to docenić.',
+    'Cały kod siedzi w jednym pliku, który możesz sobie zabrać. Wsparcie jest dobrowolne.'
+  ]
+};
+
+function rysujWsparcie(){
+  var box = el('pasek-wsparcia');
+  if(!WSPARCIE.wlaczone || s.mies % WSPARCIE.coIleTur !== 0 || s.wsparcieUkryte === s.mies){
+    box.classList.add('ukryty'); box.innerHTML = ''; return;
+  }
+  var tekst = WSPARCIE.teksty[Math.floor(s.mies / WSPARCIE.coIleTur - 1) % WSPARCIE.teksty.length];
+  box.className = 'wsparcie';
+  box.innerHTML = '<span class="tekst">' + tekst + '</span>' +
+    '<a class="link" href="' + WSPARCIE.link + '" target="_blank" rel="noopener noreferrer">Wesprzyj autora</a>' +
+    '<button class="zamknij" type="button" aria-label="Zamknij">✕</button>';
+  box.querySelector('.zamknij').addEventListener('click', function(){
+    s.wsparcieUkryte = s.mies;
+    box.classList.add('ukryty');
+  });
+}
+
+/* ============ zdarzenia własne dla niszy ============ */
+var ZDARZENIA_NISZY = {
+  gry:{t:'Wyszła gra, na którą czekali wszyscy. Twoja publiczność jest teraz gdzie indziej.',
+    e:function(s){
+      if(Math.random()<0.5){ var z=Math.round(s.obs*los(0.06,0.18)+los(400,2600)); s.obs+=z; s.algo=ogranicz(s.algo+8,5,95);
+        return {op:'Zdążyłeś z materiałem. Obserwujący +'+liczba(z)+'.',
+          m:'W niszy zależnej od premier liczy się bycie pierwszym, nie bycie najlepszym. Kto opublikuje w dniu premiery, zbiera wszystko; kto tydzień później, zbiera resztki po kimś innym.'}; }
+      s.algo=ogranicz(s.algo-9,5,95); s.zaang=Math.max(1.2,s.zaang-0.5);
+      return {op:'Nie zdążyłeś. Przychylność −9, zaangażowanie −0,5 pkt.',
+        m:'Twoja nisza ma własny kalendarz, którego nie ustalasz. Miesiąc pracy nad czymś innym może się okazać miesiącem straconym, bo publiczność w tym czasie oglądała premierę.'};
+    }},
+  kuchnia:{t:'Duży portal przepisał twój przepis. Bez podania źródła.',
+    e:function(s){ var z=Math.round(s.obs*los(0.02,0.07)); s.obs+=z; s.wiary=ogranicz(s.wiary-2,0,100);
+      return {op:'Trochę ruchu i tak spłynęło. Obserwujący +'+liczba(z)+'.',
+        m:'Przepisów nie da się chronić i cała ta nisza stoi na kopiowaniu. Zostaje jedno, czego skopiować nie można: to, że ludzie chcą patrzeć akurat na twoje ręce.'}; }},
+  nauka:{t:'Ktoś merytoryczny wypunktował błąd w twoim materiale.',
+    e:function(s){
+      if(s.wiary>62){ s.wiary=ogranicz(s.wiary+4,0,100); s.zaang+=0.5;
+        return {op:'Poprawiłeś się publicznie. Wiarygodność +4, zaangażowanie +0,5 pkt.',
+          m:'W niszy edukacyjnej sprostowanie buduje zaufanie mocniej niż bezbłędny materiał, bo pokazuje, jak traktujesz własne pomyłki. To działa tylko wtedy, gdy nie próbujesz zamiatać.'}; }
+      s.wiary=ogranicz(s.wiary-9,0,100); s.obs-=Math.round(s.obs*0.02);
+      return {op:'Zignorowałeś to. Wiarygodność −9.',
+        m:'Publiczność edukacyjna wybacza błąd i nie wybacza upierania się przy nim. To najostrzejsza nisza pod tym względem, i to jest jej największa zaleta.'};
+    }},
+  sport:{t:'Kontuzja. Miesiąc bez treningu i bez połowy planowanych materiałów.',
+    e:function(s){ s.energia=ogranicz(s.energia-12,0,100); s.zaang+=0.6;
+      return {op:'Energia −12, ale zaangażowanie +0,6 pkt.',
+        m:'Kiedy twoje ciało jest narzędziem pracy, choroba zatrzymuje produkcję całkowicie. Widzowie reagują wtedy cieplej niż zwykle — i to jest jedyna rekompensata, jaką dostajesz.'}; }},
+  uroda:{t:'Marka przysłała paczkę bez umowy i bez pytania. Z prośbą o „szczerą opinię".',
+    e:function(s){ var kasa=s.stawka()*los(0.2,0.5); s.hajs+=kasa; s.wiary=ogranicz(s.wiary-5,0,100); s.zuzycie+=1.2;
+      return {op:'Przychód '+zloty(kasa)+', wiarygodność −5.',
+        m:'Paczka bez umowy to najtańszy sposób kupienia twojej opinii, bo formalnie nikt ci nic nie zapłacił. Widzowie tego nie odróżnią od reklamy, a ty i tak zapłacisz sufitem wiarygodności.'}; }},
+  diy:{t:'Twój projekt trafił na zagraniczny agregator. Ruch z pół świata.',
+    e:function(s){ var z=Math.round(s.obs*los(0.1,0.3)+los(900,5000)); s.obs+=z; s.dlugKolab+=z*0.4;
+      return {op:'Obserwujący +'+liczba(z)+'.',
+        m:'Rzeczy, które się robi rękami, przekraczają barierę językową bez tłumaczenia. To rekompensuje małą polską publiczność tej niszy — z tym, że część tych ludzi nie zrozumie kolejnego materiału.'}; }},
+  muzyka:{t:'Roszczenie prawnoautorskie. Twój najlepszy materiał został zablokowany.',
+    e:function(s){ s.obs-=Math.round(s.obs*los(0.02,0.05)); s.algo=ogranicz(s.algo-7,5,95); s.hajs-=los(0,600);
+      return {op:'Odpływ obserwujących i przychylność −7.',
+        m:'W muzyce nie jesteś właścicielem tego, co publikujesz, i dowiadujesz się o tym w momencie, w którym coś zaczyna działać. To ryzyko wpisane w tę niszę, nie wypadek.'}; }},
+  podroze:{t:'Wyjazd wyszedł dwa razy drożej, niż zakładałeś.',
+    e:function(s){ var koszt=Math.min(Math.max(s.hajs,0), los(2500,9000)); s.hajs-=koszt; s.zaang+=0.4;
+      return {op:'Wydatek '+zloty(koszt)+'.',
+        m:'To jedyna nisza, w której materiał trzeba najpierw kupić. Przy małym kanale koszt produkcji przewyższa przychód i różnicę dopłaca się z własnej kieszeni albo z etatu.'}; }}
+};
+
+/* ============ twórca, z którym masz historię ============ */
+var KLUCZOWI = ['Bartek Zwyczajny','Ola Poniedziałek','Michał Bez Planu','Zosia Na Głośno','Kuba Popołudnie'];
+
+function opisRelacji(r){
+  if(r<20) return 'Nie odzywacie się. Jego widzowie wiedzą, co o tobie myśli.';
+  if(r<40) return 'Chłodno. Kiedyś było inaczej.';
+  if(r<62) return 'Znacie się, lubicie się na tyle, na ile trzeba.';
+  if(r<82) return 'Piszecie do siebie. Podrzuca ci pomysły.';
+  return 'Ufacie sobie. To w tej branży rzadkość.';
+}
+
+/* ============ stan ============ */
+var s = null;
+var wybranaNisza = null;
+var wylosowaneCechy = null;
+var pozostaleLosowania = 1;
+
+function nowyStan(nick, nisza, cechy){
+  var st = {
+    nick: nick, nisza: nisza, cechy: cechy,
+    mies: 1, obs: losCal(60,240),
+    zaang: 8.5, wiary: 70, energia: 100, algo: 50,
+    hajs: 0, zespol: 0, warsztatBonus: 0,
+    historia: [], zasiegi: [], kronika: [],
+    poprzObs: 0, rywale: [], koniec: null,
+    dlugKolab: 0, sumaZasiegow: 0, szczytObs: 0, reklamy: 0,
+    zuzycie: 0, spory: 0, wieksiRywale: 0, naciskOstatni: 1, zdarzeniaNiszy: 0,
+    etat: true, pensja: 4200, kosztyZycia: 2600, powroty: 0, miesBezEtatu: 0,
+    wystrzaly: 0, sumaSzans: 0, zPrzypadku: 0, zPracy: 0,
+    trafne: 0, przewidywania: 0, czekaAkcja: null, mojePrzewidywanie: null,
+    przychodyKanalu: [],
+    kluczowy: null, relacja: 55, wspolneMaterialy: 0,
+    walka: null, walki: 0, slawa: 0,
+    subskrypcja: false, subskrybenci: 0, przychodSub: 0, imprezy: 0,
+    wsparcieUkryte: -1
+  };
+  st.stawka = function(){
+    return Math.pow(Math.max(st.obs,1), 0.86) * ogranicz(st.zaang/8.5, 0.5, 1.8) * (ogranicz(st.wiary,10,100)/70) * st.nisza.kasa * 0.38;
+  };
+  st.kluczowy = wybierz(KLUCZOWI);
+  var uzyte = {};
+  uzyte[st.kluczowy] = true;
+  st.rywale.push({ n: st.kluczowy, obs: Math.round(st.obs*los(1.1,2.6)+los(200,900)), zmiana:0,
+    tempo: los(0.055,0.115) * (0.72 + st.nisza.tlum*0.34), kluczowy:true });
+  for(var i=0;i<12;i++){
+    var n;
+    do { n = wybierz(NICKI); } while(uzyte[n]);
+    uzyte[n] = true;
+    st.rywale.push({ n:n, obs: Math.round(st.obs*los(0.6,4.5)+los(80,600)), zmiana:0,
+      tempo: los(0.03,0.13) * (0.72 + st.nisza.tlum*0.34) });
+  }
+  return st;
+}
+
+function coZaskoczylo(viral, czAlgo, czZaang, nacisk, kondycja){
+  var k=[];
+  if(viral) k.push({w:4.0, t:'wystrzał, którego nie dało się przewidzieć — na to nie miałeś wpływu'});
+  if(czAlgo<0.8) k.push({w:2.0-czAlgo, t:'niska przychylność algorytmu, mnożnik tylko ×'+czAlgo.toFixed(2).replace('.',',')});
+  if(czAlgo>1.25) k.push({w:czAlgo, t:'wysoka przychylność algorytmu, mnożnik ×'+czAlgo.toFixed(2).replace('.',',')});
+  if(czZaang<0.85) k.push({w:1.8-czZaang, t:'słabe zaangażowanie — twoja publiczność rozrosła się szybciej, niż przywiązała'});
+  if(nacisk<0.85) k.push({w:1.6-nacisk, t:'nacisk konkurencji w niszy, obniżający przyrost o '+Math.round((1-nacisk)*100)+'%'});
+  if(kondycja<1) k.push({w:2.2-kondycja, t:'twoje zmęczenie, obniżające cały wynik o '+Math.round((1-kondycja)*100)+'%'});
+  if(!k.length) return 'zwykły rozrzut losowy w liczbie nowych widzów';
+  k.sort(function(a,b){return b.w-a.w;});
+  return k[0].t;
+}
+
+function sredniaCech(){
+  var suma=0, ile=0;
+  CECHY.forEach(function(x){ suma += s.cechy[x.id]; ile++; });
+  return ile ? suma/ile : 0;
+}
+
+function sredniaZKanalu(){
+  if(!s.przychodyKanalu.length) return 0;
+  var suma=0;
+  s.przychodyKanalu.forEach(function(x){ suma+=x; });
+  return suma/s.przychodyKanalu.length;
+}
+
+function jakosc(){
+  return 4 + (s.cechy.kreatywnosc*2 + (s.cechy.warsztat + s.warsztatBonus*5.8)*1.6 + s.cechy.charyzma*1.4) / 8;
+}
+
+/* ============ ekran startu ============ */
+function rysujNisze(){
+  var box = el('lista-nisz'); box.innerHTML = '';
+  NISZE.forEach(function(n){
+    var b = document.createElement('button');
+    b.className = 'nisza'; b.type = 'button';
+    b.setAttribute('aria-pressed', wybranaNisza && wybranaNisza.id===n.id ? 'true':'false');
+    b.innerHTML = '<span class="nn">'+n.n+'</span><span class="no">'+n.o+'</span>';
+    b.addEventListener('click', function(){ wybranaNisza = n; rysujNisze(); });
+    box.appendChild(b);
+  });
+}
+
+function losujCechy(){
+  var c = {};
+  CECHY.forEach(function(x){ c[x.id] = losCal(4,17); });
+  wylosowaneCechy = c;
+  var box = el('lista-cech'); box.innerHTML = '';
+  CECHY.forEach(function(x){
+    var d = document.createElement('div');
+    d.className = 'cecha';
+    d.innerHTML = '<span class="cn">'+x.n+'</span><span class="cv">'+c[x.id]+'</span>';
+    box.appendChild(d);
+  });
+  el('ile-losowan').textContent = '(' + pozostaleLosowania + ')';
+  el('losuj').disabled = pozostaleLosowania <= 0;
+}
+
+/* ============ rysowanie gry ============ */
+function poziom(){
+  var o = s.obs;
+  if(o < 1000) return {nr:1, n:'Kanał początkujący'};
+  if(o < 10000) return {nr:2, n:'Mały kanał'};
+  if(o < 50000) return {nr:3, n:'Kanał średni'};
+  if(o < 200000) return {nr:4, n:'Kanał duży'};
+  if(o < 1000000) return {nr:5, n:'Kanał bardzo duży'};
+  return {nr:6, n:'Kanał masowy'};
+}
+
+function rysuj(){
+  var p = poziom();
+  el('mk-poziom').textContent = p.nr;
+  el('mk-nick').textContent = s.nick;
+  el('mk-opis').textContent = s.nisza.n + ' · ' + p.n;
+  el('mk-obs').textContent = liczba(s.obs);
+
+  var d = s.obs - s.poprzObs;
+  var dEl = el('mk-delta');
+  if(s.mies > 1){
+    dEl.textContent = (d>=0?'+':'−') + liczba(Math.abs(d)) + ' w tym miesiącu';
+    dEl.className = 'delta ' + (d>=0?'plus':'minus');
+  } else { dEl.textContent = ''; }
+
+  el('mk-zaang').textContent = procent(s.zaang);
+  el('mk-hajs').textContent = zloty(s.hajs);
+
+  ustawMiernik('energia', s.energia, s.energia<30?'alarm':(s.energia>65?'dobry':''));
+  ustawMiernik('wiary', s.wiary, s.wiary<35?'alarm':(s.wiary>70?'dobry':''));
+  ustawMiernik('algo', s.algo, s.algo<30?'alarm':'limonka');
+
+  el('r-przychod').textContent = zloty(s.stawka()*0.26 + (s.subskrypcja ? s.przychodSub : 0)) + ' / mies.';
+  el('r-stawka').textContent = zloty(s.stawka());
+  el('r-zespol').textContent = s.zespol===0 ? 'brak' : ('poziom ' + s.zespol + ' · ' + zloty(s.zespol*900) + '/mies.');
+  el('r-etat').textContent = s.etat ? ('tak · ' + zloty(s.pensja) + '/mies.') : 'nie · na własnym';
+  el('r-koszty').textContent = s.etat ? '—' : (zloty(s.kosztyZycia) + '/mies.');
+  el('r-sub').textContent = s.subskrypcja ? (liczba(s.subskrybenci) + ' os.') : 'nieuruchomiona';
+  el('r-walki').textContent = s.walki===0 ? 'brak' : (s.walki + (s.walki===1?' walka':' walki'));
+  el('k-relacja').textContent = 'Relacja: ' + s.kluczowy;
+  el('r-relacja').textContent = Math.round(s.relacja) + ' / 100';
+  el('r-relacja').title = opisRelacji(s.relacja);
+  el('wiersz-slawa').style.display = s.slawa > 4 ? '' : 'none';
+  el('r-slawa').textContent = Math.round(s.slawa) + ' / 100';
+
+  var cb = el('mk-cechy'); cb.innerHTML = '';
+  CECHY.forEach(function(x){
+    var w = s.cechy[x.id] + (x.id==='warsztat' ? s.warsztatBonus : 0);
+    var r = document.createElement('div');
+    r.className = 'rzad';
+    r.innerHTML = '<span class="k">'+x.n+'</span><span class="w">'+w+'</span>';
+    cb.appendChild(r);
+  });
+
+  rysujWykres();
+  rysujRanking();
+  rysujKronike();
+  rysujWsparcie();
+
+  var rok = 2026 + Math.floor((s.mies-1)/12);
+  var m = ((s.mies-1)%12)+1;
+  el('naglowek-miesiaca').textContent = String(m).padStart(2,'0') + ' / ' + rok + '  ·  tura ' + s.mies + ' z 48';
+}
+
+function ustawMiernik(id, v, klasa){
+  el('v-'+id).textContent = Math.round(v);
+  var p = el('p-'+id);
+  p.style.width = ogranicz(v,0,100) + '%';
+  p.className = 'wypelnienie ' + (klasa||'');
+}
+
+function rysujWykres(){
+  var w = el('wykres'); w.innerHTML = '';
+  var dane = s.zasiegi.slice(-24);
+  if(!dane.length){ return; }
+  var maks = Math.max.apply(null, dane);
+  dane.forEach(function(v,i){
+    var b = document.createElement('div');
+    b.className = 'slupek' + (i===dane.length-1 ? ' ostatni' : '');
+    b.style.height = Math.max(3, (v/maks)*100) + '%';
+    w.appendChild(b);
+  });
+}
+
+function rysujRanking(){
+  var lista = s.rywale.map(function(r){ return {n:r.n + (r.kluczowy?' ★':''), obs:r.obs, zm:r.zmiana, ja:false}; });
+  lista.push({n:s.nick, obs:s.obs, zm:s.obs-s.poprzObs, ja:true});
+  lista.sort(function(a,b){ return b.obs-a.obs; });
+  var tb = el('ranking'); tb.innerHTML = '';
+  lista.slice(0,14).forEach(function(r,i){
+    var tr = document.createElement('tr');
+    if(r.ja) tr.className = 'ja';
+    else if(i<3) tr.className = 'czolo';
+    else if(i>=11) tr.className = 'spadek';
+    var zm = s.mies>1 ? ((r.zm>=0?'+':'−') + liczba(Math.abs(r.zm))) : '—';
+    tr.innerHTML = '<td>'+(i+1)+'.</td><td>'+r.n+'</td>' +
+                   '<td class="pr">'+liczba(r.obs)+'</td><td class="pr">'+zm+'</td>';
+    tb.appendChild(tr);
+  });
+}
+
+function rysujKronike(){
+  var k = el('kronika');
+  if(!s.kronika.length){ k.innerHTML = '<li>Jeszcze nic się nie wydarzyło.</li>'; return; }
+  k.innerHTML = '';
+  s.kronika.slice(-6).reverse().forEach(function(w){
+    var li = document.createElement('li');
+    li.innerHTML = '<b>Miesiąc '+w.mies+'</b>'+w.t;
+    k.appendChild(li);
+  });
+}
+
+function rysujAkcje(){
+  var box = el('akcje'); box.innerHTML = '';
+  var naglowek = el('naglowek-akcji');
+
+  /* faza konferencji zamiast zwyklego menu */
+  if(s.walka && s.walka.faza === 'konferencja'){
+    naglowek.textContent = 'Konferencja prasowa przed walką';
+    KONFERENCJA.forEach(function(k){
+      var b = document.createElement('button');
+      b.className = 'akcja'; b.type = 'button';
+      b.innerHTML = '<span class="an">'+k.n+'</span><span class="ao">'+k.o+'</span>' +
+                    '<span class="ac">Rozgłos +'+k.hype+' · wiarygodność '+(k.wiary>=0?'+':'')+k.wiary+'</span>';
+      b.addEventListener('click', function(){ wykonaj(k); });
+      box.appendChild(b);
+    });
+    return;
+  }
+
+  /* wieczor walki */
+  if(s.walka && s.walka.faza === 'walka'){
+    naglowek.textContent = 'Wieczór walki';
+    var bw = document.createElement('button');
+    bw.className = 'akcja'; bw.type = 'button';
+    bw.innerHTML = '<span class="an">'+WALKA.n+'</span><span class="ao">'+WALKA.o+'</span>' +
+                   '<span class="ac">Zgromadzony rozgłos: '+Math.round(s.walka.hype)+'</span>';
+    bw.addEventListener('click', function(){ wykonaj(WALKA); });
+    box.appendChild(bw);
+    return;
+  }
+
+  naglowek.textContent = 'Decyzja na ten miesiąc';
+  AKCJE.forEach(function(a){
+    if(a.id === 'subskrypcja' && s.subskrypcja){ return; }
+    var b = document.createElement('button');
+    b.className = 'akcja'; b.type = 'button';
+    var koszt = '';
+    var zablokowane = false;
+
+    if(a.id === 'sprzedaj'){
+      var wycena = s.stawka()*0.26*24 + s.obs*1.1;
+      if(s.mies < 13 || s.obs < 25000){ zablokowane = true; koszt = 'Oferty przychodzą przy 25 tys. obserwujących i po roku'; }
+      else if(s.wiary < 35){ zablokowane = true; koszt = 'Nikt nie kupi kanału z tak niską wiarygodnością'; }
+      else { koszt = 'Oferta: ' + zloty(wycena) + ' · kończy rozgrywkę'; }
+    } else if(a.id === 'odejdz'){
+      if(s.mies < 19){ zablokowane = true; koszt = 'Dostępne po osiemnastu miesiącach'; }
+      else { koszt = 'Kończy rozgrywkę z zachowaniem tego, co masz'; }
+    } else if(a.id === 'etat'){
+      if(!s.etat){ return; }
+      var srednia = sredniaZKanalu();
+      var maBufor = s.hajs >= 6000;
+      var gotowy = srednia >= s.kosztyZycia && maBufor && s.przychodyKanalu.length >= 4;
+      koszt = 'Kanał zarabia ' + zloty(srednia) + '/mies., życie kosztuje ' + zloty(s.kosztyZycia);
+      if(!gotowy){
+        zablokowane = true;
+        koszt += s.przychodyKanalu.length < 4 ? ' — za mało danych' :
+                 (!maBufor ? ' — brak poduszki 6 000 zł' : ' — kanał jeszcze nie utrzyma cię sam');
+      }
+    } else if(a.id === 'inwestycja'){
+      var cena = 4000 * Math.pow(2.4, s.zespol);
+      koszt = 'Koszt: ' + zloty(cena);
+      if(s.hajs < cena){ zablokowane = true; koszt += ' — za mało środków'; }
+    } else if(a.id === 'subskrypcja'){
+      if(s.obs < 4000){ zablokowane = true; koszt = 'Wymaga 4 000 obserwujących'; }
+      else { koszt = 'Około ' + zloty(s.obs*0.018*18) + ' miesięcznie, na stałe'; }
+    } else if(a.id === 'freak'){
+      var progWalki = Math.round(45000 - s.cechy.kontakty*1100);
+      if(!(s.obs >= progWalki || s.slawa >= 35)){
+        zablokowane = true; koszt = 'Federacja odezwie się przy ' + liczba(progWalki) + ' obserwujących';
+      } else {
+        koszt = 'Zajmuje 3 miesiące · propozycja walki nr ' + (s.walki+1);
+      }
+    } else if(a.id === 'impreza'){
+      koszt = 'Energia −15 · efekt zależy od kontaktów (' + s.cechy.kontakty + ')';
+    } else if(a.id === 'wspolpraca'){
+      koszt = 'Skuteczność zależy od kontaktów (' + s.cechy.kontakty + ')';
+    } else if(a.id === 'reklama'){
+      koszt = 'Przychód ok. ' + zloty(s.stawka()*2.8);
+    } else if(a.id === 'przerwa'){
+      koszt = 'Energia +38, przychylność algorytmu −16';
+    } else {
+      koszt = 'Energia ' + a.energia;
+    }
+
+    if(a.energia < 0 && s.energia + a.energia < 1){ zablokowane = true; koszt += ' — brak sił'; }
+
+    b.disabled = zablokowane;
+    b.innerHTML = '<span class="an">'+a.n+'</span><span class="ao">'+a.o+'</span><span class="ac">'+koszt+'</span>';
+    b.addEventListener('click', function(){ wykonaj(a); });
+    box.appendChild(b);
+  });
+}
+
+/* ============ tura ============ */
+function wykonaj(a){
+  if(pytacOPrzewidywanie() && !s.czekaAkcja && !s.mojePrzewidywanie && !a.sprzedaz && !a.odejscie){
+    s.czekaAkcja = a;
+    el('karta-akcji').classList.add('ukryty');
+    el('karta-przewidywania').classList.remove('ukryty');
+    el('tekst-przewidywania').textContent =
+      'Wybrałeś: ' + a.n.toLowerCase() + '. Zanim policzę wynik — jak myślisz, co się stanie z liczbą obserwujących w tym miesiącu?';
+    var ob = el('opcje-przewidywania'); ob.innerHTML = '';
+    PRZEWIDYWANIA.opcje.forEach(function(o){
+      var b = document.createElement('button');
+      b.className = 'akcja'; b.type = 'button';
+      b.innerHTML = '<span class="an">' + o.n + '</span><span class="ao">' + o.o + '</span>';
+      b.addEventListener('click', function(){
+        var akcja = s.czekaAkcja;
+        s.czekaAkcja = null;
+        s.mojePrzewidywanie = o.id;
+        el('karta-przewidywania').classList.add('ukryty');
+        el('karta-akcji').classList.remove('ukryty');
+        wykonaj(akcja);
+      });
+      ob.appendChild(b);
+    });
+    el('karta-przewidywania').scrollIntoView({behavior:'smooth', block:'nearest'});
+    return;
+  }
+  s.poprzObs = s.obs;
+  var log = [];
+  var mech = [];
+  var przedObs = s.obs;
+
+  /* --- inwestycja --- */
+  if(a.inwestycja){
+    var cena = 4000 * Math.pow(2.4, s.zespol);
+    s.hajs -= cena;
+    s.zespol += 1;
+    s.warsztatBonus += 1;
+    log.push('Kupujesz sprzęt i bierzesz kogoś do pomocy.');
+    mech.push('Warsztat +1 na stałe, poziom zespołu ' + s.zespol + '. Od teraz każdy miesiąc kosztuje cię mniej energii.');
+  }
+  if(a.warsztat){ s.warsztatBonus += a.warsztat; }
+
+  /* --- wyjście z gry --- */
+  if(a.sprzedaz){
+    s.wycena = s.stawka()*0.26*24 + s.obs*1.1;
+    s.hajs += s.wycena;
+    s.mies++;
+    zakoncz('sprzedaz');
+    return;
+  }
+  if(a.odejscie){
+    s.mies++;
+    zakoncz('odejscie');
+    return;
+  }
+
+  /* --- kontakt z kluczowym twórcą --- */
+  if(a.kontaktRywal){
+    s.relacja = ogranicz(s.relacja + losCal(9,16), 0, 100);
+    log.push('Napisałeś do ' + s.kluczowy + '. Odpisał tego samego dnia.');
+    mech.push('Relacja: ' + Math.round(s.relacja) + ' na 100. Ten tydzień nie dał ci ani jednego obserwującego i to jest normalne — kontakty zwracają się później i nigdy w tym samym miesiącu, w którym się je buduje.');
+  }
+
+  /* --- rzucenie etatu --- */
+  if(a.rzucEtat){
+    s.etat = false;
+    log.push('Złożyłeś wypowiedzenie. Od teraz kanał musi zarobić na twoje życie.');
+    mech.push('Twój zasięg przestaje być obniżany o 12%, a każda decyzja kosztuje cię o 4 punkty energii mniej — bo masz wreszcie cały dzień. W zamian z konta ubywa teraz ' + zloty(s.kosztyZycia) + ' miesięcznie i nikt ci tego nie uzupełni.');
+  }
+
+  /* --- impreza branżowa --- */
+  if(a.impreza){
+    s.imprezy++;
+    var zysk = Math.round((s.obs * 0.02 + 250) * (0.5 + s.cechy.kontakty/14) * los(0.6,1.6));
+    s.obs += zysk;
+    s.cechy.kontakty = Math.min(20, s.cechy.kontakty + (Math.random() < 0.35 ? 1 : 0));
+    s.slawa = Math.min(100, s.slawa + 3);
+    log.push('Wracasz nad ranem z kilkoma nowymi znajomościami.');
+    mech.push('Obserwujący +' + liczba(zysk) + ' z oznaczeń i wzmianek innych twórców. Efekt rośnie z twoimi kontaktami, a kontakty rosną od chodzenia na imprezy — to pętla, która zamyka branżę przed osobami z zewnątrz.');
+  }
+
+  /* --- uruchomienie subskrypcji --- */
+  if(a.subskrypcja){
+    s.subskrypcja = true;
+    log.push('Uruchamiasz płatną subskrypcję.');
+    mech.push('Od tego miesiąca część materiałów jest za opłatą. Zyskujesz stały przychód niezależny od reklamodawców, ale każdy kolejny miesiąc ma o 8% mniejszy zasięg publiczny i kosztuje 3 punkty energii więcej. Tej decyzji nie da się cofnąć.');
+  }
+
+  /* --- podpisanie kontraktu na walkę --- */
+  if(a.freak){
+    var przeciwnikZnajomy = s.relacja < 45;
+    s.walka = {faza:'konferencja', hype: 10 + s.slawa*0.25 + (przeciwnikZnajomy?12:0), znajomy:przeciwnikZnajomy};
+    log.push('Podpisujesz kontrakt. Przeciwnik: ' + (przeciwnikZnajomy ? s.kluczowy + '. Federacja wie, co robi.' : 'ktoś, kogo nie znasz.'));
+    if(przeciwnikZnajomy) mech.push('Federacje sprzedają nie walkę, a historię — a najlepiej sprzedaje się historia dwóch osób, które kiedyś ze sobą pracowały. Rozgłos startuje o 12 punktów wyżej właśnie dlatego, że wasz konflikt jest prawdziwy.');
+    mech.push('Przez najbliższe dwa miesiące nie będziesz podejmować zwykłych decyzji — najpierw konferencja, potem walka. Kanał przez ten czas prawie stoi, a algorytm to zauważy.');
+  }
+
+  /* --- konferencja --- */
+  if(a.konf){
+    if(a.zuzycie && a.zuzycie >= 8 && s.relacja > 8){
+      s.relacja = ogranicz(s.relacja - 30, 0, 100);
+      mech.push('Po tym, co powiedziałeś na konferencji, relacja z ' + s.kluczowy + ' spadła do ' + Math.round(s.relacja) + '. Kolaboracji już nie będzie, a to była najtańsza droga wzrostu, jaką miałeś.');
+    }
+    s.walka.hype += a.hype;
+    s.walka.faza = 'walka';
+    s.zuzycie += (a.zuzycie || 0);
+    s.slawa = Math.min(100, s.slawa + a.hype*0.35);
+    log.push('Konferencja za tobą. Nagranie krąży po sieci.');
+    mech.push('Rozgłos przed walką wynosi teraz ' + Math.round(s.walka.hype) + '. Od tej liczby zależy i wypłata, i to, ilu ludzi w ogóle zobaczy wydarzenie.');
+  }
+
+  /* --- wieczór walki --- */
+  if(a.finalWalki){
+    var hype = s.walka.hype;
+    var nowi = Math.round(s.obs * (0.16 + hype/240) + hype * 600 * los(0.7,1.35));
+    var wyplata = (24000 + s.obs*0.45 + hype*1900) * los(0.8,1.25);
+    s.obs += nowi;
+    s.hajs += wyplata;
+    s.dlugKolab += nowi * 0.75;
+    s.zaang = Math.max(1.2, s.zaang - 1.5);
+    s.walki++;
+    s.walka = null;
+    log.push('Walka za tobą. Wypłata: ' + zloty(wyplata) + '.');
+    mech.push('Przybyło ' + liczba(nowi) + ' obserwujących, ale trzy czwarte z nich odejdzie w kolejnych miesiącach — przyszli na wydarzenie, nie na twój kanał. Reszta ogląda cię słabiej niż dawna publiczność, więc zaangażowanie spadło o 1,5 punktu na stałe. Wypłata zależała głównie od rozgłosu z konferencji, nie od twojego zasięgu. Właśnie dlatego federacjom opłaca się, żeby twórcy zachowywali się na konferencjach jak najgorzej.');
+  }
+
+  /* --- energia --- */
+  var kosztEnergii = a.energia;
+  if(kosztEnergii < 0){
+    var sprawnosc = 1 - ogranicz((s.cechy.warsztat + s.warsztatBonus*1.5 - 10)*0.009, -0.10, 0.14);
+    kosztEnergii = Math.round(kosztEnergii * (1 - s.zespol*0.13) * sprawnosc);
+  }
+  if(s.subskrypcja && !a.subskrypcja){ kosztEnergii -= 3; }
+  if(s.etat && !a.rzucEtat){ kosztEnergii -= 4; }
+  if(kosztEnergii > 0){ kosztEnergii = Math.round(kosztEnergii * (1 + ogranicz((s.cechy.odpornosc-10)*0.015, -0.13, 0.16))); }
+  s.energia = ogranicz(s.energia + kosztEnergii, 0, 100);
+
+  /* --- podstawy --- */
+  s.algo = ogranicz(s.algo + a.algo + losCal(-5,5), 5, 95);
+  if(a.kasaMult){ s.zuzycie += 1.7; }
+  if(a.spor){ s.zuzycie += 6; s.spory++; }
+  var pulapWiary = ogranicz(74 - s.zuzycie, 18, 74);
+  var efektWiary = a.wiary || 0;
+  if(efektWiary < 0){ efektWiary *= Math.max(0.3, s.wiary/72); }
+  s.wiary = ogranicz(s.wiary + efektWiary + (pulapWiary - s.wiary)*0.07, 0, 100);
+  s.zaang = ogranicz(s.zaang + (a.zaang||0), 1.2, 18);
+
+  /* --- kondycja --- */
+  var kondycja = s.energia < 30 ? (0.45 + s.energia/30*0.55) : 1;
+
+  var q = jakosc();
+  var czAlgo = 0.5 + s.algo/100;
+  var czZaang = ogranicz(s.zaang/8.5, 0.5, 1.8);
+
+  /* --- wzrost --- */
+  var karaSub = ((s.subskrypcja && !a.subskrypcja) ? 0.92 : 1) * ((s.etat && !a.rzucEtat) ? 0.88 : 1);
+  var czJakosc = 0.72 + q/38;
+
+  /* konkurencja w niszy — ilu rywali jest większych od ciebie */
+  var wieksi = 0;
+  s.rywale.forEach(function(r){ if(r.obs > s.obs) wieksi++; });
+  s.wieksiRywale = wieksi;
+  var nacisk = ogranicz(1 - (wieksi/13) * 0.26 * s.nisza.tlum, 0.62, 1.0);
+  var premiaCzolowki = wieksi <= 2 ? (1 + (3-wieksi)*0.09) : 1;
+  s.naciskOstatni = nacisk * premiaCzolowki;
+
+  var organiczny = s.obs * 0.055 * a.zasieg * czAlgo * czZaang * s.nisza.zasieg * kondycja * czJakosc * karaSub * s.naciskOstatni;
+  var odkrycia = q * 22 * a.zasieg * czAlgo * s.nisza.zasieg * kondycja * los(0.55,1.5) * s.naciskOstatni;
+
+  /* --- wystrzał --- */
+  var szansaViral = ogranicz((s.cechy.kreatywnosc + q) / 190 * a.viral * czAlgo, 0, 0.42);
+  s.sumaSzans += szansaViral;
+  var viral = false, mnoznikViral = 1;
+  var odkryciaBezLosu = odkrycia, organicznyBezLosu = organiczny;
+  if(Math.random() < szansaViral){
+    viral = true;
+    s.wystrzaly++;
+    mnoznikViral = los(3.5, 14) * (0.6 + s.nisza.tlum*0.45) * (1 + (s.cechy.kreatywnosc-10)*0.011);
+    odkrycia *= mnoznikViral;
+    organiczny *= 1.6;
+    s.algo = ogranicz(s.algo + 9, 5, 95);
+  }
+  s.zPrzypadku += (odkrycia - odkryciaBezLosu) + (organiczny - organicznyBezLosu);
+  s.zPracy += odkryciaBezLosu + organicznyBezLosu;
+
+  /* --- współpraca --- */
+  if(a.wspolpraca){
+    var zKluczowym = s.relacja >= 58;
+    var rywal, przenies, udzialOdplywu;
+    if(zKluczowym){
+      s.rywale.forEach(function(r){ if(r.kluczowy) rywal = r; });
+      var nasycenie = 1 / (1 + s.wspolneMaterialy*0.30);
+      przenies = Math.min(rywal.obs * ogranicz(s.cechy.kontakty/100 + s.relacja/620, 0.05, 0.26),
+                          s.obs * 0.22 + 1500) * nasycenie;
+      udzialOdplywu = 0.24;
+      s.relacja = ogranicz(s.relacja + 7, 0, 100);
+      s.wspolneMaterialy++;
+      log.push('Nagrywasz z ' + s.kluczowy + '. Już ' + s.wspolneMaterialy + '. raz.');
+      mech.push('Od ' + s.kluczowy + ' przechodzi ' + liczba(przenies) + ' osób — nie więcej, bo publiczności wielokrotnie większej od twojej po prostu nie da się wchłonąć. Tylko jedna czwarta z nich odpłynie — bo widzowie kogoś, komu ufasz od dwóch lat, poznają to po sposobie, w jaki ze sobą rozmawiacie. Losowa kolaboracja tego nie kupi. Każdy kolejny wspólny materiał daje jednak mniej niż poprzedni — jego widzowie już cię widzieli, a drugi raz nikt nie zaczyna obserwować.');
+    } else {
+      var kandydaci = s.rywale.filter(function(r){ return !r.kluczowy; });
+      rywal = wybierz(kandydaci.length ? kandydaci : s.rywale);
+      przenies = Math.min(rywal.obs * ogranicz(s.cechy.kontakty/100, 0.03, 0.17),
+                          s.obs * 0.10 + 700);
+      udzialOdplywu = 0.4;
+      log.push('Nagrywasz z kanałem „' + rywal.n + '". Poznaliście się tydzień temu.');
+      mech.push('Od partnera przechodzi ' + liczba(przenies) + ' osób, ale 40% z nich odejdzie — przyszli dla niego, nie dla ciebie, i nic ich u ciebie nie trzyma. Współpraca z kimś obcym jest wypożyczeniem publiczności na miesiąc.');
+    }
+    odkrycia += przenies;
+    s.dlugKolab += przenies * udzialOdplywu;
+  }
+
+  /* --- spór --- */
+  if(a.spor){
+    var bylaPrzyjazn = s.relacja >= 62;
+    var ryzyko = ogranicz(0.30 + (s.spory-1)*0.12 - s.cechy.odpornosc*0.010 + (bylaPrzyjazn?0.18:0), 0.16, 0.9);
+    if(s.relacja >= 40){
+      s.relacja = ogranicz(s.relacja - losCal(26,40), 0, 100);
+      log.push('Poszło na ' + s.kluczowy + '. Relacja: ' + Math.round(s.relacja) + '.');
+      if(bylaPrzyjazn) mech.push('Zaatakowałeś kogoś, z kim ludzie widzieli cię po tej samej stronie. Publiczność wyczuwa zdradę szybciej niż konflikt i ryzyko odwrotnego skutku wzrosło o 18 punktów procentowych. Relacji zbudowanej przez dwa lata nie odbuduje jeden przepraszający materiał.');
+    }
+    if(Math.random() < ryzyko){
+      var strataS = s.obs * los(0.06, 0.16);
+      s.obs -= strataS;
+      s.wiary = ogranicz(s.wiary - 16, 0, 100);
+      s.zuzycie += 4;
+      s.energia = ogranicz(s.energia - 9, 0, 100);
+      log.push('Spór obrócił się przeciwko tobie. Publiczność stanęła po drugiej stronie.');
+      mech.push('Wiarygodność −16, odpływ ' + liczba(strataS) + ' osób. Ryzyko wynosiło ' + Math.round(ryzyko*100) + '% i rośnie z każdym kolejnym konfliktem — publiczność zapamiętuje wzorzec, nie pojedyncze zdarzenie.');
+    } else {
+      log.push('Spór wypadł po twojej myśli. Zasięgi poszły w górę.');
+      mech.push('Tym razem się udało — ryzyko wynosiło ' + Math.round(ryzyko*100) + '%. Ale to twój ' + s.spory + '. konflikt, a każdy kolejny jest groźniejszy od poprzedniego.');
+    }
+  }
+
+  /* --- odpływ --- */
+  var lojalnosc = 1 - ogranicz((s.cechy.charyzma-10)*0.013, -0.12, 0.15);
+  var odplyw = s.obs * 0.016 * lojalnosc;
+  if(s.wiary < 55){ odplyw += s.obs * ((55 - s.wiary)/55) * 0.05; }
+  if(s.dlugKolab > 0){ var sp = Math.min(s.dlugKolab, s.dlugKolab*0.4); odplyw += sp; s.dlugKolab -= sp; }
+  if(a.id === 'przerwa'){ odplyw += s.obs * 0.012; }
+
+  var przyrost = organiczny + odkrycia - odplyw;
+  s.obs = Math.max(20, Math.round(s.obs + przyrost));
+  if(s.obs > s.szczytObs) s.szczytObs = s.obs;
+
+  /* --- rozcieńczenie publiczności --- */
+  var pulapZaang = ogranicz(14.5 + (s.cechy.charyzma-10)*0.085 - Math.log(Math.max(s.obs,100))/Math.LN10 * 1.85, 3.2, 15);
+  var przedZaang = s.zaang;
+  s.zaang = ogranicz(s.zaang + (pulapZaang - s.zaang) * 0.14, 1.2, 18);
+  var spadekZaang = przedZaang - s.zaang;
+
+  /* --- zasięg --- */
+  var zasieg = Math.round(s.obs * (0.35 + s.algo/160) * a.zasieg * czZaang * kondycja);
+  s.zasiegi.push(zasieg);
+  s.sumaZasiegow += zasieg;
+
+  /* --- pieniądze --- */
+  var przychod = s.stawka() * 0.26;
+  if(a.kasaMult){ przychod += s.stawka() * a.kasaMult * los(0.8,1.25); s.reklamy++; }
+  if(s.subskrypcja){
+    var konwersja = ogranicz(0.002 + s.zaang/2600 + (s.wiary-50)/11000, 0.0015, 0.007);
+    s.subskrybenci = Math.round(s.obs * konwersja);
+    s.przychodSub = s.subskrybenci * 16;
+    przychod += s.przychodSub;
+  }
+  s.przychodyKanalu.push(przychod);
+  if(s.przychodyKanalu.length > 6) s.przychodyKanalu.shift();
+  if(s.etat){ przychod += s.pensja; }
+  else { przychod -= s.kosztyZycia; s.miesBezEtatu++; }
+  if(s.zespol > 0){ przychod -= s.zespol * 900; }
+  s.hajs += przychod;
+  s.slawa = Math.max(0, s.slawa - 1.2);
+  if(!a.kontaktRywal && !a.wspolpraca) s.relacja = Math.max(0, s.relacja - 0.7);
+
+  /* --- konto pod kreską --- */
+  if(s.hajs < 0){
+    s.powroty++;
+    if(s.powroty >= 2){ zakoncz('pieniadze'); return; }
+    s.etat = true;
+    s.hajs = 0;
+    s.zespol = Math.max(0, s.zespol - 2);
+    s.energia = ogranicz(s.energia - 28, 0, 100);
+    s.algo = ogranicz(s.algo - 17, 5, 95);
+    s.obs = Math.round(s.obs * 0.93);
+    log.push('Skończyły ci się pieniądze. Szukanie pracy zajęło dwa miesiące ciszy na kanale.');
+    mech.push('To najczęstszy koniec pełnoetatowego tworzenia i prawie nigdy nie jest ogłaszany — ludzie po prostu wracają do pracy i publikują rzadziej. Kanał zostaje, tempo już nie. Drugi raz nie będzie z czego się odbić.');
+  }
+
+  /* --- wydarzenie własne dla niszy --- */
+  var zdarzenieNiszy = false;
+  if(s.mies > 2 && Math.random() < 0.22 && ZDARZENIA_NISZY[s.nisza.id]){
+    var ZN = ZDARZENIA_NISZY[s.nisza.id];
+    var wynikN = ZN.e(s);
+    log.push(ZN.t + ' ' + wynikN.op);
+    mech.push('<b>' + ZN.t + '</b> ' + wynikN.m);
+    s.zdarzeniaNiszy++;
+    zdarzenieNiszy = true;
+  }
+
+  /* --- wydarzenie --- */
+  var wyd = null;
+  if(!zdarzenieNiszy && Math.random() < 0.55 && s.mies > 1){
+    var moliwe = WYDARZENIA.filter(function(w){ return w.w(s); });
+    if(moliwe.length){
+      var pula = [];
+      moliwe.forEach(function(w){ for(var i=0;i<w.waga;i++) pula.push(w); });
+      wyd = wybierz(pula);
+      var wynik = wyd.e(s);
+      var tytulZd = wyd.t.replace('{K}', s.kluczowy);
+      log.push(tytulZd + ' ' + wynik.op);
+      mech.push('<b>' + tytulZd + '</b> ' + wynik.m);
+    }
+  }
+
+  /* --- ocena --- */
+  var wzrostProc = przedObs > 0 ? (s.obs - przedObs)/przedObs*100 : 0;
+  var ocena, punkty = wzrostProc*1.6 + (s.energia-50)*0.16 + (s.wiary-50)*0.14 + (przychod/Math.max(500,s.stawka()))*3;
+  if(viral) punkty += 22;
+  if(punkty < -8) ocena = 'zły';
+  else if(punkty < 2) ocena = 'słaby';
+  else if(punkty < 10) ocena = 'przyzwoity';
+  else if(punkty < 22) ocena = 'dobry';
+  else if(punkty < 45) ocena = 'bardzo dobry';
+  else ocena = 'przełomowy';
+
+  /* --- narracja --- */
+  var narr = [];
+  narr.push('Wybrałeś: ' + a.n.toLowerCase() + '.');
+  if(viral){ narr.push('Jeden z materiałów wystrzelił — obejrzało go kilkanaście razy więcej osób niż zwykle.'); }
+  log.forEach(function(l){ narr.push(l); });
+  if(przyrost > 0){ narr.push('Przybyło ' + liczba(przyrost) + ' obserwujących.'); }
+  else { narr.push('Ubyło ' + liczba(Math.abs(przyrost)) + ' obserwujących.'); }
+  if(s.energia < 25){ narr.push('Jesteś na rezerwie. Kolejny taki miesiąc może się źle skończyć.'); }
+  if(s.wiary < 30){ narr.push('Zaufanie do ciebie mocno spadło. Widać to w komentarzach i w liczbach.'); }
+
+  /* --- mechanizm --- */
+  var mechHTML = '';
+  if(s.mojePrzewidywanie){
+    s.przewidywania++;
+    var faktycznie = wzrostProc > 15 ? 'mocno' : (wzrostProc >= 0 ? 'troche' : 'spadek');
+    var trafil = (faktycznie === s.mojePrzewidywanie);
+    if(trafil) s.trafne++;
+    var nazwy = {mocno:'mocny wzrost', troche:'niewielki wzrost', spadek:'spadek'};
+    mechHTML += '<p><b>' + (trafil ? 'Trafiłeś.' : 'Nie trafiłeś.') + '</b> Obstawiałeś ' + nazwy[s.mojePrzewidywanie] +
+      ', wyszło ' + nazwy[faktycznie] + ' (' + (wzrostProc>=0?'+':'') + wzrostProc.toFixed(1).replace('.',',') + '%). ' +
+      (trafil ? 'Twoja trafność w tej rozgrywce: ' + Math.round(s.trafne/s.przewidywania*100) + '%.'
+              : 'Zaskoczył cię ' + coZaskoczylo(viral, czAlgo, czZaang, s.naciskOstatni, kondycja) + '. Trafność: ' + Math.round(s.trafne/s.przewidywania*100) + '%.') + '</p>';
+    s.mojePrzewidywanie = null;
+  }
+  mechHTML += '<p>' + a.m + '</p>';
+  mechHTML += '<span class="wzor">' +
+    'jakość materiału: ' + q.toFixed(1).replace('.',',') + ' · ' +
+    'mnożnik algorytmu: ×' + czAlgo.toFixed(2).replace('.',',') + ' · ' +
+    'mnożnik zaangażowania: ×' + czZaang.toFixed(2).replace('.',',') + '<br>' +
+    'wzrost naturalny: +' + liczba(organiczny) + ' · nowi widzowie: +' + liczba(odkrycia) +
+    ' · odpływ: −' + liczba(odplyw) + '<br>' +
+    'szansa na wystrzał w tym miesiącu wynosiła ' + (szansaViral*100).toFixed(1).replace('.',',') + '%' +
+    (viral ? ' — i tym razem zadziałała (×' + mnoznikViral.toFixed(1).replace('.',',') + ')' : ' — nie zadziałała') +
+    '</span>';
+  if(s.nisza.tlum >= 1.1 && s.wieksiRywale > 6){
+    mechHTML += '<p>W twojej niszy ' + s.wieksiRywale + ' z 13 obserwowanych kanałów jest większych od ciebie, a to nisza zatłoczona. Twój przyrost został z tego powodu obniżony o ' + Math.round((1-s.naciskOstatni)*100) + '%. Widoczność nie jest nagrodą za jakość, tylko miejscem w kolejce — a kolejka jest dłuższa tam, gdzie temat jest popularny.</p>';
+  } else if(s.wieksiRywale <= 2){
+    mechHTML += '<p>Jesteś w czołówce swojej niszy, więc platforma podpowiada cię ludziom, którzy oglądają twoją konkurencję. Ta premia wynosi ' + Math.round((s.naciskOstatni-1)*100) + '% i działa tylko dlatego, że jesteś na górze — nie dlatego, że coś zrobiłeś w tym miesiącu.</p>';
+  }
+  if(kondycja < 1){
+    mechHTML += '<p>Energia poniżej 30 obniżyła wszystkie wyniki o ' + Math.round((1-kondycja)*100) + '%. Zmęczenie nie jest osobną statystyką — ono mnoży się przez całą resztę.</p>';
+  }
+  if(s.zuzycie > 2){
+    mechHTML += '<p>Twoja wiarygodność odbudowuje się już tylko do poziomu ' + Math.round(pulapWiary) + ' ze 100. Każde zlecenie reklamowe i każdy konflikt trwale obniża ten sufit. Zaufanie nie działa jak energia — wydanego nie da się odespać.</p>';
+  }
+  if(spadekZaang > 0.08){
+    mechHTML += '<p>Zaangażowanie spadło o ' + spadekZaang.toFixed(2).replace('.',',') + ' pkt samo z siebie. Im większa publiczność, tym mniejszy jej procent naprawdę ogląda — nowi widzowie trafiają przypadkiem i szybciej odpadają. Dlatego duże kanały mają niższe zaangażowanie niż małe, mimo że są lepsze.</p>';
+  }
+  mech.forEach(function(m){ mechHTML += '<p>' + m + '</p>'; });
+
+  el('narracja').textContent = narr.join(' ');
+  el('mechanizm-tresc').innerHTML = mechHTML;
+  el('mechanizm').classList.remove('ukryty');
+  el('ocena-miesiaca').textContent = ocena;
+
+  s.kronika.push({mies: s.mies, t: narr.join(' ')});
+  s.historia.push({mies: s.mies, akcja: a.id, obs: s.obs, ocena: ocena});
+
+  /* --- rywale --- */
+  s.rywale.forEach(function(r){
+    var przed = r.obs;
+    var t = r.tempo * s.nisza.zasieg;
+    if(Math.random() < 0.06) t *= los(2.5, 7);
+    if(Math.random() < 0.05) t = -Math.abs(t)*1.5;
+    r.obs = Math.max(30, Math.round(r.obs * (1 + t) + los(20,400)));
+    r.zmiana = r.obs - przed;
+  });
+
+  /* --- koniec? --- */
+  s.mies++;
+  if(s.energia <= 0){ zakoncz('wypalenie'); return; }
+  if(s.wiary <= 7){ zakoncz('zaufanie'); return; }
+  if(s.mies > 48){ zakoncz('czas'); return; }
+
+  rysuj();
+  rysujAkcje();
+  el('mechanizm').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ============ koniec ============ */
+function zakoncz(powod){
+  rysuj();
+  el('ekran-gra').classList.add('ukryty');
+  el('ekran-koniec').classList.remove('ukryty');
+
+  var tytul, tresc;
+  if(powod === 'wypalenie'){
+    tytul = 'Energia na zerze';
+    tresc = 'Nie masz już siły nagrywać. Kanał zostaje, ale ty przestajesz. To najczęstszy koniec w tej branży i prawie nigdy nie jest ogłaszany — kanały po prostu cichną.';
+  } else if(powod === 'sprzedaz'){
+    tytul = 'Sprzedane';
+    tresc = 'Dostałeś ' + zloty(s.wycena || 0) + ' za coś, czego cztery lata temu nie było. Nazwa, publiczność i archiwum należą teraz do kogoś innego, a ludzie, którzy cię obserwowali, dowiedzą się o tym z komunikatu. To jest jedyne zakończenie w tej grze, w którym wychodzisz z pieniędzmi i bez wyczerpania.';
+  } else if(powod === 'odejscie'){
+    tytul = 'Koniec na własnych warunkach';
+    tresc = 'Nagrałeś materiał pożegnalny i wróciłeś do normalnej pracy. Nie było skandalu, wypalenia ani spadku — po prostu uznałeś, że tyle wystarczy. Statystycznie to najrzadszy koniec kariery twórcy i prawie nikt o nim nie opowiada, bo nie ma w nim żadnej historii do sprzedania.';
+  } else if(powod === 'pieniadze'){
+    tytul = 'Drugi raz bez pieniędzy';
+    tresc = 'Rzuciłeś etat, wróciłeś, spróbowałeś jeszcze raz i znowu się nie domknęło. Nie zabrakło ci pomysłów ani zasięgu — zabrakło poduszki finansowej, której z kanału tej wielkości nie da się zbudować.';
+  } else if(powod === 'zaufanie'){
+    tytul = 'Publiczność przestała wierzyć';
+    tresc = 'Liczba obserwujących może i jest wysoka, ale nikt już nie traktuje cię poważnie. Zasięg bez zaufania nie zamienia się w nic trwałego.';
+  } else {
+    var sukces = s.obs > 120000 && s.wiary > 55;
+    var stabilnie = s.obs > 25000 && s.energia > 40;
+    if(sukces){ tytul = 'Kanał, który się udał'; tresc = 'Duża publiczność i zachowana wiarygodność. Rzadkie połączenie — zwykle jedno kupuje się kosztem drugiego.'; }
+    else if(stabilnie){ tytul = 'Spokojna, uczciwa robota'; tresc = 'Bez wielkich liczb, bez katastrofy. Kanał, który da się prowadzić przez kolejne lata, bo nie wypaliłeś się po drodze.'; }
+    else { tytul = 'Cztery lata, umiarkowany skutek'; tresc = 'Kanał istnieje, ale nie przebił się. Dotyczy to zdecydowanej większości twórców — i to jest najważniejsza liczba w całej tej grze.'; }
+  }
+  el('koniec-tytul').textContent = tytul;
+  el('koniec-tresc').textContent = tresc;
+
+  var srednia = s.zasiegi.length ? s.sumaZasiegow/s.zasiegi.length : 0;
+  el('koniec-liczby').innerHTML =
+    '<div class="rzad"><span class="k">Obserwujący na koniec</span><span class="w">'+liczba(s.obs)+'</span></div>' +
+    '<div class="rzad"><span class="k">Najwyższy stan</span><span class="w">'+liczba(s.szczytObs)+'</span></div>' +
+    '<div class="rzad"><span class="k">Zarobione przez 4 lata</span><span class="w">'+zloty(s.hajs)+'</span></div>' +
+    '<div class="rzad"><span class="k">Średni zasięg miesięczny</span><span class="w">'+liczba(srednia)+'</span></div>' +
+    '<div class="rzad"><span class="k">Przyjęte zlecenia reklamowe</span><span class="w">'+s.reklamy+'</span></div>' +
+    '<div class="rzad"><span class="k">Stoczone walki</span><span class="w">'+s.walki+'</span></div>' +
+    '<div class="rzad"><span class="k">Imprezy branżowe</span><span class="w">'+s.imprezy+'</span></div>' +
+    '<div class="rzad"><span class="k">Relacja z '+s.kluczowy+'</span><span class="w'+(s.relacja<30?' minus':(s.relacja>65?' plus':''))+'">'+Math.round(s.relacja)+' / 100</span></div>' +
+    '<div class="rzad"><span class="k">Wspólne materiały</span><span class="w">'+s.wspolneMaterialy+'</span></div>' +
+    '<div class="rzad"><span class="k">Płacący subskrybenci</span><span class="w">'+(s.subskrypcja?liczba(s.subskrybenci):'—')+'</span></div>' +
+    '<div class="rzad"><span class="k">Sufit wiarygodności na koniec</span><span class="w">'+Math.round(ogranicz(74-s.zuzycie,18,74))+' / 100</span></div>' +
+    '<div class="rzad"><span class="k">Wiarygodność na koniec</span><span class="w">'+Math.round(s.wiary)+' / 100</span></div>' +
+    '<div class="rzad"><span class="k">Energia na koniec</span><span class="w">'+Math.round(s.energia)+' / 100</span></div>'+
+    '<div class="rzad"><span class="k">Etat</span><span class="w">'+(s.etat?'nigdy nie rzucony albo odzyskany':'rzucony, utrzymał się '+s.miesBezEtatu+' mies.')+'</span></div>'+
+    '<div class="rzad"><span class="k">Powroty na etat z braku pieniędzy</span><span class="w">'+s.powroty+'</span></div>';
+
+  var udzialLosu = (s.zPrzypadku + s.zPracy) > 0 ? s.zPrzypadku/(s.zPrzypadku + s.zPracy) : 0;
+  var oczekiwane = s.sumaSzans;
+  var szczescie = oczekiwane > 0.3 ? (s.wystrzaly/oczekiwane) : 1;
+  var opisSzczescia = szczescie > 1.45 ? 'Los dał ci wyraźnie więcej, niż wynikało z twoich decyzji.'
+    : (szczescie < 0.65 ? 'Los dał ci wyraźnie mniej, niż wynikało z twoich decyzji.'
+    : 'Los wypadł u ciebie mniej więcej tak, jak należało się statystycznie.');
+
+  el('koniec-losowosc').innerHTML =
+    '<h3>Ile z tego było twoją decyzją, a ile rzutem kośćmi</h3>' +
+    '<div class="rzad"><span class="k">Wystrzały, które ci się trafiły</span><span class="w">'+s.wystrzaly+'</span></div>' +
+    '<div class="rzad"><span class="k">Ile należało się statystycznie</span><span class="w">'+oczekiwane.toFixed(1).replace('.',',')+'</span></div>' +
+    '<div class="rzad"><span class="k">Udział przypadku w całym przyroście</span><span class="w">'+Math.round(udzialLosu*100)+'%</span></div>' +
+    (s.przewidywania>0 ? '<div class="rzad"><span class="k">Trafność twoich przewidywań</span><span class="w">'+Math.round(s.trafne/s.przewidywania*100)+'% z '+s.przewidywania+' pytań</span></div>' : '') +
+    '<p>'+opisSzczescia+' Twoje decyzje odpowiadały za '+Math.round((1-udzialLosu)*100)+'% przyrostu obserwujących, a wystrzały, na które nie miałeś wpływu, za pozostałe '+Math.round(udzialLosu*100)+'%.</p>' +
+    '<p>Trzy rzeczy decydowały o twoim wyniku i tylko jedna z nich należała do ciebie.</p>' +
+    '<div class="rzad"><span class="k">Twoje decyzje</span><span class="w">około 2× różnicy</span></div>' +
+    '<div class="rzad"><span class="k">Przypadek, czyli wystrzały</span><span class="w">około 4× różnicy</span></div>' +
+    '<div class="rzad"><span class="k">Cechy, które wylosowałeś na starcie</span><span class="w">około 4× różnicy</span></div>' +
+    '<div class="rzad"><span class="k">Twoja średnia cech</span><span class="w">'+sredniaCech().toFixed(1).replace('.',',')+' z możliwych 4–17</span></div>' +
+    '<p>Twoje wybory ważyły najmniej z tych trzech. Przypadku nie kontrolowałeś w ogóle, a cechy dostałeś w losowaniu, na które miałeś jeden przerzut — i to jest w tej grze celowe, bo poza nią odpowiadają im wygląd, głos, sprzęt, wolny czas i pieniądze rodziców. Nikt ich sobie nie wybrał.</p>' +
+    '<p>Poza grą ten rachunek nie jest nigdzie wystawiany. Osoby, którym się udało, opowiadają swoją historię tak, jakby był w niej plan — bo z ich miejsca naprawdę tak to wygląda.</p>';
+
+  var zarobekNaMiesiac = s.hajs / Math.max(1, s.mies-1);
+  el('koniec-nauka').innerHTML =
+    '<h3>Cztery rzeczy, które ta rozgrywka pokazała</h3>' +
+    '<p><b>1.</b> Twoje cechy startowe były wylosowane. Nie zapracowałeś na nie i nie mogłeś ich wybrać — a zdecydowały o dużej części wyniku. W prawdziwych mediach odpowiada temu wygląd, głos, sprzęt, wolny czas i pieniądze rodziców.</p>' +
+    '<p><b>2.</b> Zarabiałeś średnio ' + zloty(zarobekNaMiesiac) + ' miesięcznie. Materiały o tworzeniu kanałów pokazują wyłącznie tych, którzy trafili w górną część rozkładu.</p>' +
+    '<p><b>3.</b> Wystrzał materiału był losowy. Mogłeś zwiększać jego szansę, ale nigdy nie mogłeś go zaplanować. Twórcy, którym się udało, zwykle opowiadają swoją historię tak, jakby dało się.</p>' +
+    '<p><b>4.</b> Zasady liczenia zasięgu były tu widoczne, bo gra ci je pokazywała. Żadna prawdziwa platforma tego nie robi — a mimo to miliony ludzi podejmują pod nie decyzje.</p>';
+
+  if(WSPARCIE.wlaczone && WSPARCIE.naKoncu){
+    el('wsparcie-koniec').className = 'wsparcie';
+    el('wsparcie-koniec').innerHTML =
+      '<span class="tekst">Dotarłeś do końca. Ta gra jest darmowa, nie zbiera danych i nie ma reklam — jeśli okazała się przydatna, możesz wesprzeć jej autora.</span>' +
+      '<a class="link" href="' + WSPARCIE.link + '" target="_blank" rel="noopener noreferrer">' + WSPARCIE.etykieta + '</a>';
+  }
+}
+
+/* ============ raport do porównania ============ */
+function raportTekst(){
+  var L=[];
+  var udzialLosu = (s.zPrzypadku+s.zPracy)>0 ? s.zPrzypadku/(s.zPrzypadku+s.zPracy) : 0;
+  L.push('SYMULATOR INFLUENCERA — RAPORT KARIERY');
+  L.push('======================================');
+  L.push('Kanał: '+s.nick);
+  L.push('Tematyka: '+s.nisza.n);
+  L.push('Przetrwane miesiące: '+Math.min(48,s.mies-1)+' z 48');
+  L.push('');
+  L.push('WYNIK');
+  L.push('  Obserwujący na koniec:        '+liczba(s.obs));
+  L.push('  Najwyższy stan:               '+liczba(s.szczytObs));
+  L.push('  Zaangażowanie:                '+procent(s.zaang));
+  L.push('  Wiarygodność:                 '+Math.round(s.wiary)+'/100');
+  L.push('  Sufit wiarygodności:          '+Math.round(ogranicz(74-s.zuzycie,18,74))+'/100');
+  L.push('  Energia:                      '+Math.round(s.energia)+'/100');
+  L.push('');
+  L.push('PIENIĄDZE');
+  L.push('  Zarobione łącznie:            '+zloty(s.hajs));
+  L.push('  Średnio na miesiąc:           '+zloty(s.hajs/Math.max(1,s.mies-1)));
+  L.push('  Etat:                         '+(s.etat?'nierzucony lub odzyskany':'rzucony, '+s.miesBezEtatu+' mies. na swoim'));
+  L.push('  Powroty z braku pieniędzy:    '+s.powroty);
+  L.push('  Płacący subskrybenci:         '+(s.subskrypcja?liczba(s.subskrybenci):'brak'));
+  L.push('');
+  L.push('CECHY STARTOWE (wylosowane, nie zapracowane)');
+  CECHY.forEach(function(x){
+    L.push('  '+(x.n+':').padEnd(30)+(s.cechy[x.id]+(x.id==='warsztat'?s.warsztatBonus:0)));
+  });
+  L.push('');
+  L.push('CO ROBIŁEŚ');
+  L.push('  Zlecenia reklamowe:           '+s.reklamy);
+  L.push('  Konflikty:                    '+s.spory);
+  L.push('  Walki:                        '+s.walki);
+  L.push('  Imprezy branżowe:             '+s.imprezy);
+  L.push('  Relacja z '+(s.kluczowy+':').padEnd(20)+Math.round(s.relacja)+'/100 — '+opisRelacji(s.relacja));
+  L.push('  Wspólne materiały:            '+s.wspolneMaterialy);
+  L.push('  Zdarzenia typowe dla niszy:   '+s.zdarzeniaNiszy);
+  L.push('');
+  L.push('DECYZJA CZY PRZYPADEK');
+  L.push('  Wystrzały, które się trafiły: '+s.wystrzaly);
+  L.push('  Ile należało się statystycznie:'+s.sumaSzans.toFixed(1));
+  L.push('  Udział przypadku w przyroście:'+Math.round(udzialLosu*100)+'%');
+  L.push('  Udział twoich decyzji:        '+Math.round((1-udzialLosu)*100)+'%');
+  if(s.przewidywania>0) L.push('  Trafność przewidywań:         '+Math.round(s.trafne/s.przewidywania*100)+'% z '+s.przewidywania);
+  L.push('');
+  L.push('WERDYKT: '+el('koniec-tytul').textContent);
+  L.push('');
+  L.push('— wygenerowane w Symulatorze Influencera (2piny.pl)');
+  return L.join('\n');
+}
+
+el('kopiuj').addEventListener('click', function(){
+  var t=raportTekst(), st=el('status-kopii');
+  function awaryjnie(){
+    var ta=el('raport-tekst');
+    ta.value=t; ta.classList.remove('ukryty'); ta.select();
+    st.textContent='Zaznacz i skopiuj ręcznie';
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){
+      st.textContent='Skopiowane do schowka';
+      setTimeout(function(){ st.textContent=''; },2600);
+    })['catch'](awaryjnie);
+  } else awaryjnie();
+});
+el('drukuj').addEventListener('click', function(){ window.print(); });
+
+/* ============ uruchomienie ============ */
+function odNowa(){
+  s = null; wybranaNisza = null; pozostaleLosowania = 1;
+  el('ekran-koniec').classList.add('ukryty');
+  el('ekran-gra').classList.add('ukryty');
+  el('ekran-start').classList.remove('ukryty');
+  el('nick').value = '';
+  el('przyciski-gora').innerHTML = '';
+  el('raport-tekst').classList.add('ukryty');
+  el('status-kopii').textContent = '';
+  el('karta-przewidywania').classList.add('ukryty');
+  el('karta-akcji').classList.remove('ukryty');
+  rysujNisze();
+  losujCechy();
+  window.scrollTo(0,0);
+}
+
+el('losuj').addEventListener('click', function(){
+  if(pozostaleLosowania > 0){ pozostaleLosowania--; losujCechy(); }
+});
+
+el('start').addEventListener('click', function(){
+  var nick = el('nick').value.trim();
+  if(!nick){ nick = wybierz(NICKI); el('nick').value = nick; }
+  if(!wybranaNisza){ wybranaNisza = wybierz(NISZE); rysujNisze(); }
+  s = nowyStan(nick, wybranaNisza, wylosowaneCechy);
+  el('ekran-start').classList.add('ukryty');
+  el('ekran-gra').classList.remove('ukryty');
+  var pb = el('przyciski-gora');
+  pb.innerHTML = '';
+  var b = document.createElement('button');
+  b.className = 'drugi'; b.type = 'button'; b.textContent = 'Zacznij od nowa';
+  b.addEventListener('click', function(){ if(confirm('Zacząć nową rozgrywkę? Obecna przepadnie.')) odNowa(); });
+  pb.appendChild(b);
+  rysuj();
+  rysujAkcje();
+  window.scrollTo(0,0);
+});
+
+el('od-nowa').addEventListener('click', odNowa);
+
+if(!WSPARCIE.wlaczone){ el('stopka-wsparcie').style.display = 'none'; }
+
+rysujNisze();
+losujCechy();
+
+})();
+</script>
+</body>
+</html>
