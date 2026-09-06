@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warsztat — gra negocjacyjna w czterech fazach</title>
+<style>
+:root{
+  --sea:#2C4251; --sea-deep:#16232B; --lime:#EDFF13; --paper:#E8ECEA; --paper-warm:#F2F4F1;
+  --rust:#D64933; --mint:#5FBF96; --line:rgba(44,66,81,.18);
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--sea-deep);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.02;letter-spacing:-.025em;font-weight:800}
+p{margin:0 0 .85em}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.62;margin:0 0 10px;font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1000px;margin:0 auto;padding:26px 20px 90px}
+.screen{display:none}
+.screen.on{display:block;animation:rise .3s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+
+.bar{position:sticky;top:0;z-index:40;background:var(--sea-deep);color:var(--paper);display:flex;align-items:center;gap:12px;padding:9px 20px;flex-wrap:wrap}
+.bar .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);font-weight:700}
+.bar nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.bar button{background:none;border:0;color:var(--paper);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:7px 10px;cursor:pointer;border-radius:3px}
+.bar button:hover{background:rgba(237,255,19,.14)}
+.bar button.active{background:var(--lime);color:var(--sea-deep);font-weight:700}
+.bar button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+.hero{padding:48px 0 32px;border-bottom:3px solid var(--sea-deep)}
+.hero h1{font-size:clamp(42px,9vw,98px);text-transform:uppercase;line-height:.86}
+.hero h1 em{font-style:normal;display:block;color:var(--sea);opacity:.34}
+.hero .sub{max-width:60ch;margin-top:20px;font-size:17px}
+.specs{display:flex;flex-wrap:wrap;margin-top:28px;border-top:1px solid var(--line)}
+.specs div{flex:1 1 110px;padding:12px 14px 12px 0;border-right:1px solid var(--line)}
+.specs div:last-child{border-right:0}
+.specs b{display:block;font-family:var(--mono);font-size:21px;font-weight:700}
+.specs span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
+
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:11px;margin:32px 0}
+.pick{border:2px solid var(--sea-deep);padding:18px;cursor:pointer;text-align:left;background:var(--paper-warm);font-family:inherit;color:inherit;transition:transform .16s,box-shadow .16s}
+.pick:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--sea-deep)}
+.pick:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
+.pick strong{display:block;font-size:19px;font-weight:800;margin-bottom:4px}
+.pick small{font-family:var(--mono);font-size:11px;opacity:.68;line-height:1.4;display:block}
+.pick.m{background:var(--sea-deep);color:var(--paper)}.pick.m strong{color:var(--lime)}
+.pick.l{background:var(--lime)}
+.pick.r{background:var(--rust);color:var(--paper-warm)}
+
+.role{border:3px solid var(--sea-deep);margin-bottom:22px}
+.role .head{padding:24px}
+.role .body{padding:24px;background:var(--paper-warm)}
+.roleM .head{background:var(--sea-deep);color:var(--paper)}.roleM .head h2{color:var(--lime)}
+.roleL .head{background:var(--lime);color:var(--sea-deep)}
+.roleR .head{background:var(--rust);color:var(--paper-warm)}
+.role h2{font-size:clamp(28px,5vw,44px);text-transform:uppercase;line-height:.92}
+.role .who{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-top:10px;opacity:.85}
+
+.gate{border:3px dashed var(--sea-deep);padding:38px 24px;text-align:center;background:var(--paper-warm)}
+.gate h3{font-size:25px;text-transform:uppercase;margin-bottom:10px}
+.gate p{max-width:48ch;margin:0 auto 18px;font-size:15px}
+
+.btn{background:var(--sea-deep);color:var(--lime);border:0;padding:12px 22px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.btn:hover{background:var(--sea)}
+.btn:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+.btn.ghost{background:none;color:var(--sea-deep);border:2px solid var(--sea-deep)}
+.btn.ghost:hover{background:var(--sea-deep);color:var(--lime)}
+
+.block{margin:0 0 24px}
+.block h3{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;padding-bottom:7px;border-bottom:2px solid var(--sea-deep);margin-bottom:13px;font-weight:700}
+.note{border-left:4px solid var(--rust);padding:11px 0 11px 15px;margin:15px 0;font-size:15px;background:rgba(214,73,51,.05)}
+.note.lime{border-color:var(--sea);background:rgba(44,66,81,.06)}
+ul.tight{margin:0 0 13px;padding-left:20px}
+ul.tight li{margin-bottom:6px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--sea-deep);color:var(--paper);font-weight:700;border-bottom:0}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pos{color:#1E7A56;font-weight:700}.neg{color:var(--rust);font-weight:700}
+tr.grp td{background:rgba(44,66,81,.09);font-weight:700;font-size:12px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase}
+
+.sealed{border:3px solid var(--rust);background:rgba(214,73,51,.06);padding:20px;margin:22px 0}
+.sealed .lab{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--rust);font-weight:700;margin-bottom:8px}
+.sealed h4{margin:0 0 8px;font-size:19px;text-transform:uppercase}
+
+.stol{border:2px solid var(--sea-deep);padding:12px 14px;margin-bottom:9px;background:#fff}
+.stol b{font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;display:block;margin-bottom:3px;color:var(--rust)}
+
+.timer{background:var(--sea-deep);color:var(--lime);padding:20px;text-align:center;margin-bottom:18px}
+.timer .clock{font-family:var(--mono);font-size:clamp(50px,13vw,96px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.timer .phase{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--paper);opacity:.75}
+.timer.warn .clock{color:var(--rust)}
+.tctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.tctl button{background:rgba(237,255,19,.12);color:var(--paper);border:1px solid rgba(237,255,19,.35);padding:8px 12px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+.tctl button:hover{background:var(--lime);color:var(--sea-deep)}
+
+.flow{border-top:2px solid var(--sea-deep)}
+.flow .step{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.flow .t{font-family:var(--mono);font-weight:700;font-size:13px;min-width:56px;color:var(--rust)}
+.flow .d strong{display:block;font-size:16px}
+.flow .d span{font-size:14px;opacity:.78}
+
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f label{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:700}
+.f select{padding:10px;border:2px solid var(--sea-deep);background:#fff;font-family:var(--mono);font-size:14px;color:var(--sea-deep);border-radius:0;width:100%}
+.f select:focus{outline:3px solid var(--rust);outline-offset:1px}
+.chk{display:flex;align-items:flex-start;gap:8px;border:2px solid var(--sea-deep);padding:8px 11px;cursor:pointer;font-family:var(--mono);font-size:11.5px;background:#fff;user-select:none;line-height:1.35;margin-bottom:6px}
+.chk input{accent-color:var(--sea-deep);width:15px;height:15px;flex:none;margin-top:2px}
+.chk:has(input:checked){background:var(--lime)}
+.chk.warn:has(input:checked){background:var(--rust);color:#fff;border-color:var(--rust)}
+
+.score3{display:grid;grid-template-columns:repeat(3,1fr);border:3px solid var(--sea-deep);margin-bottom:16px}
+@media(max-width:760px){.score3{grid-template-columns:1fr}}
+.score3>div{padding:18px}
+.score3 .sM{background:var(--sea-deep);color:var(--paper)}.score3 .sM .big{color:var(--lime)}
+.score3 .sL{background:var(--lime);color:var(--sea-deep)}
+.score3 .sR{background:var(--rust);color:var(--paper-warm)}
+.score3 .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.82}
+.score3 .big{font-family:var(--mono);font-size:clamp(36px,7vw,58px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score3 .delta{font-family:var(--mono);font-size:12px;margin-top:5px}
+.joint{border:3px solid var(--sea-deep);border-top:0;padding:20px;background:var(--paper-warm);margin-bottom:18px}
+.jbar{height:24px;background:rgba(44,66,81,.14);margin-top:10px;position:relative;overflow:hidden}
+.jbar i{display:block;height:100%;background:var(--sea-deep);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.jbar b{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:12px;font-weight:700;mix-blend-mode:difference;color:var(--lime)}
+.verdict{padding:18px;border:3px solid var(--rust);background:rgba(214,73,51,.07);margin-bottom:18px;font-size:15px}
+.verdict.ok{border-color:var(--sea-deep);background:rgba(95,191,150,.14)}
+.verdict strong{display:block;font-size:19px;text-transform:uppercase;margin-bottom:6px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:760px){.grid3{grid-template-columns:1fr}}
+.hidden{display:none !important}
+footer{border-top:2px solid var(--sea-deep);margin-top:42px;padding-top:15px;font-family:var(--mono);font-size:11px;opacity:.65;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media print{
+  .bar,.tctl,.no-print,.picker,footer,.gate{display:none !important}
+  .screen{display:block !important;page-break-after:always}
+  body{background:#fff;font-size:11pt}
+  .role .body,.sealed-body{display:block !important}
+  .roleM .head{background:#16232B !important}
+  .roleL .head{background:#EDFF13 !important}
+  .roleR .head{background:#D64933 !important}
+  th{background:#16232B !important}
+  .roleM .head,.roleL .head,.roleR .head,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<div class="bar no-print">
+  <span class="brand">2piny · Warsztat</span>
+  <nav>
+    <button data-go="start" class="active">Start</button>
+    <button data-go="host">Prowadzący</button>
+    <button data-go="roleM">Miasto</button>
+    <button data-go="roleL">Level Up</button>
+    <button data-go="roleR">Rada</button>
+    <button data-go="deal">Porozumienie</button>
+    <button data-go="debrief">Omówienie</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ============ START ============ -->
+<section class="screen on" id="start">
+  <div class="hero">
+    <p class="eyebrow">Gra negocjacyjna · wiek 14–18 · trzy strony · cztery fazy · trzy stoły naraz</p>
+    <h1>Warsztat<em>Nowy Brzeźnik</em></h1>
+    <p class="sub">Miejski klub „Warsztat" — makerspace, pracownia i hala esportowa w jednym — działa od dwunastu lat i od dwóch przynosi straty. Miasto chce go oddać sieci prywatnych akademii. Uczestnicy i instruktorzy dowiedzieli się o tym z gazety. Osiem spraw do ustalenia, trzy stoły negocjujące równocześnie i zakaz rozmawiania z własnym zespołem inaczej niż na karteczkach.</p>
+    <div class="specs">
+      <div><b>3</b><span>strony</span></div>
+      <div><b>8</b><span>spraw</span></div>
+      <div><b>4</b><span>fazy</span></div>
+      <div><b>90</b><span>minut</span></div>
+      <div><b>9</b><span>osób</span></div>
+    </div>
+  </div>
+
+  <div class="picker">
+    <button class="pick" data-go="host"><strong>Prowadzący</strong><small>Cztery fazy, trzy stoły, depesze</small></button>
+    <button class="pick m" data-go="roleM"><strong>Miasto</strong><small>Wydział Edukacji<br>właściciel klubu</small></button>
+    <button class="pick l" data-go="roleL"><strong>Level Up</strong><small>sieć akademii<br>chce przejąć</small></button>
+    <button class="pick r" data-go="roleR"><strong>Rada</strong><small>uczestnicy i instruktorzy<br>bronią klubu</small></button>
+  </div>
+
+  <div class="note lime"><strong>Co jest w tej grze nowego:</strong> nie negocjujesz sam ani nawet w zespole, który może swobodnie rozmawiać. Twoja trójka siada przy trzech różnych stołach, każdy dogaduje co innego, a wy porozumiewacie się wyłącznie na karteczkach. Można wyjść z sali z ośmioma ustaleniami, które osobno wyglądają rozsądnie, a razem nie mają sensu. To jest cała trudność i cała nauka.</div>
+</section>
+
+<!-- ============ PROWADZĄCY ============ -->
+<section class="screen" id="host">
+  <p class="eyebrow">Materiał dla prowadzącego</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:18px">Jak to poprowadzić</h2>
+
+  <div class="timer no-print" id="timerBox">
+    <div class="phase" id="tPhase">Zegar zatrzymany</div>
+    <div class="clock" id="tClock">00:00</div>
+    <div class="tctl">
+      <button data-min="12" data-lab="Przygotowanie · koperta 1">12 min · przygotowanie</button>
+      <button data-min="8" data-lab="Faza I · kuluary, tylko przewodniczący">8 min · kuluary</button>
+      <button data-min="4" data-lab="Odprawa w delegacjach">4 min · odprawa</button>
+      <button data-min="18" data-lab="Faza II · trzy stoły równolegle">18 min · trzy stoły</button>
+      <button data-min="20" data-lab="Faza III · pełne składy 3×3">20 min · finał</button>
+      <button data-min="1" data-lab="Rozmowa dwóch przewodniczących">1 min · na osobności</button>
+      <button id="tToggle">Pauza / wznów</button>
+      <button id="tStop">Zeruj</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Obsada — dokładnie 9 osób</h3>
+    <p>Trzy delegacje po trzy osoby. Wewnątrz każdej delegacji role są przypisane do stołów i nie wolno się nimi zamieniać w trakcie.</p>
+    <div class="stol"><b>Stół 1 — Pieniądze i własność</b>Siadają <b>przewodniczący</b> trzech delegacji. Ustalają opłatę za przejęcie i to, czy miasto zachowa udział w klubie.</div>
+    <div class="stol"><b>Stół 2 — Ludzie</b>Siadają <b>delegaci do spraw pracowniczych</b>. Ustalają, ilu instruktorów zostaje, jaka jest odprawa dla odchodzących i według jakiego regulaminu klub będzie działał.</div>
+    <div class="stol"><b>Stół 3 — Klub</b>Siadają <b>delegaci do spraw klubu</b>. Ustalają nazwę i status placówki, liczbę darmowych miejsc dla uczestników oraz to, kto zapłaci za szkolenia instruktorów.</div>
+    <p style="font-size:14px;opacity:.8">Klasa 27-osobowa gra trzy partie równolegle. Przy mniejszej grupie można zejść do 6 osób (dwa stoły zamiast trzech — połącz stół 2 i 3), ale najciekawsza część gry wtedy słabnie.</p>
+  </div>
+
+  <div class="block">
+    <h3>Przebieg — 90 minut</h3>
+    <div class="flow">
+      <div class="step"><span class="t">0–10</span><span class="d"><strong>Wprowadzenie i podział ról</strong><span>Rozdaj koperty 1. W każdej delegacji wyznaczcie przewodniczącego i dwóch delegatów.</span></span></div>
+      <div class="step"><span class="t">10–22</span><span class="d"><strong>Przygotowanie</strong><span>Delegacje czytają karty i ustalają strategię. To jedyny moment, kiedy mogą swobodnie rozmawiać — niech to wykorzystają.</span></span></div>
+      <div class="step"><span class="t">22–30</span><span class="d"><strong>Faza I — kuluary</strong><span>Tylko trzej przewodniczący, przy jednym stoliku, nieformalnie. Nic tu jeszcze nie ustalają — zbierają informacje. Każdy ma na karcie trzy cele, które ty odhaczasz.</span></span></div>
+      <div class="step"><span class="t">30–34</span><span class="d"><strong>Odprawa</strong><span>Przewodniczący wracają do swoich delegacji i przekazują, czego się dowiedzieli. Ostatnia swobodna rozmowa przed ciszą.</span></span></div>
+      <div class="step"><span class="t">34–52</span><span class="d"><strong>Faza II — trzy stoły równolegle</strong><span>Rozsadź dziewięć osób przy trzech stołach. Od tej chwili obowiązują karteczki. <b>W 44. minucie rozdaj depesze.</b></span></span></div>
+      <div class="step"><span class="t">52–72</span><span class="d"><strong>Faza III — pełne składy</strong><span>Wszyscy przy jednym stole. Domykacie osiem spraw i spisujecie porozumienie.</span></span></div>
+      <div class="step"><span class="t">72–90</span><span class="d"><strong>Wyniki i omówienie</strong><span>Wpisz ustalenia w zakładce „Porozumienie", potem przejdź do „Omówienia".</span></span></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Zasady fazy II — tej trudnej</h3>
+    <ul class="tight">
+      <li>Nie wolno rozmawiać z własną delegacją. Wiadomości przekazujecie <b>wyłącznie na karteczkach</b>, które nosisz ty albo wyznaczony obserwator.</li>
+      <li>Nie wolno wstawać od stołu ani zaglądać do sąsiadów.</li>
+      <li>Dwa razy w ciągu fazy II <b>dwóch przewodniczących</b> może poprosić o rozmowę na osobności. Trwa <b>minutę</b>, odchodzą od stolików, trzeci zostaje i patrzy. To najcenniejsze dwie minuty w całej grze — warto powiedzieć o tym dopiero w omówieniu.</li>
+      <li>Ustalenia z trzech stołów mogą być ze sobą sprzeczne. Nie poprawiaj tego. To materiał na fazę III.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Depesze</h3>
+    <p>W połowie fazy II każda delegacja dostaje kopertę z nową informacją. Depesze są w kartach ról, schowane pod przyciskiem — jeśli grasz z wydruków, wytnij je i włóż do zaklejonych kopert.</p>
+    <p>Depesze zmieniają układ sił. Miasto dowiaduje się, że kupujący naprawdę ma alternatywę. Level Up dostaje audyt pokazujący, że klub jest w gorszym stanie, niż mówiono. Rada dowiaduje się dwóch rzeczy: że uczestnicy są gotowi do akcji protestacyjnej i że dwoje instruktorów i tak odchodzi w czerwcu.</p>
+  </div>
+
+  <div class="block">
+    <h3>Dwie wersje rozliczenia</h3>
+    <p>Wszystkie strony dostają oficjalne rozliczenie klubu, które pokazuje niewielką stratę. Tylko Rada ma drugą wersję, tę z księgowości, i ta wygląda znacznie gorzej.</p>
+    <p>To jest w tej grze najciekawszy dylemat i warto go w omówieniu wyciągnąć. Ujawnienie prawdziwych liczb osłabia miasto w sporze o cenę — a miasto jest sojusznikiem Rady. Zatajenie ich sprawia, że Level Up przepłaci i tym mocniej będzie ciąć koszty gdzie indziej. Nie ma tu dobrej odpowiedzi.</p>
+  </div>
+
+  <div class="block">
+    <h3>Czego się spodziewać</h3>
+    <table>
+      <thead><tr><th>Sposób rozegrania</th><th class="n">Suma punktów</th></tr></thead>
+      <tbody>
+        <tr><td>Brak porozumienia — każdy zostaje ze swoim planem awaryjnym</td><td class="n">−5</td></tr>
+        <tr><td>Kompromis „po środku" w każdej z ośmiu spraw</td><td class="n">97</td></tr>
+        <tr><td>Porozumienie referencyjne, każdy wyraźnie ponad planem B</td><td class="n">111</td></tr>
+        <tr><td>Teoretyczne maksimum</td><td class="n">124</td></tr>
+      </tbody>
+    </table>
+    <p>Jeśli któraś strona podyktuje warunki pozostałym, suma spada do kilkunastu punktów, a jedna albo dwie strony wychodzą poniżej swojego planu awaryjnego — czyli podpisały coś gorszego niż nicnierobienie.</p>
+  </div>
+
+  <div class="block">
+    <h3>Punktacja jawna czy ukryta</h3>
+    <p>Przy pierwszym podejściu polecam <b>ukrytą</b> — karty ról zawierają priorytety opisane słowami, a pełne tabele punktowe są schowane pod przyciskiem. Rozmowa idzie wtedy o interesach, a nie o arytmetyce.</p>
+  </div>
+</section>
+
+<!-- ============ MIASTO ============ -->
+<section class="screen" id="roleM">
+  <div class="gate no-print" id="gateM"><h3>Koperta 1 — Miasto</h3>
+    <p>Karta delegacji Wydziału Edukacji. Jeśli grasz po innej stronie, zamknij to teraz.</p>
+    <button class="btn" data-open="M">Jesteśmy Miastem — otwórz</button></div>
+  <div class="role roleM hidden" id="cardM">
+    <div class="head"><p class="eyebrow" style="opacity:.8">Strona A · koperta 1</p><h2>Miasto</h2>
+      <p class="who">Wydział Edukacji i Sportu · Urząd Miasta Nowy Brzeźnik</p></div>
+    <div class="body">
+      <button class="btn ghost no-print" id="togM" style="margin-bottom:18px">Pokaż tabelę punktów</button>
+
+      <div class="block"><h3>Wasza sytuacja</h3>
+      <p>Klub „Warsztat" otwarto dwanaście lat temu w dawnej hali warsztatów szkolnych. Drukarki 3D, dwie pracownie, stanowiska esportowe, 220 stałych uczestników i czternastu instruktorów. Przez lata było to najlepsze, co miasto zrobiło dla młodzieży.</p>
+      <p>Od dwóch lat klub przynosi straty. Sprzęt się zestarzał, część stanowisk stoi, a dwie prywatne akademie otwarte przy galerii zabrały wam młodszych uczestników. Skarbnik postawił sprawę jasno: albo klub znajdzie inwestora, albo w przyszłym budżecie znika.</p>
+      <p>Za siedem miesięcy są wybory samorządowe. Zamknięcie „Warsztatu" byłoby najgorszą rzeczą, jaka może się wam przydarzyć w kampanii. Sprzedanie go i wyjście z tego z podniesionym czołem — jedną z najlepszych.</p></div>
+
+      <div class="block"><h3>Czego chcecie</h3>
+      <p><b>Pieniędzy.</b> Opłata za przejęcie idzie do budżetu, a połowę obiecaliście już publicznie przeznaczyć na remont hali. Im wyżej, tym lepiej.</p>
+      <p><b>Zachowania nazwy.</b> „Warsztat" to dwanaście lat i marka, którą zna całe miasto. Gdyby jutro zawisł tam szyld sieciowej akademii, wyglądałoby to jak wyprzedaż.</p>
+      <p><b>Nowoczesnego regulaminu.</b> Tu, wyjątkowo, jesteście po stronie kupującego. Level Up prowadzi osiemnaście placówek i wie, jak to się robi. Wasz obecny regulamin pamięta rok otwarcia.</p>
+      <p><b>Żeby ludzie zostali.</b> Instruktorzy to mieszkańcy i wyborcy. Ale każda złotówka dopłaty boli, bo nie macie jej skąd wziąć.</p>
+      <p><b>Rozważacie zachowanie udziału w klubie.</b> Trzydzieści procent oznacza, że jeśli Level Up podniesie wartość placówki, wy też na tym zyskacie — i że nie zniknie z dnia na dzień.</p></div>
+
+      <div class="block"><h3>Czego nie chcecie</h3>
+      <p>Płacić za cokolwiek. Odprawy dla zwalnianych instruktorów dzielą się po połowie między was i Level Up — to już wystarczająco boli. Za szkolenia instruktorów powinien zapłacić kupujący.</p></div>
+
+      <div class="block"><h3>Faza I — kuluary. Trzy rzeczy do zrobienia</h3>
+      <p>Na spotkaniu w kuluarach niczego jeszcze nie ustalacie. Macie się dowiedzieć i niczego nie obiecać.</p>
+      <ul class="tight">
+        <li><b>Umówcie właściwe spotkanie w ratuszu, nie w hali klubu.</b> W hali kręcą się uczestnicy i lokalny portal. Negocjacje przy publiczności to nie są negocjacje.</li>
+        <li><b>Dowiedzcie się, ile Level Up może wydać.</b> To najważniejsza liczba w tej grze.</li>
+        <li><b>Nie składajcie żadnej deklaracji o zatrudnieniu.</b> Rada będzie o to naciskać. Cokolwiek powiecie w kuluarach, wróci do was w fazie trzeciej.</li>
+      </ul></div>
+
+      <div class="block"><h3>Plan awaryjny</h3>
+      <p>Jeśli nie dogadacie się z nikim, klub działa dalej i dalej traci pieniądze, a wy wchodzicie w kampanię z problemem, którego nie rozwiązaliście. <b>Ten wariant jest wart −10 punktów.</b> Każde porozumienie gorsze niż −10 jest dla was gorsze niż brak porozumienia.</p></div>
+
+      <div class="sealed" id="sealM">
+        <div class="lab">Depesza · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="M">Otwórz depeszę</button>
+        <div class="sealed-body hidden">
+          <h4>Dwie wiadomości, obie niedobre</h4>
+          <p><b>Level Up naprawdę ma alternatywę.</b> Znajoma z urzędu w Piotrkowie potwierdza: ta sama sieć od miesiąca rozmawia tam o przejęciu podobnej placówki i jest bliska podpisania. Wasze przekonanie, że kupujący nie ma dokąd pójść, właśnie się rozsypało. Jeśli przesadzicie z ceną, wstaną od stołu i to nie będzie blef.</p>
+          <p><b>Instalacja w hali.</b> Przegląd wykazał, że rozdzielnia elektryczna nie spełnia norm. Remont to około 60 tysięcy złotych i trzeba go zrobić w tym roku niezależnie od tego, kto będzie prowadził klub. Jeżeli Level Up się o tym dowie, zażąda obniżenia opłaty.</p>
+        </div>
+      </div>
+
+      <div class="block hidden" id="tabM"><h3>Wasza punktacja</h3><div id="tabMbody"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LEVEL UP ============ -->
+<section class="screen" id="roleL">
+  <div class="gate no-print" id="gateL"><h3>Koperta 1 — Level Up</h3>
+    <p>Karta delegacji sieci Level Up Akademia. Jeśli grasz po innej stronie, zamknij to teraz.</p>
+    <button class="btn" data-open="L">Jesteśmy Level Up — otwórz</button></div>
+  <div class="role roleL hidden" id="cardL">
+    <div class="head"><p class="eyebrow" style="opacity:.75">Strona B · koperta 1</p><h2>Level Up</h2>
+      <p class="who">Level Up Akademia · 18 placówek w Polsce · dział rozwoju</p></div>
+    <div class="body">
+      <button class="btn ghost no-print" id="togL" style="margin-bottom:18px">Pokaż tabelę punktów</button>
+
+      <div class="block"><h3>Wasza sytuacja</h3>
+      <p>Prowadzicie osiemnaście akademii: programowanie, robotyka, esport, druk 3D. Wszędzie ten sam program, ten sam regulamin, ta sama aplikacja do zapisów i te same koszulki. Na tym polega sieć — na tym, że w Gdańsku wygląda to tak samo jak w Rzeszowie.</p>
+      <p>W tym roku macie budżet na dwie nowe placówki. Nowy Brzeźnik jest atrakcyjny, bo hala jest duża, w centrum i za darmo od miasta w użytkowanie. Kłopot w tym, że w środku jest dwanaście lat cudzych przyzwyczajeń i czternastu instruktorów, których nikt nigdy nie oceniał.</p>
+      <p>Wasz limit na całą operację to <b>150 tysięcy złotych</b> opłaty. Powyżej tej kwoty zarząd nie podpisze.</p></div>
+
+      <div class="block"><h3>Czego chcecie</h3>
+      <p><b>Stu procent kontroli.</b> Placówka, w której miasto ma udziały, to placówka, w której o każdej zmianie trzeba kogoś pytać. Przerabialiście to raz i nie chcecie drugi.</p>
+      <p><b>Waszego regulaminu.</b> To nie jest kwestia ambicji, tylko tego, jak działa sieć. Osiemnaście placówek na jednym systemie zapisów, jednym cenniku i jednych zasadach. Placówka na własnych regułach nie jest waszą placówką.</p>
+      <p><b>Waszego szyldu.</b> Marka jest tym, za co płacicie. Filia Level Up to najlepsze rozwiązanie, wspólna marka jest do przełknięcia.</p>
+      <p><b>Mniejszej kadry.</b> Czternastu instruktorów na 220 uczestników to o połowę za dużo według waszych wskaźników. Sześciu, może ośmiu, w zupełności wystarczy.</p>
+      <p><b>Żeby za szkolenia zapłaciło miasto.</b> Skoro przejmujecie ich ludzi z ich nawykami, niech oni sfinansują przekwalifikowanie.</p></div>
+
+      <div class="block"><h3>Czego nie chcecie</h3>
+      <p>Darmowych miejsc. Każde darmowe miejsce to abonament, którego nie ma w przychodach. Rozumiecie, że jakaś pula będzie konieczna, ale sześćdziesiąt osób z dwustu dwudziestu to co czwarty uczestnik za darmo.</p></div>
+
+      <div class="block"><h3>Faza I — kuluary. Trzy rzeczy do zrobienia</h3>
+      <ul class="tight">
+        <li><b>Wyciągnijcie obietnicę rozmowy o całości klubu.</b> Jeśli już na wstępie zgodzicie się, że miasto coś zachowa, przegraliście tę sprawę przed jej rozpoczęciem.</li>
+        <li><b>Sprawdźcie nastroje wśród instruktorów i uczestników.</b> Rada będzie mówić w ich imieniu. Musicie wiedzieć, ile w tym prawdy, a ile pozy.</li>
+        <li><b>Nie mówcie ani słowa o zwolnieniach.</b> Wiecie, że odejdzie mniej więcej połowa. Ta liczba nie może paść w kuluarach.</li>
+      </ul></div>
+
+      <div class="block"><h3>Plan awaryjny</h3>
+      <p>Jeśli rozmowy padną, przenosicie budżet na placówkę w Piotrkowie, gdzie negocjacje są zaawansowane i prostsze, bo obiekt jest prywatny i nie ma tam żadnej rady uczestników. <b>Ten wariant jest wart 25 punktów.</b> To najwyższy plan awaryjny przy tym stole i wasza największa siła — pod warunkiem, że pozostali w niego uwierzą.</p></div>
+
+      <div class="sealed" id="sealL">
+        <div class="lab">Depesza · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="L">Otwórz depeszę</button>
+        <div class="sealed-body hidden">
+          <h4>Audyt i telefon z centrali</h4>
+          <p><b>Klub jest w gorszym stanie, niż pokazuje oficjalne rozliczenie.</b> Wasz audytor dotarł do dokumentów: około <b>180 tysięcy złotych zaległości</b>, dwie drukarki przemysłowe w leasingu z niezapłaconymi ratami, a jedna z firm leasingowych już wysłała wezwanie. Miasto albo o tym nie wie, albo o tym nie mówi. To jest bardzo mocny argument w rozmowie o cenie.</p>
+          <p><b>Telefon z centrali.</b> Jeśli w porozumieniu zostanie więcej niż dziesięciu instruktorów, cała umowa idzie do ponownej akceptacji w Warszawie, a to sześć tygodni. Tyle nie macie. Zostawienie dwunastu osób jest możliwe, ale musicie mieć w zamian coś, czym da się to obronić przed zarządem.</p>
+        </div>
+      </div>
+
+      <div class="block hidden" id="tabL"><h3>Wasza punktacja</h3><div id="tabLbody"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RADA ============ -->
+<section class="screen" id="roleR">
+  <div class="gate no-print" id="gateR"><h3>Koperta 1 — Rada Uczestników</h3>
+    <p>Karta delegacji Rady Uczestników i instruktorów klubu. Jeśli grasz po innej stronie, zamknij to teraz.</p>
+    <button class="btn" data-open="R">Jesteśmy Radą — otwórz</button></div>
+  <div class="role roleR hidden" id="cardR">
+    <div class="head"><p class="eyebrow" style="opacity:.8">Strona C · koperta 1</p><h2>Rada Uczestników</h2>
+      <p class="who">Rada Uczestników klubu „Warsztat" · 220 członków · 14 instruktorów</p></div>
+    <div class="body">
+      <button class="btn ghost no-print" id="togR" style="margin-bottom:18px">Pokaż tabelę punktów</button>
+
+      <div class="block"><h3>Wasza sytuacja</h3>
+      <p>O tym, że miasto szuka inwestora, dowiedzieliście się z lokalnego portalu. Nie z pisma, nie na zebraniu — z artykułu, który ktoś wrzucił na grupę o siódmej rano. Do południa grupa miała czterysta wiadomości.</p>
+      <p>Reprezentujecie dwieście dwadzieścia osób i czternastu instruktorów. Dla części z tych osób „Warsztat" to jedyne miejsce w mieście, gdzie mają dostęp do sprzętu i do kogoś, kto pokaże, jak go używać. Trzydzieści kilka osób chodzi tu na miejscach bezpłatnych, bo w domu nie ma z czego płacić abonamentu.</p>
+      <p>Nie jesteście przeciwni zmianom. Wiecie, że sprzęt się sypie i że tak dalej być nie może. Boicie się czegoś innego: że po przejęciu klub zostanie, ale nie dla was.</p></div>
+
+      <div class="block"><h3>Czego chcecie</h3>
+      <p><b>Żeby instruktorzy zostali.</b> To jest wasza sprawa numer jeden. Czternastu to cel, ale wiecie, jak trudno będzie go obronić.</p>
+      <p><b>Darmowych miejsc.</b> Jeśli w porozumieniu nie będzie zapisanej puli miejsc bezpłatnych, część waszych ludzi zwyczajnie przestanie przychodzić. Czterdzieści miejsc to liczba, o którą warto się bić.</p>
+      <p><b>Zachowania nazwy.</b> „Warsztat" to nie szyld, to dwanaście lat. Tu miasto jest po waszej stronie.</p>
+      <p><b>Wysokiej opłaty za przejęcie.</b> Miasto obiecało publicznie, że połowa pójdzie na remont hali. Im wyższa opłata, tym większa szansa, że coś z tego zobaczycie. Tu też jesteście z miastem.</p>
+      <p><b>Żeby miasto zostało w klubie.</b> Udział miasta to jedyna gwarancja, że za dwa lata placówki nie zamkną, bo „nie dowozi wyników".</p>
+      <p><b>Szkoleń dla instruktorów, płaconych przez miasto.</b> Wewnętrzny kurs Level Up to według waszych informacji dwa dni i test online. Tu, o dziwo, kupujący będzie waszym sojusznikiem, bo też woli, żeby zapłaciło miasto.</p></div>
+
+      <div class="block"><h3>Czego nie chcecie</h3>
+      <p><b>Regulaminu Level Up.</b> Wypytaliście znajomych z ich placówki w Radomsku. Wejście na kartę, limit czasu na stanowisku, brak wstępu bez opłaconego abonamentu, zakaz zostawania po godzinach nad własnym projektem. W „Warsztacie" pół sali robi swoje rzeczy po zamknięciu i to jest cały sens tego miejsca.</p>
+      <p style="font-size:14px;opacity:.85"><b>Uwaga:</b> w tej sprawie jesteście sami. Miasto popiera nowy regulamin, bo widzi w nim nowoczesność. Będziecie jeden przeciwko dwóm.</p></div>
+
+      <div class="block"><h3>Faza I — kuluary. Trzy rzeczy do zrobienia</h3>
+      <ul class="tight">
+        <li><b>Wyciągnijcie od którejkolwiek strony deklarację o utrzymaniu zatrudnienia.</b> Nawet ogólną. Wypowiedziane zdanie da się potem przypomnieć.</li>
+        <li><b>Dowiedzcie się, czy miasto zamierza do czegokolwiek dopłacać.</b> Jeśli nie, to cała wasza strategia musi wyglądać inaczej.</li>
+        <li><b>Ustalcie, kto właściwie jest kupującym i jak prowadzi swoje placówki.</b></li>
+      </ul></div>
+
+      <div class="block"><h3>Rozliczenie klubu — wersja z księgowości</h3>
+      <p>Wszyscy dostali oficjalne rozliczenie, w którym klub jest na niewielkim minusie. Wy macie drugą wersję, tę, którą pokazała wam księgowa.</p>
+      <table><tbody>
+        <tr><td>Wynik roczny w wersji oficjalnej</td><td class="n">−18 000 zł</td></tr>
+        <tr><td>Zaległości wobec dostawców i firm leasingowych</td><td class="n">180 000 zł</td></tr>
+        <tr><td>Dwie drukarki przemysłowe w leasingu</td><td class="n">raty zaległe od 4 miesięcy</td></tr>
+        <tr><td>Wezwanie od jednej z firm leasingowych</td><td class="n">wpłynęło w zeszłym tygodniu</td></tr>
+      </tbody></table>
+      <div class="note">To jest wasza najmocniejsza informacja i jednocześnie pułapka. Ujawnienie prawdziwych liczb osłabi miasto w sporze o cenę — a miasto jest w tym sporze waszym sojusznikiem i to z tej opłaty ma być remont hali. Zatajenie ich sprawi, że Level Up przepłaci i będzie tym mocniej ciąć koszty tam, gdzie boli was najbardziej: na ludziach i na darmowych miejscach. Zdecydujcie świadomie, a nie przypadkiem.</div></div>
+
+      <div class="block"><h3>Plan awaryjny</h3>
+      <p>Jeśli nie będzie porozumienia, klub działa jeszcze jeden sezon i najpewniej znika z budżetu miasta. Bez inwestycji sprzęt nie doczeka kolejnego roku. <b>Ten wariant jest wart −20 punktów</b> i jest najgorszym planem awaryjnym przy tym stole. Wiecie o tym. Druga strona niekoniecznie.</p></div>
+
+      <div class="sealed" id="sealR">
+        <div class="lab">Depesza · otwórz dopiero na sygnał prowadzącego</div>
+        <button class="btn no-print" data-seal="R">Otwórz depeszę</button>
+        <div class="sealed-body hidden">
+          <h4>Dwie wiadomości z klubu</h4>
+          <p><b>Na grupie wrze.</b> Ktoś zrobił grafikę „Ratujmy Warsztat", ktoś inny napisał do lokalnego portalu, a trzy osoby pytają, kiedy zbiórka pod ratuszem. Możecie to uruchomić jednym słowem. Możecie też to zatrzymać.</p>
+          <p style="font-size:14.5px">Zanim to zrobicie, policzcie. <b>Ogłoszenie akcji protestacyjnej kosztuje was 8 punktów, miasto 12, a Level Up 14.</b> Szkodzi wszystkim, wam najmniej, kupującemu najbardziej. To znaczy, że jest to broń — ale broń, po której nikt nie wychodzi z sali bogatszy. Sama możliwość, o której druga strona wie, działa lepiej niż jej użycie.</p>
+          <p><b>Dwoje instruktorów i tak odchodzi.</b> Marta idzie na studia dzienne, Rafał przenosi się do Łodzi. Powiedzieli wam to wczoraj, prywatnie, i nie mówili tego nikomu innemu. Czyli walka o czternaście etatów jest walką o dwa etaty, które i tak zostaną puste. <b>Realnie bijecie się o dwanaście osób</b> — i tego argumentu druga strona nie ma.</p>
+        </div>
+      </div>
+
+      <div class="block hidden" id="tabR"><h3>Wasza punktacja</h3><div id="tabRbody"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POROZUMIENIE ============ -->
+<section class="screen" id="deal">
+  <p class="eyebrow">Formularz końcowy · wypełniają trzy strony razem</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:8px">Porozumienie</h2>
+  <p style="max-width:60ch;margin-bottom:22px">Osiem spraw. Każda musi być uzgodniona przez wszystkie trzy strony. Jeśli w którejkolwiek nie ma zgody, porozumienia nie ma i wszyscy schodzą na swoje plany awaryjne.</p>
+
+  <div class="form" id="formBox"></div>
+
+  <div class="block">
+    <h3>Faza I — co się komu udało w kuluarach</h3>
+    <div class="grid3" id="fazaBox"></div>
+  </div>
+
+  <div class="block">
+    <h3>Dodatkowo</h3>
+    <label class="chk warn" style="display:inline-flex"><input type="checkbox" id="protest"> Rada ogłosiła akcję protestacyjną</label>
+    <label class="chk" style="display:inline-flex"><input type="checkbox" id="brak"> Strony nie doszły do porozumienia</label>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:22px 0" class="no-print">
+    <button class="btn" id="calc">Policz wynik</button>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="verdict" id="verdict"></div>
+    <div class="score3">
+      <div class="sM"><div class="lbl">Miasto</div><div class="big" id="scM">0</div><div class="delta" id="deM"></div></div>
+      <div class="sL"><div class="lbl">Level Up</div><div class="big" id="scL">0</div><div class="delta" id="deL"></div></div>
+      <div class="sR"><div class="lbl">Rada Uczestników</div><div class="big" id="scR">0</div><div class="delta" id="deR"></div></div>
+    </div>
+    <div class="joint">
+      <div class="lbl mono" style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.7">Wartość wspólna — ile punktów trzy strony wyciągnęły z tego stołu razem</div>
+      <div class="jbar"><i id="jFill" style="width:0%"></i><b id="jTxt">0 / 124</b></div>
+      <p style="font-size:14px;margin-top:11px;opacity:.85" id="jComment"></p>
+    </div>
+    <div class="grid3" id="brkWrap"></div>
+  </div>
+</section>
+
+<!-- ============ OMÓWIENIE ============ -->
+<section class="screen" id="debrief">
+  <p class="eyebrow">Po grze · 18 minut</p>
+  <h2 style="font-size:clamp(28px,6vw,50px);text-transform:uppercase;margin-bottom:18px">Omówienie</h2>
+
+  <div class="note lime">Zacznij nie od wyników, tylko od jednego pytania: <b>czy ustalenia z trzech stołów dało się w ogóle połączyć w jedną umowę?</b> W większości partii nie dało się i faza trzecia zeszła na prostowaniu tego, co ich własna delegacja obiecała bez ich wiedzy.</div>
+
+  <div class="block"><h3>Cztery sposoby rozegrania tej samej sprawy</h3>
+    <table><thead><tr><th>Wariant</th><th class="n">Razem</th><th>Co się dzieje</th></tr></thead><tbody>
+      <tr><td>Brak porozumienia</td><td class="n"><b>−5</b></td><td>Klub dogorywa jeszcze sezon, miasto wchodzi w kampanię z problemem, Level Up idzie do Piotrkowa.</td></tr>
+      <tr><td>Level Up dyktuje warunki</td><td class="n"><b>3</b></td><td>Kupujący zgarnia wszystko, ale miasto i Rada wychodzą poniżej planu awaryjnego — czyli taka umowa nie zostałaby podpisana.</td></tr>
+      <tr><td>Kompromis po środku w każdej sprawie</td><td class="n"><b>97</b></td><td>Nikt nie przegrał, nikt nic nie ugrał. Osiem razy podzielono różnicę na pół.</td></tr>
+      <tr><td>Porozumienie referencyjne</td><td class="n"><b>111</b></td><td>Każda strona oddała to, co było dla niej tanie, a dla kogoś innego drogie.</td></tr>
+    </tbody></table>
+    <p>Teoretyczne maksimum to 124. Różnica między „kompromisem po środku" a porozumieniem referencyjnym to czternaście punktów, których nikt nikomu nie musiał zabierać.</p>
+  </div>
+
+  <div class="block"><h3>Porozumienie referencyjne</h3>
+    <table><tbody>
+      <tr><td>Opłata za przejęcie</td><td class="n">90 000 zł</td></tr>
+      <tr><td>Udział miasta w klubie</td><td class="n">15%</td></tr>
+      <tr><td>Instruktorzy zostający</td><td class="n">12 z 14</td></tr>
+      <tr><td>Odprawa dla odchodzącego</td><td class="n">3 000 zł</td></tr>
+      <tr><td>Darmowe miejsca</td><td class="n">40 z 220</td></tr>
+      <tr><td>Nazwa i status</td><td class="n">Wspólna marka „Warsztat by Level Up"</td></tr>
+      <tr><td>Regulamin</td><td class="n">System Level Up</td></tr>
+      <tr><td>Szkolenia instruktorów</td><td class="n">płaci miasto</td></tr>
+      <tr><td><b>Wynik</b></td><td class="n"><b>Miasto 47 · Level Up 45 · Rada 19 — razem 111</b></td></tr>
+    </tbody></table>
+    <p>Zwróć uwagę na jedną rzecz: <b>Rada oddaje regulamin</b>, czyli sprawę, w której miała najsilniejsze emocje. Oddaje ją, bo była w niej sama przeciwko dwóm i nie miała szans, a w zamian dostaje dwunastu instruktorów zamiast ośmiu i czterdzieści darmowych miejsc zamiast dwudziestu. To jest dokładnie ta wymiana, której większość drużyn nie zauważa.</p>
+  </div>
+
+  <div class="block"><h3>Trzy różne sojusze przy trzech stołach</h3>
+    <p>Ta gra jest tak zbudowana, że układ sił zmienia się w zależności od tego, o czym akurat mowa.</p>
+    <table><thead><tr><th>Sprawa</th><th>Kto z kim</th><th>Kto sam</th></tr></thead><tbody>
+      <tr><td>Opłata za przejęcie, nazwa klubu, liczba instruktorów</td><td>Miasto + Rada</td><td>Level Up</td></tr>
+      <tr><td>Regulamin</td><td>Miasto + Level Up</td><td>Rada</td></tr>
+      <tr><td>Kto płaci za szkolenia</td><td>Level Up + Rada</td><td>Miasto</td></tr>
+      <tr><td>Odprawy</td><td>Miasto + Level Up (obaj płacą)</td><td>Rada</td></tr>
+    </tbody></table>
+    <p>Zapytaj, czy ktokolwiek to zauważył w trakcie gry. Zwykle dopiero teraz robi się jasne, dlaczego przy jednym stole szło łatwo, a przy sąsiednim to samo nie przechodziło.</p>
+  </div>
+
+  <div class="block"><h3>Trzy stoły i karteczki</h3>
+    <p>To jest część, o którą warto zapytać najdłużej.</p>
+    <ul class="tight">
+      <li>Czy wasze trzy stoły ustaliły rzeczy, które dało się połączyć? Ile trzeba było w fazie trzeciej cofnąć?</li>
+      <li>Czy przed rozejściem się do stołów ustaliliście, czego nie wolno oddać? Jeśli nie — to były te cztery minuty odprawy, które przespaliście.</li>
+      <li>Co pisaliście na karteczkach? Instrukcje czy pytania? Kto pisał najwięcej i czy to pomogło?</li>
+      <li>Wykorzystaliście dwie minutowe rozmowy przewodniczących na osobności? W większości partii nikt po nie nie sięga, a to jedyny moment, kiedy dwie strony mogą się umówić bez trzeciej.</li>
+    </ul>
+  </div>
+
+  <div class="block"><h3>Depesze i dwie wersje rozliczenia</h3>
+    <p>Rada wiedziała od początku, że klub ma 180 tysięcy zaległości. Level Up dowiedział się tego z audytu dopiero w połowie fazy drugiej. Miasto nie dowiedziało się wcale — chyba że ktoś mu powiedział.</p>
+    <p>Zapytaj Radę, czy ujawniła te liczby i dlaczego. Nie ma tu dobrej odpowiedzi i o to chodzi. Ujawnienie osłabia sojusznika w sprawie ceny. Zatajenie oznacza, że kupujący przepłaci i odbije to sobie na ludziach.</p>
+    <p>Zapytaj też Radę o drugą część depeszy: dwoje instruktorów i tak odchodzi. Czy ktoś przestawił się z żądania czternastu na dwanaście? Kto to zrobił, ten prosił o coś, co dało się dać.</p>
+  </div>
+
+  <div class="block"><h3>Akcja protestacyjna</h3>
+    <p>Jeśli padła, policzcie na głos: Rada traci 8, miasto 12, Level Up 14. Suma spada o trzydzieści cztery punkty. Nikt nie zyskuje, Rada traci najmniej.</p>
+    <p>I to jest dokładnie powód, dla którego groźba działa lepiej niż jej wykonanie. Dopóki wisi, jest warta tyle, ile druga strona się jej boi. Wykonana, jest już tylko kosztem — i to wspólnym, także dla tych, w czyim imieniu się ją ogłasza.</p>
+  </div>
+
+  <div class="block"><h3>Pytania do klasy</h3>
+    <ul class="tight">
+      <li>Co obiecaliście w kuluarach, żałując tego później?</li>
+      <li>Która strona pierwsza powiedziała, ile ma pieniędzy albo ile potrzebuje? Co jej to dało?</li>
+      <li>Czy Rada w ogóle wiedziała, że w sprawie regulaminu jest sama przeciwko dwóm? Kiedy to do niej dotarło?</li>
+      <li>Czy ktoś sprawdził, jaki jest plan awaryjny drugiej strony? Level Up miał najlepszy i najmniej się o to starano.</li>
+      <li>Gdyby zagrać jeszcze raz, co ustalilibyście w tych czterech minutach odprawy przed rozejściem do stołów?</li>
+    </ul>
+  </div>
+
+  <div class="block"><h3>Jeśli grasz drugi raz</h3>
+    <ul class="tight">
+      <li>Zamień strony. Ci, którzy grali Radą, grają Level Upem.</li>
+      <li>Skróć odprawę do dwóch minut albo znieś ją zupełnie. Zobaczycie, ile znaczy przygotowanie.</li>
+      <li>Znieś karteczki i pozwól delegacjom rozmawiać. Porównajcie wartość wspólną — zwykle rośnie o dwadzieścia punktów, a gra robi się o połowę łatwiejsza.</li>
+      <li>Nie rozdawaj Radzie prawdziwego rozliczenia. Cała dynamika sporu o cenę wygląda wtedy inaczej.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>Stowarzyszenie 2piny · Warsztat · gra negocjacyjna 14–18 lat</span>
+  <span>Działa offline. Żadne dane nie wychodzą z tego pliku.</span>
+</footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var P=['M','L','R'], NAZ={M:'Miasto',L:'Level Up',R:'Rada Uczestników'};
+var OB=[
+ {id:'oplata',lab:'Opłata za przejęcie',stol:1,opcje:[
+   ['0 zł',-15,30,-10],['60 000 zł',0,18,0],['90 000 zł',10,10,5],
+   ['120 000 zł',20,0,9],['150 000 zł',30,-12,12],['180 000 zł',38,-30,14]]},
+ {id:'udzial',lab:'Udział miasta w klubie',stol:1,opcje:[
+   ['0%',0,18,-12],['15%',5,8,0],['30%',12,-5,10],['49%',16,-22,14]]},
+ {id:'instr',lab:'Instruktorzy zostający (z 14)',stol:2,opcje:[
+   ['6',-12,22,-25],['8',-4,14,-12],['10',4,4,2],['12',10,-8,14],['14',14,-22,22]]},
+ {id:'odprawa',lab:'Odprawa dla odchodzącego',stol:2,opcje:[
+   ['0 zł',8,10,-18],['3 000 zł',4,5,-4],['6 000 zł',-2,-2,8],['9 000 zł',-9,-10,16]]},
+ {id:'regulamin',lab:'Regulamin klubu',stol:2,opcje:[
+   ['System Level Up',10,18,-20],['Mieszany',4,4,2],['Zasady klubu',-6,-16,14]]},
+ {id:'nazwa',lab:'Nazwa i status',stol:3,opcje:[
+   ['Filia Level Up',-10,16,-14],['Wspólna marka',8,6,4],['Klub zachowuje nazwę',14,-10,16]]},
+ {id:'darmowe',lab:'Darmowe miejsca (z 220)',stol:3,opcje:[
+   ['0',-8,14,-22],['20',2,6,-2],['40',8,-4,12],['60',12,-18,20]]},
+ {id:'szkolenia',lab:'Kto płaci za szkolenia',stol:3,opcje:[
+   ['Level Up',10,-10,8],['Miasto',-8,10,8],['Po połowie',0,0,10],['Nikt — brak szkoleń',3,4,-14]]}
+];
+var FAZA={
+ M:[['Umówienie rozmów w ratuszu, nie w hali klubu',8,-4],
+    ['Ustalenie, ile Level Up może wydać',10,0],
+    ['Brak jakiejkolwiek deklaracji o zatrudnieniu',6,-8]],
+ L:[['Obietnica rozmowy o całości klubu',10,0],
+    ['Rozpoznanie nastrojów wśród instruktorów i uczestników',8,0],
+    ['Brak jakiejkolwiek deklaracji o zwolnieniach',8,-10]],
+ R:[['Deklaracja o utrzymaniu zatrudnienia od którejkolwiek strony',10,-4],
+    ['Ustalenie, czy miasto zamierza dopłacać',8,0],
+    ['Rozpoznanie, kto jest kupującym i jak prowadzi placówki',6,0]]
+};
+var PROTEST={M:-12,L:-14,R:-8};
+var PLANB={M:-10,L:25,R:-20};
+var MAXSUMA=124;
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
+  document.querySelectorAll('.bar button[data-go]').forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
+document.querySelectorAll('[data-open]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.getElementById('gate'+b.dataset.open).classList.add('hidden');
+    document.getElementById('card'+b.dataset.open).classList.remove('hidden');});
+});
+document.querySelectorAll('[data-seal]').forEach(function(b){
+  b.addEventListener('click',function(){
+    b.parentNode.querySelector('.sealed-body').classList.remove('hidden');
+    b.classList.add('hidden');});
+});
+
+/* zegar */
+var tSec=0,tRun=false,tInt=null;
+function draw(){
+  var s=Math.abs(tSec);
+  document.getElementById('tClock').textContent=(tSec<0?'-':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  document.getElementById('timerBox').classList.toggle('warn',tSec<=60);
+}
+document.querySelectorAll('.tctl button[data-min]').forEach(function(b){
+  b.addEventListener('click',function(){
+    tSec=parseInt(b.dataset.min,10)*60;tRun=true;
+    document.getElementById('tPhase').textContent=b.dataset.lab;draw();
+    if(!tInt)tInt=setInterval(function(){if(tRun){tSec--;draw();}},1000);});
+});
+document.getElementById('tToggle').addEventListener('click',function(){tRun=!tRun;});
+document.getElementById('tStop').addEventListener('click',function(){
+  tRun=false;tSec=0;document.getElementById('tPhase').textContent='Zegar zatrzymany';draw();});
+draw();
+
+/* tabele punktów na kartach */
+var IDX={M:1,L:2,R:3};
+function tabelaDla(t){
+  var h='<table><thead><tr><th>Sprawa</th><th>Wariant</th><th class="n">Punkty</th></tr></thead><tbody>';
+  OB.forEach(function(o){
+    h+='<tr class="grp"><td colspan="3">'+o.lab+' · stół '+o.stol+'</td></tr>';
+    o.opcje.forEach(function(w){
+      var v=w[IDX[t]];
+      h+='<tr><td></td><td>'+w[0]+'</td><td class="n '+(v>0?'pos':(v<0?'neg':''))+'">'+(v>0?'+':'')+v+'</td></tr>';
+    });
+  });
+  h+='<tr class="grp"><td colspan="3">Faza I — kuluary</td></tr>';
+  FAZA[t].forEach(function(f){
+    h+='<tr><td></td><td>'+f[0]+'</td><td class="n"><span class="pos">+'+f[1]+'</span> / <span class="'+(f[2]<0?'neg':'')+'">'+f[2]+'</span></td></tr>';
+  });
+  h+='<tr class="grp"><td colspan="3">Pozostałe</td></tr>';
+  h+='<tr><td></td><td>Akcja protestacyjna ogłoszona</td><td class="n neg">'+PROTEST[t]+'</td></tr>';
+  h+='<tr><td></td><td><b>Plan awaryjny (brak porozumienia)</b></td><td class="n"><b>'+PLANB[t]+'</b></td></tr>';
+  return h+'</tbody></table><p style="font-size:14px;opacity:.8">Odprawa nie jest liczona, jeśli w porozumieniu zostaje wszystkich czternastu instruktorów — wtedy nikt nie odchodzi.</p>';
+}
+P.forEach(function(t){document.getElementById('tab'+t+'body').innerHTML=tabelaDla(t);});
+P.forEach(function(t){
+  var btn=document.getElementById('tog'+t),box=document.getElementById('tab'+t);
+  btn.addEventListener('click',function(){
+    var pokaz=box.classList.toggle('hidden')===false;
+    btn.textContent=pokaz?'Ukryj tabelę punktów':'Pokaż tabelę punktów';});
+});
+
+/* formularz */
+document.getElementById('formBox').innerHTML=OB.map(function(o){
+  return '<div class="f"><label>'+o.lab+' · stół '+o.stol+'</label><select id="s_'+o.id+'">'
+    +o.opcje.map(function(w,i){return '<option value="'+i+'"'+(i===Math.floor(o.opcje.length/2)?' selected':'')+'>'+w[0]+'</option>';}).join('')
+    +'</select></div>';
+}).join('');
+document.getElementById('fazaBox').innerHTML=P.map(function(t){
+  return '<div><div class="mono" style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:8px">'+NAZ[t]+'</div>'
+    +FAZA[t].map(function(f,i){return '<label class="chk"><input type="checkbox" id="f_'+t+i+'"> '+f[0]+'</label>';}).join('')+'</div>';
+}).join('');
+
+document.getElementById('calc').addEventListener('click',function(){
+  var brak=document.getElementById('brak').checked;
+  var protest=document.getElementById('protest').checked;
+  document.getElementById('out').classList.remove('hidden');
+  var wyn={},poz={M:[],L:[],R:[]};
+
+  if(brak){
+    P.forEach(function(t){wyn[t]=PLANB[t];poz[t]=[['Plan awaryjny',PLANB[t]]];});
+  } else {
+    var wyb={};
+    OB.forEach(function(o){wyb[o.id]=parseInt(document.getElementById('s_'+o.id).value,10);});
+    var wszyscy = OB.filter(function(o){return o.id==='instr';})[0].opcje[wyb.instr][0]==='14';
+    P.forEach(function(t){
+      var s=0;
+      OB.forEach(function(o){
+        var w=o.opcje[wyb[o.id]], v=w[IDX[t]];
+        if(o.id==='odprawa' && wszyscy){poz[t].push(['Odprawa — nikt nie odchodzi',0]);return;}
+        poz[t].push([o.lab+': '+w[0],v]);s+=v;
+      });
+      FAZA[t].forEach(function(f,i){
+        var ok=document.getElementById('f_'+t+i).checked;
+        var v=ok?f[1]:f[2];
+        poz[t].push(['Faza I — '+f[0]+(ok?' (tak)':' (nie)'),v]);s+=v;
+      });
+      if(protest){poz[t].push(['Akcja protestacyjna',PROTEST[t]]);s+=PROTEST[t];}
+      wyn[t]=s;
+    });
+  }
+
+  var suma=P.reduce(function(a,t){return a+wyn[t];},0);
+  P.forEach(function(t){
+    document.getElementById('sc'+t).textContent=wyn[t];
+    document.getElementById('de'+t).textContent='plan B = '+PLANB[t]+' · '+(wyn[t]-PLANB[t]>0?'+':'')+(wyn[t]-PLANB[t]);
+  });
+  document.getElementById('brkWrap').innerHTML=P.map(function(t){
+    return '<div><h3 style="font-size:11px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:8px">'+NAZ[t]+'</h3><table style="font-size:12.5px"><tbody>'
+      +poz[t].map(function(r){
+        var c=r[1]>0?'pos':(r[1]<0?'neg':'');
+        return '<tr><td style="padding:3px 6px">'+r[0]+'</td><td class="n '+c+'" style="padding:3px 6px">'+(r[1]>0?'+':'')+r[1]+'</td></tr>';
+      }).join('')+'<tr><td style="padding:3px 6px"><b>Razem</b></td><td class="n" style="padding:3px 6px"><b>'+wyn[t]+'</b></td></tr></tbody></table></div>';
+  }).join('');
+
+  var pct=Math.max(0,Math.min(100,Math.round(suma/MAXSUMA*100)));
+  document.getElementById('jFill').style.width=pct+'%';
+  document.getElementById('jTxt').textContent=suma+' / '+MAXSUMA;
+  var jc=document.getElementById('jComment');
+  if(suma>=105)jc.textContent='Bardzo dobrze. Każda strona oddała to, co było dla niej tanie, a dla kogoś innego drogie.';
+  else if(suma>=90)jc.textContent='Solidnie, ale to mniej więcej poziom dzielenia różnicy na pół w każdej sprawie. Sprawdźcie w omówieniu, którą wymianę przegapiliście.';
+  else if(suma>=50)jc.textContent='Sporo zostało na stole. Zwykle znaczy to, że jedna strona wygrała za dużo spraw naraz.';
+  else jc.textContent='Niewiele. Albo któraś strona podyktowała warunki, albo padła akcja protestacyjna, albo nie było porozumienia.';
+
+  var v=document.getElementById('verdict'),msgs=[];
+  if(brak){
+    v.className='verdict';
+    v.innerHTML='<strong>Brak porozumienia</strong>Klub działa jeszcze sezon i znika z budżetu. Miasto wchodzi w kampanię z nierozwiązanym problemem, Level Up przenosi budżet do Piotrkowa, Rada zostaje z niczym. Wszyscy schodzą na plany awaryjne.';
+  } else {
+    var ponizej=P.filter(function(t){return wyn[t]<PLANB[t];});
+    ponizej.forEach(function(t){
+      msgs.push(NAZ[t]+' wychodzi <b>poniżej swojego planu awaryjnego</b> ('+wyn[t]+' zamiast '+PLANB[t]+') — ta strona nie powinna była tego podpisać.');
+    });
+    if(protest)msgs.push('Ogłoszono akcję protestacyjną. Kosztowała wszystkich razem 34 punkty.');
+    if(msgs.length){v.className='verdict';v.innerHTML='<strong>Uwagi do porozumienia</strong>'+msgs.join(' ');}
+    else{
+      var z=P.map(function(t){return [NAZ[t],wyn[t]-PLANB[t]];}).sort(function(a,b){return b[1]-a[1];});
+      v.className='verdict ok';
+      v.innerHTML='<strong>Porozumienie zawarte</strong>Wszystkie trzy strony wyszły ponad swój plan awaryjny, więc ta umowa miała sens dla każdej z nich. Najwięcej ponad plan ugrało: '+z[0][0]+' (+'+z[0][1]+'), najmniej: '+z[2][0]+' ('+(z[2][1]>0?'+':'')+z[2][1]+').';
+    }
+  }
+  document.getElementById('out').scrollIntoView({behavior:'smooth',block:'nearest'});
+});
+})();
+</script>
+</body>
+</html>

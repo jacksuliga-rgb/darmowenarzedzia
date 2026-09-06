@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strefa Startu — gra negocjacyjna</title>
+<style>
+:root{
+  --sea:#2C4251;
+  --sea-deep:#16232B;
+  --lime:#EDFF13;
+  --paper:#E8ECEA;
+  --paper-warm:#F2F4F1;
+  --rust:#D64933;
+  --mint:#5FBF96;
+  --line:rgba(44,66,81,.18);
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--sea-deep);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;line-height:1.02;letter-spacing:-.025em;font-weight:800}
+p{margin:0 0 .85em}
+a{color:inherit}
+
+/* ---------- utility type ---------- */
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  opacity:.62;margin:0 0 10px;font-weight:600;
+}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.wrap{max-width:940px;margin:0 auto;padding:28px 22px 90px}
+.screen{display:none}
+.screen.on{display:block;animation:rise .34s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+
+/* ---------- top bar ---------- */
+.bar{
+  position:sticky;top:0;z-index:40;background:var(--sea-deep);color:var(--paper);
+  display:flex;align-items:center;gap:14px;padding:9px 22px;flex-wrap:wrap;
+}
+.bar .brand{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--lime);font-weight:700}
+.bar nav{display:flex;gap:2px;margin-left:auto;flex-wrap:wrap}
+.bar button{
+  background:none;border:0;color:var(--paper);font-family:var(--mono);font-size:11px;
+  letter-spacing:.09em;text-transform:uppercase;padding:7px 11px;cursor:pointer;border-radius:3px;
+}
+.bar button:hover{background:rgba(237,255,19,.14)}
+.bar button.active{background:var(--lime);color:var(--sea-deep);font-weight:700}
+.bar button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+
+/* ---------- start ---------- */
+.hero{padding:52px 0 34px;border-bottom:3px solid var(--sea-deep)}
+.hero h1{font-size:clamp(46px,9.5vw,104px);text-transform:uppercase;line-height:.86}
+.hero h1 em{font-style:normal;display:block;color:var(--sea);opacity:.34}
+.hero .sub{max-width:56ch;margin-top:22px;font-size:17px}
+.specs{display:flex;gap:0;flex-wrap:wrap;margin-top:30px;border-top:1px solid var(--line)}
+.specs div{flex:1 1 130px;padding:13px 16px 13px 0;border-right:1px solid var(--line)}
+.specs div:last-child{border-right:0}
+.specs b{display:block;font-family:var(--mono);font-size:22px;font-weight:700}
+.specs span{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;opacity:.6}
+
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:12px;margin:34px 0}
+.pick{
+  border:2px solid var(--sea-deep);padding:20px;cursor:pointer;text-align:left;
+  background:var(--paper-warm);font-family:inherit;color:inherit;transition:transform .16s,box-shadow .16s;
+}
+.pick:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--sea-deep)}
+.pick:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
+.pick strong{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:5px}
+.pick small{font-family:var(--mono);font-size:11px;letter-spacing:.06em;opacity:.66;line-height:1.4;display:block}
+.pick.a{background:var(--sea-deep);color:var(--paper);border-color:var(--sea-deep)}
+.pick.a strong{color:var(--lime)}
+.pick.b{background:var(--lime);border-color:var(--sea-deep)}
+
+/* ---------- role cards: polarity inversion ---------- */
+.role{border:3px solid var(--sea-deep);margin-bottom:22px}
+.role .head{padding:26px 26px 22px}
+.role .body{padding:26px;background:var(--paper-warm)}
+.roleA .head{background:var(--sea-deep);color:var(--paper)}
+.roleA .head h2{color:var(--lime)}
+.roleB .head{background:var(--lime);color:var(--sea-deep)}
+.role h2{font-size:clamp(28px,5vw,44px);text-transform:uppercase;line-height:.92}
+.role .who{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-top:12px;opacity:.8}
+
+.gate{
+  border:3px dashed var(--sea-deep);padding:40px 26px;text-align:center;background:var(--paper-warm);
+}
+.gate h3{font-size:26px;text-transform:uppercase;margin-bottom:10px}
+.gate p{max-width:44ch;margin:0 auto 20px;font-size:15px}
+
+.btn{
+  background:var(--sea-deep);color:var(--lime);border:0;padding:13px 24px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;
+}
+.btn:hover{background:var(--sea)}
+.btn:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+.btn.ghost{background:none;color:var(--sea-deep);border:2px solid var(--sea-deep)}
+.btn.ghost:hover{background:var(--sea-deep);color:var(--lime)}
+.btn.lime{background:var(--lime);color:var(--sea-deep)}
+
+/* ---------- content blocks ---------- */
+.block{margin:0 0 26px}
+.block h3{font-size:13px;font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;
+  padding-bottom:7px;border-bottom:2px solid var(--sea-deep);margin-bottom:14px;font-weight:700}
+.note{border-left:4px solid var(--rust);padding:11px 0 11px 15px;margin:16px 0;font-size:15px;background:rgba(214,73,51,.05)}
+.note.lime{border-color:var(--sea);background:rgba(44,66,81,.06)}
+ul.tight{margin:0 0 14px;padding-left:20px}
+ul.tight li{margin-bottom:7px}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:18px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--sea-deep);color:var(--paper);font-weight:700;border-bottom:0}
+td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;width:1%}
+.pos{color:#1E7A56;font-weight:700}
+.neg{color:var(--rust);font-weight:700}
+tr.grp td{background:rgba(44,66,81,.09);font-weight:700;font-size:12px;
+  font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- host ---------- */
+.timer{
+  background:var(--sea-deep);color:var(--lime);padding:24px;text-align:center;margin-bottom:22px;
+}
+.timer .clock{font-family:var(--mono);font-size:clamp(56px,15vw,110px);font-weight:700;
+  line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.timer .phase{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--paper);opacity:.75}
+.timer.warn .clock{color:var(--rust)}
+.tctl{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.tctl button{background:rgba(237,255,19,.12);color:var(--paper);border:1px solid rgba(237,255,19,.35);
+  padding:8px 13px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+.tctl button:hover{background:var(--lime);color:var(--sea-deep)}
+
+.flow{border-top:2px solid var(--sea-deep)}
+.flow .step{display:flex;gap:16px;padding:13px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.flow .t{font-family:var(--mono);font-weight:700;font-size:13px;min-width:62px;color:var(--rust)}
+.flow .d strong{display:block;font-size:16px}
+.flow .d span{font-size:14px;opacity:.78}
+
+/* ---------- deal form ---------- */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-bottom:24px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:700}
+.f select,.f input[type=number]{
+  padding:11px;border:2px solid var(--sea-deep);background:var(--paper-warm);font-family:var(--mono);
+  font-size:15px;color:var(--sea-deep);border-radius:0;width:100%;
+}
+.f select:focus,.f input:focus{outline:3px solid var(--rust);outline-offset:1px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.chk{display:flex;align-items:center;gap:8px;border:2px solid var(--sea-deep);padding:9px 13px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;letter-spacing:.05em;background:var(--paper-warm);user-select:none}
+.chk input{accent-color:var(--sea-deep);width:16px;height:16px}
+.chk:has(input:checked){background:var(--lime)}
+
+/* ---------- results ---------- */
+.score{display:grid;grid-template-columns:1fr 1fr;gap:0;border:3px solid var(--sea-deep);margin-bottom:20px}
+.score>div{padding:24px}
+.score .sA{background:var(--sea-deep);color:var(--paper)}
+.score .sB{background:var(--lime);color:var(--sea-deep)}
+.score .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.score .big{font-family:var(--mono);font-size:clamp(44px,10vw,74px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score .sA .big{color:var(--lime)}
+.score .delta{font-family:var(--mono);font-size:13px;margin-top:8px}
+.joint{border:3px solid var(--sea-deep);border-top:0;padding:22px;background:var(--paper-warm);margin-bottom:20px}
+.jbar{height:26px;background:rgba(44,66,81,.14);margin-top:12px;position:relative;overflow:hidden}
+.jbar i{display:block;height:100%;background:var(--sea-deep);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.jbar b{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:var(--mono);
+  font-size:12px;font-weight:700;mix-blend-mode:difference;color:var(--lime)}
+.verdict{padding:18px;border:3px solid var(--rust);background:rgba(214,73,51,.07);margin-bottom:20px;font-size:15px}
+.verdict.ok{border-color:var(--sea-deep);background:rgba(95,191,150,.14)}
+.verdict strong{display:block;font-size:19px;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:6px}
+
+.brk{font-family:var(--mono);font-size:13px;width:100%;border-collapse:collapse}
+.brk td{padding:5px 8px;border-bottom:1px solid var(--line)}
+.brk td:first-child{font-family:var(--sans);font-size:14px}
+
+.rank td:first-child{font-family:var(--mono);font-weight:700}
+
+.hidden{display:none !important}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:720px){.two,.score{grid-template-columns:1fr}}
+
+footer{border-top:2px solid var(--sea-deep);margin-top:44px;padding-top:16px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;opacity:.65;display:flex;
+  justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+@media print{
+  .bar,.tctl,.no-print,.picker,footer{display:none !important}
+  .screen{display:block !important;page-break-after:always}
+  body{background:#fff;font-size:11.5pt}
+  .roleA .head{background:#16232B !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .roleB .head{background:#EDFF13 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  th{background:#16232B !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .gate{display:none !important}
+  .role .body{display:block !important}
+}
+</style>
+</head>
+<body>
+
+<div class="bar no-print">
+  <span class="brand">2piny · Strefa Startu</span>
+  <nav>
+    <button data-go="start" class="active">Start</button>
+    <button data-go="host">Prowadzący</button>
+    <button data-go="roleA">Karta A</button>
+    <button data-go="roleB">Karta B</button>
+    <button data-go="deal">Porozumienie</button>
+    <button data-go="debrief">Omówienie</button>
+  </nav>
+</div>
+
+<div class="wrap">
+
+<!-- ============ START ============ -->
+<section class="screen on" id="start">
+  <div class="hero">
+    <p class="eyebrow">Gra negocjacyjna · wiek 14–18 · dwie strony</p>
+    <h1>Strefa<br>Startu<em>Nowy Brzeźnik</em></h1>
+    <p class="sub">Samorząd uczniowski chce ściągnąć na szkolny festiwal ekipę twórców internetowych z 6 milionami obserwujących. Manager ekipy chce wyjechać z tego miasta jak najszybciej i jak najbogatszy. Obie strony mają Plan B. Osiem rzeczy do ustalenia. Jedna godzina.</p>
+    <div class="specs">
+      <div><b>2</b><span>strony</span></div>
+      <div><b>8</b><span>obszarów sporu</span></div>
+      <div><b>75</b><span>minut</span></div>
+      <div><b>80 000</b><span>zł budżetu</span></div>
+      <div><b>2–6</b><span>osób w grze</span></div>
+    </div>
+  </div>
+
+  <div class="picker">
+    <button class="pick" data-go="host"><strong>Prowadzący</strong><small>Przebieg, zegar, zasady, materiały do druku</small></button>
+    <button class="pick a" data-go="roleA"><strong>Strona A</strong><small>Kaja Nowicka<br>Samorząd Uczniowski</small></button>
+    <button class="pick b" data-go="roleB"><strong>Strona B</strong><small>Bartek Wolski<br>agencja NORTHLIGHT</small></button>
+    <button class="pick" data-go="deal"><strong>Porozumienie</strong><small>Formularz końcowy i liczenie punktów</small></button>
+  </div>
+
+  <div class="note lime"><strong>Zanim rozdasz karty:</strong> każda strona czyta wyłącznie swoją. Połowa napięcia w tej grze bierze się z tego, czego strony o sobie nie wiedzą. Karty A i B mają odwrócone kolory — z drugiego końca sali widać, kto jest kim.</div>
+</section>
+
+<!-- ============ PROWADZĄCY ============ -->
+<section class="screen" id="host">
+  <p class="eyebrow">Materiał dla prowadzącego</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:20px">Jak to poprowadzić</h2>
+
+  <div class="timer no-print" id="timerBox">
+    <div class="phase" id="tPhase">Zegar zatrzymany</div>
+    <div class="clock" id="tClock">00:00</div>
+    <div class="tctl">
+      <button data-min="12" data-lab="Przygotowanie w zespołach">12 min · przygotowanie</button>
+      <button data-min="30" data-lab="Negocjacje">30 min · negocjacje</button>
+      <button data-min="20" data-lab="Negocjacje (wersja ekspres)">20 min · ekspres</button>
+      <button data-min="5" data-lab="Spisywanie porozumienia">5 min · porozumienie</button>
+      <button id="tToggle">Pauza / wznów</button>
+      <button id="tStop">Zeruj</button>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Przebieg — 75 minut</h3>
+    <div class="flow">
+      <div class="step"><span class="t">0–8</span><span class="d"><strong>Wprowadzenie i podział ról</strong><span>Zapowiedz temat jednym zdaniem, nie zdradzaj mechaniki punktów. Podziel klasę na pary lub zespoły 2–3 osób po każdej stronie.</span></span></div>
+      <div class="step"><span class="t">8–20</span><span class="d"><strong>Przygotowanie</strong><span>Zespoły czytają swoje karty osobno, najlepiej w różnych rogach sali. Zadanie: wypisać trzy rzeczy, których nie oddadzą, i trzy, które oddadzą bez żalu.</span></span></div>
+      <div class="step"><span class="t">20–50</span><span class="d"><strong>Negocjacje</strong><span>Siadają naprzeciw siebie. Ty krążysz i nie podpowiadasz. Zapisuj sobie momenty, do których wrócisz w omówieniu.</span></span></div>
+      <div class="step"><span class="t">50–55</span><span class="d"><strong>Spisanie porozumienia</strong><span>Zakładka „Porozumienie". Osiem pól, obie strony muszą się zgodzić na każde. Brak zgody = brak porozumienia, obie strony schodzą na Plan B.</span></span></div>
+      <div class="step"><span class="t">55–75</span><span class="d"><strong>Liczenie i omówienie</strong><span>Wpisujesz wyniki wszystkich par, pokazujesz ranking, przechodzisz do zakładki „Omówienie".</span></span></div>
+    </div>
+    <p style="font-size:14px;opacity:.78"><b>Wersja na jedną lekcję (45 min):</b> 5 min wprowadzenia, 8 min przygotowania, 20 min negocjacji, 3 min na porozumienie, 9 min omówienia. Skróć karty do pierwszej strony.</p>
+  </div>
+
+  <div class="block">
+    <h3>Punktacja jawna czy ukryta</h3>
+    <p>Możesz to rozegrać na dwa sposoby, tak jak w oryginalnych scenariuszach biznesowych.</p>
+    <p><b>Jawna</b> — uczniowie widzą swoją tabelę punktów od początku. Łatwiej im ustawić priorytety, gra jest szybsza i bardziej czytelna. Ryzyko: liczą punkty zamiast rozmawiać.</p>
+    <p><b>Ukryta</b> — dostają tylko opis roli, punkty poznają po wszystkim. Rozmowa robi się dużo bardziej naturalna, a omówienie mocniejsze, bo dopiero wtedy widzą, ile zostawili na stole. <b>Dla 14–18 lat polecam ukrytą przy pierwszym podejściu</b> i jawną, jeśli powtarzasz grę z tą samą grupą.</p>
+    <p>Na kartach ról jest przełącznik, który chowa tabelę punktów.</p>
+  </div>
+
+  <div class="block">
+    <h3>Zasady, których pilnujesz</h3>
+    <ul class="tight">
+      <li>Nie wolno pokazywać drugiej stronie swojej karty ani tabeli punktów. Można o wszystkim mówić — także kłamać.</li>
+      <li>Twórcy nie mogą się w Nowym Brzeźniku rozdzielać. Jeśli przyjeżdża dwoje, są razem w każdym miejscu.</li>
+      <li>Strona A nie może przekroczyć budżetu 80 000 zł. Przekroczenie to nieważne porozumienie i minus dwadzieścia punktów.</li>
+      <li>Brak porozumienia jest dopuszczalny. Obie strony dostają wtedy wynik swojego Planu B. Czasem to lepszy wynik niż zła umowa — i warto, żeby ktoś w klasie tego doświadczył.</li>
+      <li>Jedna liczba dni dotyczy całego pobytu, niezależnie od tego, ilu twórców przyjedzie.</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Co wydrukować</h3>
+    <p>Ctrl+P na tej stronie drukuje wszystkie ekrany po kolei, każdy na osobnej kartce. Wydrukuj <b>Kartę A</b> dla jednego zespołu i <b>Kartę B</b> dla drugiego — i nie pomyl kopert. Formularz porozumienia wydrukuj po jednej sztuce na parę.</p>
+  </div>
+
+  <div class="block">
+    <h3>Ranking par — wpisz wyniki po grze</h3>
+    <p style="font-size:14px;opacity:.8">Policz każdą parę w zakładce „Porozumienie", a potem kliknij tam „Dodaj do rankingu". Zestawienie pojawi się poniżej.</p>
+    <table class="rank"><thead><tr><th>Para</th><th>Punkty A</th><th>Punkty B</th><th>Wartość wspólna</th><th>Umowa</th></tr></thead>
+    <tbody id="rankBody"><tr><td colspan="5" style="opacity:.55;font-family:var(--sans)">Jeszcze pusto.</td></tr></tbody></table>
+    <button class="btn ghost no-print" id="rankClear">Wyczyść ranking</button>
+  </div>
+</section>
+
+<!-- ============ KARTA A ============ -->
+<section class="screen" id="roleA">
+  <div class="gate no-print" id="gateA">
+    <h3>Karta strony A</h3>
+    <p>To jest karta Samorządu Uczniowskiego. Jeśli grasz po stronie managera — zamknij ją teraz. Czytanie cudzej karty psuje całą grę i wcale nie jest sprytne.</p>
+    <button class="btn" data-open="A">Jestem stroną A — otwórz</button>
+  </div>
+
+  <div class="role roleA hidden" id="cardA">
+    <div class="head">
+      <p class="eyebrow" style="opacity:.8">Strona A · karta poufna</p>
+      <h2>Kaja Nowicka</h2>
+      <p class="who">Przewodnicząca Samorządu Uczniowskiego · ZS nr 4 im. Stanisława Lema · Nowy Brzeźnik</p>
+    </div>
+    <div class="body">
+      <button class="btn ghost no-print" id="toggleA" style="margin-bottom:20px">Ukryj tabelę punktów</button>
+
+      <div class="block">
+        <h3>Twoja sytuacja</h3>
+        <p>We wrześniu obiecałaś na apelu rzecz, której nikt przed tobą nie zrobił: że czterdziestolecie szkoły nie będzie akademią z gazetką i wierszem, tylko festiwalem, o którym napisze ktoś spoza Nowego Brzeźnika. Nazwałaś to <b>Strefa Startu</b>. Nazwa się przyjęła. Reszta na razie nie.</p>
+        <p>Przez pół roku zbierałaś pieniądze i wyszło ci więcej, niż ktokolwiek się spodziewał. Firma <b>Termopol</b> dała 35 000 zł, bo prezes Ryszard Malec sam kończył tę szkołę. Miasto dorzuciło 25 000 zł, ale postawiło warunek. Rada rodziców dołożyła 20 000 zł, po długiej dyskusji, na której padło zdanie „a nie lepiej kupić za to rzutniki". <b>Razem masz 80 000 zł</b> i nikt ci ich drugi raz nie da.</p>
+        <p>W marcu ekipa <b>Pixel Squad</b> ogłosiła trasę po Polsce. Napisałaś do ich agencji jedenaście razy. Za dwunastym odpisali. Jutro siadasz naprzeciw ich managera.</p>
+      </div>
+
+      <div class="block">
+        <h3>Kogo chcesz</h3>
+        <p>W szkolnej ankiecie zagłosowało 480 osób i wynik jest bezdyskusyjny.</p>
+        <ul class="tight">
+          <li><b>Nel</b> (Nela Kruk, 4,1 mln) — 71% głosów. Gdyby przyjechała sama jedna, festiwal byłby wydarzeniem roku w całym powiecie.</li>
+          <li><b>Ozzy</b> (Oskar Zieliński, 1,3 mln) — gaming i streamy. Chłopaki z technikum zrobiłyby dla niego wszystko.</li>
+          <li><b>Vika</b> (Wiktoria Kot, 780 tys.) — eksperymenty, DIY, „Vika tłumaczy". Najmniejsza, ale twoja nauczycielka fizyki mówi o niej jak o córce.</li>
+        </ul>
+        <p>Cała trójka naraz byłaby cudem. Zakładasz, że manager zacznie od tego, że to niemożliwe.</p>
+      </div>
+
+      <div class="block">
+        <h3>Gala czterdziestolecia — 12 czerwca</h3>
+        <p>To jest twój prawdziwy problem. <b>12 czerwca wieczorem</b> w hali szkolnej odbywa się oficjalna gala z absolwentami, radnymi, prezesem Malcem i dyrektorką, która całą Strefę Startu podpisała swoim nazwiskiem. Powiedziała ci jedno zdanie: „Kaja, jeśli na gali nie będzie nikogo z tych ludzi z internetu, to ja tego więcej nie firmuję".</p>
+        <p>Kłopot w tym, że wykradziony z grupy fanowskiej plan trasy wygląda tak:</p>
+        <table><tbody>
+          <tr><td>Gdańsk</td><td class="n">1–3 czerwca</td></tr>
+          <tr><td>Poznań</td><td class="n">4–6 czerwca</td></tr>
+          <tr><td>Wrocław</td><td class="n">7–9 czerwca</td></tr>
+          <tr><td>Kraków</td><td class="n">10–13 czerwca</td></tr>
+          <tr><td>Nowy Brzeźnik</td><td class="n">14 czerwca — ?</td></tr>
+        </tbody></table>
+        <p>Żeby ktoś stanął na twojej gali 12 czerwca, trasa w Krakowie musi zostać skrócona o dwa dni. Słyszałaś, że zerwanie terminu kosztuje odszkodowanie — <b>ktoś mówił o kilkunastu tysiącach za dzień</b>, ale nie masz pojęcia, ile dokładnie. Jesteś gotowa to zapłacić z budżetu, jeśli starczy.</p>
+        <div class="note">Bez gwiazdy na gali 12 czerwca cała twoja pozycja w szkole się sypie. To jest rzecz, o którą walczysz najmocniej.</div>
+      </div>
+
+      <div class="block">
+        <h3>Miejsca — do wyboru pięć</h3>
+        <p>Im więcej punktów miasta odwiedzą, tym większy zasięg i tym trudniej będzie komukolwiek powiedzieć, że to była impreza dla jednej szkoły.</p>
+        <ul class="tight">
+          <li>Hala sportowa szkoły</li>
+          <li><b>Biblioteka Miejska</b> — miasto dało 25 000 zł pod warunkiem, że coś się tam wydarzy. Dyrektorka biblioteki dzwoni do ciebie co tydzień.</li>
+          <li>Dom Kultury „Zenit"</li>
+          <li>Park nad Brzeźnicą</li>
+          <li>Galeria handlowa „Forum"</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <h3>Dwa dodatkowe wydarzenia</h3>
+        <p><b>Warsztaty dla ósmoklasistów.</b> Dwie godziny, trzydzieści osób, dzieciaki, które we wrześniu wybierają szkołę średnią. Dyrektorka wpisała je do dokumentów jako „działanie promocyjne" i pytała o nie już trzy razy. Zakładasz, że manager uzna to za darmową robotę i będzie się opierał.</p>
+        <p><b>Kolacja u prezesa Malca.</b> Jego córka Amelia kończy 18 lat i prezes bardzo delikatnie zasugerował, że byłoby miło, gdyby ktoś wpadł. Dał 35 000 zł. Trudno to zignorować, ale też nie musisz tego załatwić za każdą cenę.</p>
+      </div>
+
+      <div class="block">
+        <h3>Koszty, które musisz pokryć z 80 000 zł</h3>
+        <table><tbody>
+          <tr><td>Transport ekipy</td><td class="n">3 000 zł</td></tr>
+          <tr><td>Scena i nagłośnienie</td><td class="n">5 000 zł</td></tr>
+          <tr><td>Nocleg — standard turystyczny</td><td class="n">350 zł / osoba / doba</td></tr>
+          <tr><td>Nocleg — standard premium</td><td class="n">800 zł / osoba / doba</td></tr>
+          <tr><td>Ochrona przy 1 twórcy</td><td class="n">900 zł / doba</td></tr>
+          <tr><td>Ochrona przy 2 twórcach</td><td class="n">1 400 zł / doba</td></tr>
+          <tr><td>Ochrona przy 3 twórcach</td><td class="n">1 900 zł / doba</td></tr>
+          <tr><td>Honorarium dla twórców</td><td class="n">do negocjacji</td></tr>
+          <tr><td>Odszkodowanie za skrócenie Krakowa</td><td class="n">nie wiesz</td></tr>
+        </tbody></table>
+        <p>Nie da się zakwaterować dwojga twórców w jednym pokoju. Liczba dób noclegowych równa się liczbie dni pobytu.</p>
+      </div>
+
+      <div class="block">
+        <h3>Twój Plan B</h3>
+        <p>Jeśli rozmowy padną, masz awaryjny wariant: zespół <b>Ostatni Autobus</b> z Radomska plus regionalny youtuber Kuba „Brzeźnik od kuchni". Festiwal się odbędzie, nikt nie umrze, ale nikt też o tym nie napisze. <b>Ten wariant jest wart 8 punktów.</b> Każde porozumienie, które da ci mniej niż 8, jest gorsze niż wyjście z tej sali bez umowy.</p>
+      </div>
+
+      <div class="block" id="tableA">
+        <h3>Twoja punktacja</h3>
+        <table>
+          <thead><tr><th>Obszar</th><th>Wariant</th><th style="text-align:right">Punkty</th></tr></thead>
+          <tbody>
+            <tr class="grp"><td colspan="3">Kto przyjeżdża</td></tr>
+            <tr><td></td><td>Nel</td><td class="n pos">+5</td></tr>
+            <tr><td></td><td>Ozzy</td><td class="n pos">+3</td></tr>
+            <tr><td></td><td>Vika</td><td class="n pos">+2</td></tr>
+            <tr><td></td><td>Nel i Ozzy</td><td class="n pos">+8</td></tr>
+            <tr><td></td><td>Nel i Vika</td><td class="n pos">+7</td></tr>
+            <tr><td></td><td>Ozzy i Vika</td><td class="n pos">+6</td></tr>
+            <tr><td></td><td>Cała trójka</td><td class="n pos">+11</td></tr>
+            <tr class="grp"><td colspan="3">Liczba dni pobytu</td></tr>
+            <tr><td></td><td>1 dzień</td><td class="n neg">−6</td></tr>
+            <tr><td></td><td>2 dni</td><td class="n neg">−2</td></tr>
+            <tr><td></td><td>3 dni</td><td class="n pos">+2</td></tr>
+            <tr><td></td><td>4 dni</td><td class="n pos">+6</td></tr>
+            <tr><td></td><td>5 dni</td><td class="n pos">+9</td></tr>
+            <tr><td></td><td>6 dni i więcej</td><td class="n pos">+11</td></tr>
+            <tr class="grp"><td colspan="3">Ile zostanie w budżecie</td></tr>
+            <tr><td></td><td>budżet przekroczony</td><td class="n neg">−20</td></tr>
+            <tr><td></td><td>0 – 4 999 zł</td><td class="n">0</td></tr>
+            <tr><td></td><td>5 000 – 11 999 zł</td><td class="n pos">+3</td></tr>
+            <tr><td></td><td>12 000 – 19 999 zł</td><td class="n pos">+6</td></tr>
+            <tr><td></td><td>20 000 zł i więcej</td><td class="n pos">+9</td></tr>
+            <tr class="grp"><td colspan="3">Liczba odwiedzonych miejsc</td></tr>
+            <tr><td></td><td>1</td><td class="n neg">−5</td></tr>
+            <tr><td></td><td>2</td><td class="n">0</td></tr>
+            <tr><td></td><td>3</td><td class="n pos">+4</td></tr>
+            <tr><td></td><td>4</td><td class="n pos">+6</td></tr>
+            <tr><td></td><td>5</td><td class="n pos">+8</td></tr>
+            <tr><td></td><td>Biblioteka Miejska wśród miejsc</td><td class="n pos">+2</td></tr>
+            <tr class="grp"><td colspan="3">Wydarzenia</td></tr>
+            <tr><td>Gala 12 czerwca</td><td>tak / nie</td><td class="n"><span class="pos">+10</span> / <span class="neg">−12</span></td></tr>
+            <tr><td>Warsztaty dla ósmoklasistów</td><td>tak / nie</td><td class="n"><span class="pos">+6</span> / <span class="neg">−2</span></td></tr>
+            <tr><td>Kolacja u prezesa Malca</td><td>tak / nie</td><td class="n"><span class="pos">+4</span> / <span class="neg">−4</span></td></tr>
+            <tr class="grp"><td colspan="3">Plan B (brak porozumienia)</td></tr>
+            <tr><td></td><td>Ostatni Autobus + Kuba</td><td class="n pos">8</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KARTA B ============ -->
+<section class="screen" id="roleB">
+  <div class="gate no-print" id="gateB">
+    <h3>Karta strony B</h3>
+    <p>To jest karta managera agencji NORTHLIGHT. Jeśli grasz po stronie samorządu — zamknij ją teraz.</p>
+    <button class="btn" data-open="B">Jestem stroną B — otwórz</button>
+  </div>
+
+  <div class="role roleB hidden" id="cardB">
+    <div class="head">
+      <p class="eyebrow" style="opacity:.75">Strona B · karta poufna</p>
+      <h2>Bartek Wolski</h2>
+      <p class="who">Manager ekipy Pixel Squad · agencja NORTHLIGHT · Warszawa</p>
+    </div>
+    <div class="body">
+      <button class="btn ghost no-print" id="toggleB" style="margin-bottom:20px">Ukryj tabelę punktów</button>
+
+      <div class="block">
+        <h3>Twoja sytuacja</h3>
+        <p>Trasa Pixel Squad po Polsce to najbardziej wyczerpujące trzy tygodnie w twojej karierze i jesteś dopiero w połowie planowania. Pięć miast, trzy osoby o trzech różnych charakterach, jeden bus i telefon, który nie milczy.</p>
+        <p>W lutym zaczęła do ciebie pisać jakaś przewodnicząca samorządu z Nowego Brzeźnika. Skasowałeś jedenaście wiadomości. Dwunastą przeczytałeś do końca, bo padła w niej kwota — i dlatego, że Nowy Brzeźnik to miasto, z którego pochodzisz. Wyjechałeś stamtąd w wieku dziewiętnastu lat i nie mówisz o tym w pracy.</p>
+        <p>Jutro masz spotkanie. Twoim zadaniem jest wyjść z niego z pieniędzmi i bez zniszczonej ekipy.</p>
+      </div>
+
+      <div class="block">
+        <h3>Nel nie może jechać</h3>
+        <p>Trzy tygodnie temu Nela ogłosiła na swoim kanale przerwę. Nie było w tym gry. Rozmawiałeś z nią i z jej terapeutką i podjąłeś decyzję: <b>Nela nie robi w czerwcu niczego ponad to, co już podpisane.</b></p>
+        <p>Będą cię o nią prosić. Będą podnosić stawkę. Możesz udawać, że rozważasz, ale każdy scenariusz z Nelą jest dla ciebie przegraną — i tego nie wolno ci sprzedać za żadne pieniądze.</p>
+        <p>Za to <b>Ozzy i Vika</b> to układ, który ci pasuje. Ozzy potrzebuje odbudować liczby po słabym kwietniu. Vika od miesięcy prosi o materiał do nowej serii i to jest twój sposób, żeby jej to dać.</p>
+        <div class="note">Jeśli wyjdziesz stamtąd z parą Ozzy i Vika, to jest twój najlepszy możliwy wynik w tej sprawie.</div>
+      </div>
+
+      <div class="block">
+        <h3>Kalendarz i odszkodowania</h3>
+        <table><tbody>
+          <tr><td>Gdańsk</td><td class="n">1–3 czerwca</td></tr>
+          <tr><td>Poznań</td><td class="n">4–6 czerwca</td></tr>
+          <tr><td>Wrocław</td><td class="n">7–9 czerwca</td></tr>
+          <tr><td>Kraków</td><td class="n">10–13 czerwca</td></tr>
+          <tr><td>Nowy Brzeźnik</td><td class="n">14 czerwca — ?</td></tr>
+          <tr><td>Od 20 czerwca</td><td class="n">zdjęcia do serialu</td></tr>
+        </tbody></table>
+        <p>Umowa krakowska jest podpisana. <b>Skrócenie Krakowa kosztuje 7 000 zł za każdy zabrany dzień</b> i płaci to strona, która o skrócenie prosi. Druga strona prawdopodobnie nie zna tej kwoty. To jest informacja, którą możesz zagrać, jak zechcesz.</p>
+        <p>Po dwudziestym czerwca nie ma żadnej dyskusji — cała ekipa jest na planie.</p>
+      </div>
+
+      <div class="block">
+        <h3>Ile dni i ile miejsc</h3>
+        <p>Krótko. Po pięciu miastach ludzie są wykończeni, a ty odpowiadasz za to, w jakim stanie dojadą na plan. Idealnie byłyby to <b>dwa, może trzy dni i nie więcej niż dwa miejsca</b>. Każdy kolejny punkt na mapie to kolejne przenosiny sprzętu i kolejna okazja, żeby coś poszło źle.</p>
+        <p>Jest jeden wyjątek, o którym nie musisz nikomu mówić. <b>Park nad Brzeźnicą</b> — tam nagrałeś telefonem swój pierwszy film, dwanaście lat temu, i nigdy tam potem nie wróciłeś. Jeśli park znajdzie się na liście, uznasz to za dobry dzień.</p>
+      </div>
+
+      <div class="block">
+        <h3>Pieniądze</h3>
+        <p>Twoje wynagrodzenie zależy od honorarium, jakie wynegocjujesz dla ekipy. Im wyższa suma, tym wyższa twoja prowizja i tym lepiej wygląda ta trasa w rozliczeniu przed zarządem NORTHLIGHT.</p>
+        <p><b>Poniżej 20 000 zł nie masz o czym rozmawiać</b> — taka kwota to sygnał dla całej branży, że Pixel Squad tanieje. Realny cel to <b>przedział 35 000 – 50 000 zł</b>. Powyżej pięćdziesięciu tysięcy wracasz do Warszawy jako człowiek, który zrobił coś, o czym się mówi.</p>
+      </div>
+
+      <div class="block">
+        <h3>Warunki, których nie odpuszczasz</h3>
+        <p><b>Hotel i ochrona w standardzie premium.</b> Masz to w umowach z twórcami i nie jest to twoje widzimisię. Jeśli zgodzisz się na tanie noclegi i słabą ochronę, odpowiadasz za to osobiście.</p>
+      </div>
+
+      <div class="block">
+        <h3>Trzy zaproszenia, o które będą prosić</h3>
+        <p><b>Gala szkolna 12 czerwca.</b> Wieczorna impreza z absolwentami i lokalnymi notablami. Kolizja z Krakowem, dodatkowa robota, żadnego zasięgu. Wolałbyś tego uniknąć, ale nie jest to sprawa, za którą wychodzisz z sali.</p>
+        <p><b>Warsztaty dla ósmoklasistów.</b> Tu masz coś, o czym oni nie wiedzą. Vika od pół roku dobija się o materiał do serii „Vika tłumaczy", a marka edukacyjna, z którą negocjujesz kontrakt na jesień, poprosiła o dowód, że ekipa robi rzeczy z dziećmi. Dwie godziny warsztatów w szkole to dokładnie ten dowód, a ty nie musisz za niego płacić. <b>Jeśli oni sami tego nie zaproponują, zaproponuj to sam.</b></p>
+        <p><b>Kolacja u jakiegoś sponsora.</b> Prywatna impreza urodzinowa, wieczór, zero kontroli nad tym, kto tam będzie z telefonem. Tego nie chcesz.</p>
+      </div>
+
+      <div class="block">
+        <h3>Twój Plan B</h3>
+        <p>Zabezpieczyłeś się. Galeria handlowa w Częstochowie chce Ozzy'ego na jeden dzień i płaci bez negocjacji. Nudne, ale bezpieczne. <b>Ten wariant jest wart 10 punktów.</b> Jeśli porozumienie z Nowym Brzeźnikiem daje ci mniej niż 10, lepiej wstań od stołu.</p>
+      </div>
+
+      <div class="block" id="tableB">
+        <h3>Twoja punktacja</h3>
+        <table>
+          <thead><tr><th>Obszar</th><th>Wariant</th><th style="text-align:right">Punkty</th></tr></thead>
+          <tbody>
+            <tr class="grp"><td colspan="3">Kto przyjeżdża</td></tr>
+            <tr><td></td><td>Nel</td><td class="n neg">−6</td></tr>
+            <tr><td></td><td>Ozzy</td><td class="n pos">+4</td></tr>
+            <tr><td></td><td>Vika</td><td class="n pos">+3</td></tr>
+            <tr><td></td><td>Nel i Ozzy</td><td class="n neg">−5</td></tr>
+            <tr><td></td><td>Nel i Vika</td><td class="n neg">−5</td></tr>
+            <tr><td></td><td>Ozzy i Vika</td><td class="n pos">+8</td></tr>
+            <tr><td></td><td>Cała trójka</td><td class="n neg">−4</td></tr>
+            <tr class="grp"><td colspan="3">Liczba dni pobytu</td></tr>
+            <tr><td></td><td>1 dzień</td><td class="n pos">+10</td></tr>
+            <tr><td></td><td>2 dni</td><td class="n pos">+7</td></tr>
+            <tr><td></td><td>3 dni</td><td class="n pos">+3</td></tr>
+            <tr><td></td><td>4 dni</td><td class="n">0</td></tr>
+            <tr><td></td><td>5 dni</td><td class="n neg">−4</td></tr>
+            <tr><td></td><td>6 dni i więcej</td><td class="n neg">−9</td></tr>
+            <tr class="grp"><td colspan="3">Honorarium dla ekipy</td></tr>
+            <tr><td></td><td>poniżej 20 000 zł</td><td class="n neg">−12</td></tr>
+            <tr><td></td><td>20 000 – 27 999 zł</td><td class="n">0</td></tr>
+            <tr><td></td><td>28 000 – 34 999 zł</td><td class="n pos">+5</td></tr>
+            <tr><td></td><td>35 000 – 41 999 zł</td><td class="n pos">+10</td></tr>
+            <tr><td></td><td>42 000 – 49 999 zł</td><td class="n pos">+15</td></tr>
+            <tr><td></td><td>50 000 zł i więcej</td><td class="n pos">+20</td></tr>
+            <tr class="grp"><td colspan="3">Liczba odwiedzonych miejsc</td></tr>
+            <tr><td></td><td>1</td><td class="n pos">+6</td></tr>
+            <tr><td></td><td>2</td><td class="n pos">+4</td></tr>
+            <tr><td></td><td>3</td><td class="n">0</td></tr>
+            <tr><td></td><td>4</td><td class="n neg">−4</td></tr>
+            <tr><td></td><td>5</td><td class="n neg">−8</td></tr>
+            <tr><td></td><td>Park nad Brzeźnicą wśród miejsc</td><td class="n pos">+2</td></tr>
+            <tr class="grp"><td colspan="3">Warunki i wydarzenia</td></tr>
+            <tr><td>Standard premium</td><td>tak / nie</td><td class="n"><span class="pos">+6</span> / <span class="neg">−8</span></td></tr>
+            <tr><td>Gala 12 czerwca</td><td>tak / nie</td><td class="n"><span class="neg">−3</span> / <span class="pos">+3</span></td></tr>
+            <tr><td>Warsztaty dla ósmoklasistów</td><td>tak / nie</td><td class="n"><span class="pos">+5</span> / <span class="neg">−2</span></td></tr>
+            <tr><td>Kolacja u prezesa Malca</td><td>tak / nie</td><td class="n"><span class="neg">−5</span> / <span class="pos">+4</span></td></tr>
+            <tr class="grp"><td colspan="3">Plan B (brak porozumienia)</td></tr>
+            <tr><td></td><td>Galeria w Częstochowie</td><td class="n pos">10</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ POROZUMIENIE ============ -->
+<section class="screen" id="deal">
+  <p class="eyebrow">Formularz końcowy · wypełniają obie strony razem</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:8px">Porozumienie</h2>
+  <p style="max-width:58ch;margin-bottom:26px">Osiem pól. Każde musi być uzgodnione. Jeżeli w którymkolwiek nie ma zgody — porozumienia nie ma i obie strony schodzą na swój Plan B.</p>
+
+  <div class="form">
+    <div class="f"><label for="fStars">Kto przyjeżdża</label>
+      <select id="fStars">
+        <option value="nel">Nel</option><option value="ozzy">Ozzy</option><option value="vika">Vika</option>
+        <option value="nel+ozzy">Nel i Ozzy</option><option value="nel+vika">Nel i Vika</option>
+        <option value="ozzy+vika" selected>Ozzy i Vika</option><option value="all">Cała trójka</option>
+      </select></div>
+    <div class="f"><label for="fDni">Liczba dni pobytu</label>
+      <input type="number" id="fDni" min="1" max="10" value="4"></div>
+    <div class="f"><label for="fHon">Honorarium łączne (zł)</label>
+      <input type="number" id="fHon" min="0" step="1000" value="38000"></div>
+    <div class="f"><label for="fStd">Standard noclegu i ochrony</label>
+      <select id="fStd"><option value="1" selected>Premium</option><option value="0">Turystyczny</option></select></div>
+  </div>
+
+  <div class="block">
+    <h3>Odwiedzone miejsca</h3>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" class="mj" value="hala" checked> Hala szkolna</label>
+      <label class="chk"><input type="checkbox" class="mj" value="bibl" checked> Biblioteka Miejska</label>
+      <label class="chk"><input type="checkbox" class="mj" value="zenit"> Dom Kultury „Zenit"</label>
+      <label class="chk"><input type="checkbox" class="mj" value="park" checked> Park nad Brzeźnicą</label>
+      <label class="chk"><input type="checkbox" class="mj" value="forum"> Galeria „Forum"</label>
+    </div>
+  </div>
+
+  <div class="block">
+    <h3>Wydarzenia dodatkowe</h3>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" id="fGala" checked> Gala 40-lecia, 12 czerwca</label>
+      <label class="chk"><input type="checkbox" id="fWarsz" checked> Warsztaty dla ósmoklasistów</label>
+      <label class="chk"><input type="checkbox" id="fKol"> Kolacja u prezesa Malca</label>
+    </div>
+    <p style="font-size:13px;opacity:.72;margin-top:10px">Gala 12 czerwca wymaga skrócenia trasy w Krakowie o 2 dni — kalkulator doliczy odszkodowanie automatycznie.</p>
+  </div>
+
+  <div class="block no-print">
+    <h3>Albo</h3>
+    <label class="chk" style="display:inline-flex"><input type="checkbox" id="fBrak"> Strony nie doszły do porozumienia</label>
+  </div>
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:26px 0" class="no-print">
+    <button class="btn" id="calc">Policz wynik</button>
+    <button class="btn ghost" id="addRank">Dodaj do rankingu</button>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="verdict" id="verdict"></div>
+    <div class="score">
+      <div class="sA"><div class="lbl">Strona A · Kaja Nowicka</div><div class="big" id="scA">0</div><div class="delta" id="dA"></div></div>
+      <div class="sB"><div class="lbl">Strona B · Bartek Wolski</div><div class="big" id="scB">0</div><div class="delta" id="dB"></div></div>
+    </div>
+    <div class="joint">
+      <div class="lbl mono" style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7">Wartość wspólna — ile punktów wyciągnęliście ze stołu razem</div>
+      <div class="jbar"><i id="jFill" style="width:0%"></i><b id="jTxt">0 / 72</b></div>
+      <p style="font-size:14px;margin-top:12px;opacity:.85" id="jComment"></p>
+    </div>
+    <div class="two">
+      <div><h3 style="font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:10px">Rozbicie — strona A</h3><table class="brk"><tbody id="brkA"></tbody></table></div>
+      <div><h3 style="font-size:12px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;border-bottom:2px solid var(--sea-deep);padding-bottom:6px;margin-bottom:10px">Rozbicie — strona B</h3><table class="brk"><tbody id="brkB"></tbody></table></div>
+    </div>
+    <div class="block" style="margin-top:26px">
+      <h3>Budżet strony A</h3>
+      <table class="brk"><tbody id="brkBudget"></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OMÓWIENIE ============ -->
+<section class="screen" id="debrief">
+  <p class="eyebrow">Po grze · 20 minut · najważniejsza część</p>
+  <h2 style="font-size:clamp(30px,6vw,52px);text-transform:uppercase;margin-bottom:20px">Omówienie</h2>
+
+  <div class="note lime">Zanim zaczniesz rozmowę, pokaż klasie ranking par. Różnica między najlepszą a najsłabszą parą wyniesie zwykle 25–30 punktów wartości wspólnej. Wszyscy grali w tę samą grę, tymi samymi kartami. To jest cały wykład.</div>
+
+  <div class="block">
+    <h3>Co było ukryte przed każdą ze stron</h3>
+    <table>
+      <thead><tr><th>Sprawa</th><th>A myślała</th><th>Naprawdę</th></tr></thead>
+      <tbody>
+        <tr><td>Nel</td><td>„Chodzi o pieniądze, damy więcej"</td><td>Nela ogłosiła przerwę. Żadna kwota tego nie zmieni. Manager traci punkty za każdy scenariusz z nią.</td></tr>
+        <tr><td>Warsztaty</td><td>„Uznają to za darmową robotę"</td><td>Manager ich potrzebuje — Vika chce materiału, a marka edukacyjna prosi o dowód. Obie strony na tym zyskują.</td></tr>
+        <tr><td>Park</td><td>„Zwykły punkt na liście"</td><td>Bartek nagrał tam pierwszy film w życiu. Wart dla niego więcej niż pozostałe miejsca razem.</td></tr>
+        <tr><td>Skrócenie Krakowa</td><td>„Kilkanaście tysięcy za dzień"</td><td>7 000 zł za dzień. Manager to wiedział. Rozmowa o gali mogła kosztować dużo mniej, niż A zakładała.</td></tr>
+        <tr><td>Standard premium</td><td>„Fanaberia, kosztuje"</td><td>Warunek z umów z twórcami. Wart managerowi 14 punktów różnicy, a stronę A kosztuje kilka tysięcy złotych.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="block">
+    <h3>Jedno z lepszych możliwych porozumień</h3>
+    <p>Nie jedyne — ale pokazuje, jak wygląda umowa, w której obie strony wygrywają dużo.</p>
+    <table><tbody>
+      <tr><td>Kto</td><td class="n">Ozzy i Vika</td></tr>
+      <tr><td>Dni</td><td class="n">4</td></tr>
+      <tr><td>Honorarium</td><td class="n">38 000 zł</td></tr>
+      <tr><td>Miejsca</td><td class="n">hala, biblioteka, park</td></tr>
+      <tr><td>Standard</td><td class="n">premium</td></tr>
+      <tr><td>Gala 12 czerwca</td><td class="n">tak</td></tr>
+      <tr><td>Warsztaty</td><td class="n">tak</td></tr>
+      <tr><td>Kolacja u sponsora</td><td class="n">nie</td></tr>
+      <tr><td><b>Wynik</b></td><td class="n"><b>A: 33 · B: 32 · razem 65</b></td></tr>
+    </tbody></table>
+    <p>Dla porównania: „sprawiedliwy kompromis po połowie" — Nel i Ozzy, 3 dni, 35 000 zł, gala tak, warsztaty nie, kolacja tak — daje A 34 punkty, ale B tylko 4. Manager schodzi wtedy na Plan B i cała umowa jest bez sensu. Wartość wspólna: 38 zamiast 65.</p>
+  </div>
+
+  <div class="block">
+    <h3>Pytania do klasy</h3>
+    <ul class="tight">
+      <li>W której minucie przestaliście traktować to jako przeciąganie liny, a zaczęliście szukać, co komu naprawdę potrzebne?</li>
+      <li>Co oddaliście za darmo, choć druga strona zapłaciłaby za to sporo?</li>
+      <li>Czy ktoś w ogóle zapytał, dlaczego Nel jest problemem? Ile razy padło pytanie „dlaczego", a ile „ile"?</li>
+      <li>Rozmawialiście o warsztatach? Jeśli nie — obie strony straciły punkty na rzeczy, której obie chciały.</li>
+      <li>Ktoś blefował? Co się stało, kiedy blef został sprawdzony?</li>
+      <li>Czy któraś para powinna była wstać od stołu? Kiedy brak umowy jest lepszy niż umowa?</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <h3>Cztery pojęcia, które teraz mają pokrycie w doświadczeniu</h3>
+    <p><b>Plan B (BATNA).</b> To, co masz, jeśli nie dogadasz się z tą osobą. Twoja siła w negocjacjach nie bierze się z tego, jak głośno mówisz, tylko z tego, jak dobry masz plan B. Kto zna swój — nie da się przycisnąć.</p>
+    <p><b>Interesy zamiast stanowisk.</b> Stanowisko: „chcemy Nel". Interes: „chcemy, żeby o festiwalu było głośno". Na stanowisku rozmowa się zatrzymuje. Pod stanowiskiem prawie zawsze jest coś, co da się zaspokoić inaczej.</p>
+    <p><b>Pułapka stałego tortu.</b> Domyślnie zakładamy, że skoro ktoś czegoś chce, to musi to być kosztem nas. Warsztaty dla ósmoklasistów były w tej grze po to, żeby to sprawdzić — obie strony ich chciały, a większość par w ogóle o nich nie rozmawia.</p>
+    <p><b>Wymiana ustępstw.</b> Oddaj tanio to, co dla ciebie mało warte, a dla drugiej strony dużo. Premium kosztuje A kilka tysięcy, a jest warte B czternaście punktów. Kolacja u sponsora jest warta A cztery punkty, a kosztuje B pięć — lepiej ją wymienić na coś innego niż wygrać.</p>
+  </div>
+
+  <div class="block">
+    <h3>Jeśli grasz drugi raz z tą samą grupą</h3>
+    <ul class="tight">
+      <li>Zamień strony. Ci, którzy byli samorządem, zostają managerem.</li>
+      <li>Odsłoń punktację od początku — rozmowa zrobi się chłodniejsza i bardziej techniczna, warto o tej różnicy porozmawiać.</li>
+      <li>Dołóż zasadę: żadnych liczb przez pierwsze 10 minut. Wolno tylko pytać i tłumaczyć, dlaczego coś jest ważne.</li>
+      <li>Dorzuć trzecią osobę jako obserwatora, który nic nie mówi i notuje, kto ile razy przerwał drugiej stronie.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <span>Stowarzyszenie 2piny · Strefa Startu · gra negocjacyjna 14–18 lat</span>
+  <span>Działa offline. Żadne dane nie wychodzą z tego pliku.</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- nawigacja ---------- */
+var navBtns=document.querySelectorAll('.bar button[data-go]');
+function go(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.toggle('on',s.id===id);});
+  navBtns.forEach(function(b){b.classList.toggle('active',b.dataset.go===id);});
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-go]').forEach(function(b){
+  b.addEventListener('click',function(){go(b.dataset.go);});
+});
+
+/* ---------- bramki kart ról ---------- */
+document.querySelectorAll('[data-open]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var s=b.dataset.open;
+    document.getElementById('gate'+s).classList.add('hidden');
+    document.getElementById('card'+s).classList.remove('hidden');
+  });
+});
+[['toggleA','tableA'],['toggleB','tableB']].forEach(function(p){
+  var btn=document.getElementById(p[0]),tab=document.getElementById(p[1]);
+  btn.addEventListener('click',function(){
+    var h=tab.classList.toggle('hidden');
+    btn.textContent=h?'Pokaż tabelę punktów':'Ukryj tabelę punktów';
+  });
+});
+
+/* ---------- zegar ---------- */
+var tSec=0,tRun=false,tInt=null;
+var clock=document.getElementById('tClock'),phase=document.getElementById('tPhase'),box=document.getElementById('timerBox');
+function draw(){
+  var m=Math.floor(Math.abs(tSec)/60),s=Math.abs(tSec)%60;
+  clock.textContent=(tSec<0?'-':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  box.classList.toggle('warn',tSec<=60);
+}
+function tick(){ if(tRun){tSec--;draw();} }
+document.querySelectorAll('.tctl button[data-min]').forEach(function(b){
+  b.addEventListener('click',function(){
+    tSec=parseInt(b.dataset.min,10)*60;tRun=true;phase.textContent=b.dataset.lab;draw();
+    if(!tInt)tInt=setInterval(tick,1000);
+  });
+});
+document.getElementById('tToggle').addEventListener('click',function(){
+  tRun=!tRun;phase.textContent=tRun?phase.textContent.replace(' — pauza',''):phase.textContent+' — pauza';
+});
+document.getElementById('tStop').addEventListener('click',function(){
+  tRun=false;tSec=0;phase.textContent='Zegar zatrzymany';draw();
+});
+draw();
+
+/* ---------- model punktacji ---------- */
+var CFG={
+  budget:80000, fixed:8000, odszkodowanie:14000,
+  nocleg:{premium:800, std:350},
+  ochrona:{1:900,2:1400,3:1900},
+  batnaA:8, batnaB:10,
+  stars:{
+    'nel':{n:1,l:'Nel',a:5,b:-6},'ozzy':{n:1,l:'Ozzy',a:3,b:4},'vika':{n:1,l:'Vika',a:2,b:3},
+    'nel+ozzy':{n:2,l:'Nel i Ozzy',a:8,b:-5},'nel+vika':{n:2,l:'Nel i Vika',a:7,b:-5},
+    'ozzy+vika':{n:2,l:'Ozzy i Vika',a:6,b:8},'all':{n:3,l:'Cała trójka',a:11,b:-4}
+  },
+  dni:{1:[-6,10],2:[-2,7],3:[2,3],4:[6,0],5:[9,-4],6:[11,-9]},
+  miejsca:{1:[-5,6],2:[0,4],3:[4,0],4:[6,-4],5:[8,-8]}
+};
+function tierRez(v){ if(v<0)return -20; if(v<5000)return 0; if(v<12000)return 3; if(v<20000)return 6; return 9; }
+function tierHon(v){ if(v<20000)return -12; if(v<28000)return 0; if(v<35000)return 5; if(v<42000)return 10; if(v<50000)return 15; return 20; }
+function zl(v){ return v.toLocaleString('pl-PL')+' zł'; }
+function sgn(v){ return (v>0?'+':'')+v; }
+
+function readForm(){
+  var mj=Array.prototype.slice.call(document.querySelectorAll('.mj:checked')).map(function(c){return c.value;});
+  return {
+    stars:document.getElementById('fStars').value,
+    dni:Math.max(1,parseInt(document.getElementById('fDni').value,10)||1),
+    honor:Math.max(0,parseInt(document.getElementById('fHon').value,10)||0),
+    premium:document.getElementById('fStd').value==='1',
+    miejsca:mj,
+    gala:document.getElementById('fGala').checked,
+    warsz:document.getElementById('fWarsz').checked,
+    kol:document.getElementById('fKol').checked
+  };
+}
+
+function score(d){
+  var st=CFG.stars[d.stars], n=st.n, dk=Math.min(d.dni,6);
+  var nm=Math.max(1,Math.min(5,d.miejsca.length));
+  var kNocleg=(d.premium?CFG.nocleg.premium:CFG.nocleg.std)*n*d.dni;
+  var kOchrona=CFG.ochrona[n]*d.dni;
+  var kOdsz=d.gala?CFG.odszkodowanie:0;
+  var koszt=d.honor+kNocleg+kOchrona+CFG.fixed+kOdsz;
+  var rez=CFG.budget-koszt;
+  var bibl=d.miejsca.indexOf('bibl')>-1, park=d.miejsca.indexOf('park')>-1;
+
+  var A=[['Kto przyjeżdża — '+st.l,st.a],
+         ['Pobyt '+d.dni+' dni',CFG.dni[dk][0]],
+         ['W budżecie zostało '+zl(rez),tierRez(rez)],
+         ['Miejsca: '+nm,CFG.miejsca[nm][0]]];
+  if(bibl)A.push(['Biblioteka Miejska na liście',2]);
+  A.push(['Gala 12 czerwca — '+(d.gala?'tak':'nie'),d.gala?10:-12]);
+  A.push(['Warsztaty — '+(d.warsz?'tak':'nie'),d.warsz?6:-2]);
+  A.push(['Kolacja u prezesa — '+(d.kol?'tak':'nie'),d.kol?4:-4]);
+
+  var B=[['Kto przyjeżdża — '+st.l,st.b],
+         ['Pobyt '+d.dni+' dni',CFG.dni[dk][1]],
+         ['Honorarium '+zl(d.honor),tierHon(d.honor)],
+         ['Miejsca: '+nm,CFG.miejsca[nm][1]]];
+  if(park)B.push(['Park nad Brzeźnicą na liście',2]);
+  B.push(['Standard '+(d.premium?'premium':'turystyczny'),d.premium?6:-8]);
+  B.push(['Gala 12 czerwca — '+(d.gala?'tak':'nie'),d.gala?-3:3]);
+  B.push(['Warsztaty — '+(d.warsz?'tak':'nie'),d.warsz?5:-2]);
+  B.push(['Kolacja u prezesa — '+(d.kol?'tak':'nie'),d.kol?-5:4]);
+
+  var sum=function(x){return x.reduce(function(t,r){return t+r[1];},0);};
+  return {A:A,B:B,ptsA:sum(A),ptsB:sum(B),rez:rez,koszt:koszt,
+    budget:[['Budżet startowy',CFG.budget],['Honorarium',-d.honor],
+      ['Noclegi ('+n+' os. × '+d.dni+' dni)',-kNocleg],['Ochrona ('+d.dni+' dni)',-kOchrona],
+      ['Transport i scena',-CFG.fixed],['Odszkodowanie za Kraków',-kOdsz],['Zostaje',rez]]};
+}
+
+function rows(tb,arr,money){
+  tb.innerHTML=arr.map(function(r){
+    var v=money?zl(Math.abs(r[1])):sgn(r[1]);
+    if(money&&r[1]<0)v='− '+v;
+    var cls=money?'':(r[1]>0?'pos':(r[1]<0?'neg':''));
+    return '<tr><td>'+r[0]+'</td><td class="n '+cls+'">'+v+'</td></tr>';
+  }).join('');
+}
+
+var lastResult=null;
+function calculate(){
+  var brak=document.getElementById('fBrak').checked;
+  var out=document.getElementById('out');out.classList.remove('hidden');
+  var v=document.getElementById('verdict');
+  var a,b,r=null;
+
+  if(brak){
+    a=CFG.batnaA;b=CFG.batnaB;
+    v.className='verdict';
+    v.innerHTML='<strong>Brak porozumienia</strong>Obie strony schodzą na Plan B. Kaja robi festiwal z zespołem Ostatni Autobus, Bartek wysyła Ozzy\'ego do galerii w Częstochowie. Nikt nie przegrał — ale nikt też nie wykorzystał tego, co leżało na stole.';
+    document.getElementById('brkA').innerHTML='<tr><td>Plan B</td><td class="n pos">8</td></tr>';
+    document.getElementById('brkB').innerHTML='<tr><td>Plan B</td><td class="n pos">10</td></tr>';
+    document.getElementById('brkBudget').innerHTML='<tr><td>Budżet nienaruszony</td><td class="n">'+zl(CFG.budget)+'</td></tr>';
+  } else {
+    var d=readForm();
+    if(d.miejsca.length===0){alert('Zaznacz co najmniej jedno miejsce.');return;}
+    r=score(d);a=r.ptsA;b=r.ptsB;
+    rows(document.getElementById('brkA'),r.A);
+    rows(document.getElementById('brkB'),r.B);
+    rows(document.getElementById('brkBudget'),r.budget,true);
+
+    var msgs=[];
+    if(r.rez<0){msgs.push('<b>Budżet przekroczony o '+zl(-r.rez)+'.</b> To porozumienie jest nieważne — strona A obiecała pieniądze, których nie ma. Minus dwadzieścia punktów.');}
+    if(a<CFG.batnaA){msgs.push('Strona A wyszła <b>poniżej swojego Planu B</b>. Kaja podpisała umowę gorszą niż nicnierobienie.');}
+    if(b<CFG.batnaB){msgs.push('Strona B wyszła <b>poniżej swojego Planu B</b>. Bartek powinien był wstać od stołu.');}
+    if(msgs.length){
+      v.className='verdict';
+      v.innerHTML='<strong>Umowa, której nie należało podpisywać</strong>'+msgs.join(' ');
+    } else {
+      v.className='verdict ok';
+      var who=(a-CFG.batnaA)>(b-CFG.batnaB)?'Strona A ugrała więcej ponad swój Plan B.':((b-CFG.batnaB)>(a-CFG.batnaA)?'Strona B ugrała więcej ponad swój Plan B.':'Idealna równowaga — obie strony ugrały tyle samo ponad Plan B.');
+      v.innerHTML='<strong>Porozumienie zawarte</strong>Obie strony wyszły ponad swój Plan B, więc ta umowa miała sens. '+who;
+    }
+  }
+
+  document.getElementById('scA').textContent=a;
+  document.getElementById('scB').textContent=b;
+  document.getElementById('dA').textContent='Plan B = '+CFG.batnaA+' · ponad plan: '+sgn(a-CFG.batnaA);
+  document.getElementById('dB').textContent='Plan B = '+CFG.batnaB+' · ponad plan: '+sgn(b-CFG.batnaB);
+
+  var joint=a+b, max=72;
+  var pct=Math.max(0,Math.min(100,Math.round(joint/max*100)));
+  document.getElementById('jFill').style.width=pct+'%';
+  document.getElementById('jTxt').textContent=joint+' / '+max;
+  var jc=document.getElementById('jComment');
+  if(joint>=60)jc.textContent='Bardzo dobrze. Znaleźliście wymiany, w których obie strony zyskiwały jednocześnie. Tort okazał się większy, niż wyglądał na początku.';
+  else if(joint>=45)jc.textContent='Solidnie, ale coś zostało na stole. Sprawdźcie w omówieniu, którą wymianę przegapiliście.';
+  else if(joint>=25)jc.textContent='Wynik typowy dla przeciągania liny. Ustępowaliście po równo zamiast pytać, co dla kogo jest naprawdę ważne.';
+  else jc.textContent='Niewiele. Prawdopodobnie przez większość czasu spieraliście się o jedną albo dwie sprawy i nie dotknęliście reszty.';
+
+  lastResult={a:a,b:b,joint:joint,deal:!brak,valid:!brak&&(!r||r.rez>=0)};
+  document.getElementById('out').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+document.getElementById('calc').addEventListener('click',calculate);
+
+/* ---------- ranking (tylko w pamięci tej sesji) ---------- */
+var ranking=[];
+function drawRank(){
+  var tb=document.getElementById('rankBody');
+  if(!ranking.length){tb.innerHTML='<tr><td colspan="5" style="opacity:.55;font-family:var(--sans)">Jeszcze pusto.</td></tr>';return;}
+  var sorted=ranking.slice().sort(function(x,y){return y.joint-x.joint;});
+  tb.innerHTML=sorted.map(function(r,i){
+    return '<tr><td>'+(i+1)+'. '+r.name+'</td><td class="n">'+r.a+'</td><td class="n">'+r.b+'</td><td class="n"><b>'+r.joint+'</b></td><td>'+(r.deal?(r.valid?'tak':'nieważna'):'brak')+'</td></tr>';
+  }).join('');
+}
+document.getElementById('addRank').addEventListener('click',function(){
+  if(!lastResult){alert('Najpierw policz wynik.');return;}
+  var name=prompt('Nazwa pary albo numery uczniów:','Para '+(ranking.length+1));
+  if(!name)return;
+  ranking.push({name:name,a:lastResult.a,b:lastResult.b,joint:lastResult.joint,deal:lastResult.deal,valid:lastResult.valid});
+  drawRank();go('host');
+});
+document.getElementById('rankClear').addEventListener('click',function(){
+  if(confirm('Wyczyścić cały ranking?')){ranking=[];drawRank();}
+});
+drawRank();
+
+})();
+</script>
+</body>
+</html>
