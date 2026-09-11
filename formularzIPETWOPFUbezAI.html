@@ -985,8 +985,9 @@ textarea.xtall { min-height: 160px; }
       </div>
     </div>
     <div class="nav">
-      <button class="btn btn-outline" onclick="goStep(2)">← Wróć</button>
+      <button class="btn btn-outline" onclick="goStep(1)">← Wróć</button>
       <button class="btn btn-outline btn-sm" style="color:var(--gray2);border-color:var(--border2)" onclick="newStudent()" title="Wyczyść formularz i zacznij od nowa">🗑 Nowy</button>
+      <button class="btn btn-teal" onclick="saveStudent()">💾 Zapisz ucznia</button>
       <button class="btn btn-primary" onclick="goStep(3)">Dalej: IPET →</button>
     </div>
   </div>
@@ -1146,6 +1147,7 @@ textarea.xtall { min-height: 160px; }
     <div class="nav">
       <button class="btn btn-outline" onclick="goStep(3)">← Wróć</button>
       <button class="btn btn-outline btn-sm" style="color:var(--gray2);border-color:var(--border2)" onclick="newStudent()" title="Wyczyść formularz i zacznij od nowa">🗑 Nowy</button>
+      <button class="btn btn-teal" onclick="saveStudent()">💾 Zapisz ucznia</button>
       <button class="btn btn-primary" onclick="goStep(5)">Dalej: Drukuj →</button>
     </div>
   </div>
@@ -2966,6 +2968,7 @@ function loadStudent(id) {
   if(s.plan_rows){var plb=$('planBody');plb.innerHTML='';s.plan_rows.forEach(function(r){addPlanRow(r[0],r[1],r[2],r[3]);});}
   if(s.ppp_checked){PPP.concat(REW).forEach(function(item){var el=$(item.id);if(!el)return;el.checked=false;var w=el.closest('.ppp-item');if(w)w.classList.remove('checked');var h=$(item.id+'_h');if(h)h.style.display='none';});s.ppp_checked.forEach(function(pc){var el=$(pc.id);if(el){el.checked=true;var w=el.closest('.ppp-item');if(w)w.classList.add('checked');var h=$(pc.id+'_h');if(h){h.style.display='block';if(pc.h)h.value=pc.h;}}});}
   var ewFields=['d','w','m','u'];for(var i=1;i<=6;i++){ewFields.forEach(function(x){if(s['e'+i+x])sv('e'+i+x,s['e'+i+x]);});}
+  var hdrImie=$('hdrImie');if(hdrImie){var nm=(s.f_imie||'').trim();hdrImie.textContent=nm?'👤 '+nm:'';hdrImie.style.display=nm?'':'none';}
   toggleSL(); goStep(1); toast('📂 Wczytano: '+s.name);
 }
 
