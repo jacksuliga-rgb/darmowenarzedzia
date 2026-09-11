@@ -985,8 +985,9 @@ textarea.xtall { min-height: 160px; }
       </div>
     </div>
     <div class="nav">
-      <button class="btn btn-outline" onclick="goStep(2)">← Wróć</button>
+      <button class="btn btn-outline" onclick="goStep(1)">← Wróć</button>
       <button class="btn btn-outline btn-sm" style="color:var(--gray2);border-color:var(--border2)" onclick="newStudent()" title="Wyczyść formularz i zacznij od nowa">🗑 Nowy</button>
+      <button class="btn btn-teal" onclick="saveStudent()">💾 Zapisz ucznia</button>
       <button class="btn btn-primary" onclick="goStep(3)">Dalej: IPET →</button>
     </div>
   </div>
@@ -1146,6 +1147,7 @@ textarea.xtall { min-height: 160px; }
     <div class="nav">
       <button class="btn btn-outline" onclick="goStep(3)">← Wróć</button>
       <button class="btn btn-outline btn-sm" style="color:var(--gray2);border-color:var(--border2)" onclick="newStudent()" title="Wyczyść formularz i zacznij od nowa">🗑 Nowy</button>
+      <button class="btn btn-teal" onclick="saveStudent()">💾 Zapisz ucznia</button>
       <button class="btn btn-primary" onclick="goStep(5)">Dalej: Drukuj →</button>
     </div>
   </div>
@@ -2914,7 +2916,7 @@ function openPrintWin(html) {
 // ZAPIS UCZNIÓW
 // ═══════════════════════════════════════════════════════
 function getStudents() { try{return JSON.parse(localStorage.getItem(STUDENTS_LS)||'[]');}catch(e){return[];} }
-function putStudents(arr) { try{localStorage.setItem(STUDENTS_LS,JSON.stringify(arr));}catch(e){} }
+function putStudents(arr) { try{localStorage.setItem(STUDENTS_LS,JSON.stringify(arr));return true;}catch(e){toast('❌ Błąd zapisu — brak miejsca lub zablokowany localStorage');return false;} }
 
 function collectForm() {
   var fields=['f_imie','f_dob','f_pesel','f_szkola','f_klasa','f_wiek','f_wychowawca','f_rok','f_okres','f_nr','f_data_doc','f_poradnia','f_rodzice','f_diag_krotka','f_diagnoza','f_zalecenia','f_mocne','f_trudnosci','i_cele_ter','i_cele_edu','i_tresci','i_pomoc','i_wspolpraca','w_priorytety','p_wychowawca','p_pedagog','p_dyrektor','p_specjalista','p_rodzic'];
@@ -2931,8 +2933,8 @@ function collectForm() {
 }
 
 function saveStudent() {
-  var d=collectForm(); var imie=d.f_imie||'Bez nazwy';
-  if(!imie.trim()){alert('Wpisz imię i nazwisko ucznia.');return;}
+  var d=collectForm(); var imie=(d.f_imie||'').trim();
+  if(!imie){alert('Wpisz imię i nazwisko ucznia przed zapisaniem.');return;}
   var all=getStudents();
   if(STATE.studentId){
     var idx=all.findIndex(function(s){return s.id===STATE.studentId;});
@@ -2942,7 +2944,7 @@ function saveStudent() {
     STATE.studentId='s_'+Date.now();
     all.push(Object.assign({},d,{name:imie,klasa:d.f_klasa,id:STATE.studentId}));
   }
-  putStudents(all); renderSL(); toast('✅ Zapisano: '+imie);
+  if(putStudents(all)){renderSL(); toast('✅ Zapisano: '+imie);}
 }
 
 function loadStudent(id) {
@@ -2966,6 +2968,7 @@ function loadStudent(id) {
   if(s.plan_rows){var plb=$('planBody');plb.innerHTML='';s.plan_rows.forEach(function(r){addPlanRow(r[0],r[1],r[2],r[3]);});}
   if(s.ppp_checked){PPP.concat(REW).forEach(function(item){var el=$(item.id);if(!el)return;el.checked=false;var w=el.closest('.ppp-item');if(w)w.classList.remove('checked');var h=$(item.id+'_h');if(h)h.style.display='none';});s.ppp_checked.forEach(function(pc){var el=$(pc.id);if(el){el.checked=true;var w=el.closest('.ppp-item');if(w)w.classList.add('checked');var h=$(pc.id+'_h');if(h){h.style.display='block';if(pc.h)h.value=pc.h;}}});}
   var ewFields=['d','w','m','u'];for(var i=1;i<=6;i++){ewFields.forEach(function(x){if(s['e'+i+x])sv('e'+i+x,s['e'+i+x]);});}
+  var hdrImie=$('hdrImie');if(hdrImie){var nm=(s.f_imie||'').trim();hdrImie.textContent=nm?'👤 '+nm:'';hdrImie.style.display=nm?'':'none';}
   toggleSL(); goStep(1); toast('📂 Wczytano: '+s.name);
 }
 
