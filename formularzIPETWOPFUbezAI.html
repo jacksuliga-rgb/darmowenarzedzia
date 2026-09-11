@@ -1992,8 +1992,8 @@ function setDocType(type) {
   $('btn-op').style.cssText='flex:1;padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:700;background:'+(!isOrz?'var(--teal)':'transparent')+';color:'+(!isOrz?'#fff':'var(--gray2)');
   $('stp1lbl').textContent='Dane ucznia';
   $('hdrDocType').textContent=isOrz?'Orzeczenie':'Opinia';
-  $('uploadTitle').textContent=isOrz?'📸 Wgraj zdjęcia orzeczenia':'📸 Wgraj zdjęcia opinii';
-  $('manLabel').textContent='Treść '+(isOrz?'orzeczenia':'opinii');
+  var ut=$('uploadTitle');if(ut)ut.textContent=isOrz?'📸 Wgraj zdjęcia orzeczenia':'📸 Wgraj zdjęcia opinii';
+  var ml=$('manLabel');if(ml)ml.textContent='Treść '+(isOrz?'orzeczenia':'opinii');
   $('lblZal').textContent=isOrz?'Zalecenia z orzeczenia':'Zalecenia z opinii poradni';
   $('secDoc').textContent=isOrz?'📄 Orzeczenie':'📄 Opinia poradni';
   // Kroki
