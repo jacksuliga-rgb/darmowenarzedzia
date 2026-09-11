@@ -667,6 +667,8 @@ textarea.xtall { min-height: 160px; }
 .sl-item:hover { background: #f0fdf4; }
 .sl-name { font-weight: 700; flex: 1; }
 .sl-meta { font-size: 11px; color: var(--gray2); }
+.sl-load { background: var(--teal); border: none; cursor: pointer; color: #fff; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 6px; font-family: var(--font); white-space: nowrap; }
+.sl-load:hover { opacity: .85; }
 .sl-del { background: none; border: none; cursor: pointer; color: var(--border2); font-size: 13px; padding: 2px 6px; }
 .sl-del:hover { color: var(--red); }
 
@@ -3010,9 +3012,11 @@ function renderSL() {
     var div=document.createElement('div'); div.className='sl-item';
     div.innerHTML='<span style="font-size:16px">'+(s.docType==='opinia'?'📝':'📋')+'</span>'+
       '<div style="flex:1"><div class="sl-name">'+escH(s.name||'')+'</div><div class="sl-meta">kl. '+(s.klasa||'—')+' · '+date+'</div></div>'+
+      '<button class="sl-load" title="Wczytaj dane ucznia">📂 Wczytaj</button>'+
       '<button class="sl-del" title="Usuń">🗑</button>';
+    div.querySelector('.sl-load').addEventListener('click',function(e){e.stopPropagation();loadStudent(s.id);});
     div.querySelector('.sl-del').addEventListener('click',function(e){deleteStudent(s.id,e);});
-    div.addEventListener('click',function(e){if(!e.target.classList.contains('sl-del'))loadStudent(s.id);});
+    div.addEventListener('click',function(e){var t=e.target;if(!t.classList.contains('sl-del')&&!t.classList.contains('sl-load'))loadStudent(s.id);});
     c.appendChild(div);
   });
 }
