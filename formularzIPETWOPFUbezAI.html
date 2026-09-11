@@ -3082,6 +3082,12 @@ function clearAllStudents() {
 }
 
 (function init() {
+  // Usuń stare puste rekordy (zapisane przed wprowadzeniem walidacji imienia)
+  (function cleanupEmptyStudents(){
+    var all=[];try{all=JSON.parse(localStorage.getItem('ipet_students')||'[]');}catch(e){}
+    var clean=all.filter(function(s){return s&&(s.f_imie||'').trim();});
+    if(clean.length<all.length){try{localStorage.setItem('ipet_students',JSON.stringify(clean));}catch(e){}}
+  })();
   initPpp();
   initWopfu();
   initEwaluacja();
